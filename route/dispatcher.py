@@ -1,18 +1,17 @@
-from krules_core.route.dispatcher import BaseDispatcher
-
-import json
-
-from cloudevents.sdk.event import v02
-from cloudevents.sdk import marshaller
-from cloudevents.sdk import converters
+import logging
 import uuid
 from datetime import datetime
+from io import StringIO
 
-import logging
+import pycurl
+from cloudevents.sdk import converters
+from cloudevents.sdk import marshaller
+from cloudevents.sdk.event import v02
 
-from .. import _pool, _on_success
-import requests
+from krules_core.route.dispatcher import BaseDispatcher
 
+
+# import requests
 
 class CloudEventsDispatcher(BaseDispatcher):
 
@@ -40,16 +39,40 @@ class CloudEventsDispatcher(BaseDispatcher):
         )
 
 
-        #import pdb; pdb.set_trace()
         headers, data = marshaller.NewDefaultHTTPMarshaller().ToRequest(
             event, converters.TypeStructured, lambda x: x
         )
 
-        _pool.apply_async(requests.post, args=(self._dispatch_url,), kwds={'headers': headers, 'data': data.getvalue()},
-                          callback=_on_success)
+        # used pycurl to avoid thread safety issues
 
-        #response = requests.post(self._dispatch_url, headers=headers, data=data.getvalue())
+        c = pycurl.Curl()
+        c.setopt(c.URL, self._dispatch_url)
 
-        #response.raise_for_status()
+        b = StringIO()
+        c.setopt(c.POST, 1)
+        c.setopt(c.HTTPHEADER, ["{}: {}".format(n, v) for n, v in headers.items()])
+        c.setopt(c.WRITEFUNCTION, b.write)
+        c.setopt(c.POSTFIELDS, data.read())
+        c.perform()
+        b.close()
+        c.close()
+
+
+
+
+
+        # url = self._dispatch_url.replace("{{message}}", message)
+        # print(url)
+        # #_pool.apply_async(requests.post, args=(url,), kwds={'headers': headers, 'data': data.getvalue()},
+        # #                  callback=_on_success)
+        # #requests.post(url, headers=headers, data=data.getvalue())
+        # req = Request(url, data=data.getvalue())
+        # print(req)
+        # for k, v in headers.items():
+        #     req.add_header(k, v)
+        # req.get_method = lambda: "POST"
+        # print("posting")
+        # urlopen(req)
+        # print("posted")
 
         return event
