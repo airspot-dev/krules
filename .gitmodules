@@ -1,3 +1,4 @@
 [submodule "krules_core"]
 	path = krules_core
 	url = git@bitbucket.org:byters/krules_core.git
+	branch = develop
