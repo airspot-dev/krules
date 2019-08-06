@@ -33,6 +33,6 @@ setup(
         'pytest',
     ],
     extras_require={
-        'subject_redis': ['git+ssh://git@bitbucket.org/byters/krules-subject-redis.git#egg=krules-subject-redis-0.0.1']
+        'subject_redis': 'git+ssh://git@bitbucket.org/byters/krules-subject-redis.git#egg=krules-subject-redis-0.0.1'
     }
 )
