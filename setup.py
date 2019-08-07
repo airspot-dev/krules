@@ -6,7 +6,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name='krules-python-core',
+    name='krules-core',
     version="0.0.1",
     author="Alberto Degli Esposti",
     author_email="alberto@arisport.tech",
