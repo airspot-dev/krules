@@ -1,4 +1,4 @@
-# python-krules-core
+# krules-core
 
 This is the python core package of KRules.
 
