@@ -14,7 +14,7 @@ setup(
     licence="Apache Licence 2.0",
     keywords="krules rules engine",
     url="...",  #TODO
-    packages=find_packages(), #['krules_core'],
+    packages=['krules_core'],
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
