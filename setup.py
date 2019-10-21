@@ -9,7 +9,7 @@ setup(
     name='krules-core',
     version="0.0.1",
     author="Alberto Degli Esposti",
-    author_email="alberto@arisport.tech",
+    author_email="alberto@arispot.tech",
     description="KRules Python core package",
     licence="Apache Licence 2.0",
     keywords="krules rules engine",
