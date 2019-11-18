@@ -1,0 +1,41 @@
+import os
+from setuptools import setup, find_packages
+
+
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+setup(
+    name='krules-dispatcher-cloudevents',
+    version="0.0.1",
+    author="Alberto Degli Esposti",
+    author_email="alberto@arispot.tech",
+    description="KRules cloudevents dispatcher",
+    licence="Apache Licence 2.0",
+    keywords="krules cloudevents router",
+    url="...",  #TODO
+    packages=['krules_cloudevents'],
+    long_description=read('README.md'),
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Framework :: KRules",
+        "License :: OSI Approved :: Apache Software License",
+    ],
+    install_requires=[
+        #'cloudevents>=0.2.4',
+        'pycurl==7.43.0.3',
+        'krules-core',
+    ],
+    dependency_links=[
+        'git+ssh://git@bitbucket.org/byters/krules-core.git#egg=krules-core',
+        'git+ssh://git@bitbucket.org/byters/krules-subject-redis.git#egg=krules-subject-redis',
+    ],
+    setup_requires=[
+        'pytest-runner',
+    ],
+    tests_require=[
+        'pytest',
+        'pytest-localserver',
+        'krules-subject-redis',  # TODO: use mock
+    ],
+)
