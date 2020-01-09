@@ -1,3 +1,14 @@
+# Copyright 2019 The KRules Authors
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from uuid import uuid4
 
@@ -90,7 +101,7 @@ class Rule:
                 }
                 logger.debug("> processing: {0}".format(res_in))
                 try:
-                    res = _cinst.execute(*_c._get_args(subject, payload), **_c._get_kwargs(subject, payload))
+                    res = _cinst.execute(*_c._get_args(_cinst), **_c._get_kwargs(_cinst))
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
                     raise TypeError(msg + str(ex))
@@ -134,7 +145,7 @@ class Rule:
                 }
                 logger.debug("> processing: {0}".format(res_in))
                 try:
-                    res = _cinst.execute(*_c._get_args(subject, payload), **_c._get_kwargs(subject, payload))
+                    res = _cinst.execute(*_c._get_args(_cinst), **_c._get_kwargs(_cinst))
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
                     raise TypeError(msg + str(ex))

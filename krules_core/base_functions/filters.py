@@ -1,3 +1,15 @@
+# Copyright 2019 The KRules Authors
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 from krules_core.subject import PayloadConst
 from . import RuleFunctionBase
 
@@ -34,11 +46,17 @@ class Check(RuleFunctionBase):
         # TODO: bug!!! does not work with with_subject
         return expr
 
+
+With = Check
+
 class CheckPayload(RuleFunctionBase):
 
     def execute(self, func):
 
         return func(self.payload)
+
+
+WithPayload = CheckPayload
 
 
 # TODO: refactor: CheckSubject
@@ -269,6 +287,18 @@ class OnSubjectPropertyChangedIn(RuleFunctionBase):
             return False
 
         return _property_name in property_names
+
+
+# TODO: unit tests
+class OnSubjectPropertyChangedNotIn(RuleFunctionBase):
+
+    def execute(self, *property_names):
+
+        _property_name = self.payload.get(PayloadConst.PROPERTY_NAME, None)
+        if _property_name is None:
+            return True
+
+        return _property_name not in property_names
 
 
 # TODO: unit tests

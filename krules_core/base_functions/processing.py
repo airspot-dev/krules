@@ -1,5 +1,29 @@
+# Copyright 2019 The KRules Authors
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+
 from krules_core.route.router import DispatchPolicyConst
 from . import RuleFunctionBase
+
+
+class PyCall(RuleFunctionBase):
+    """
+    Call a python function
+    """
+
+    def execute(self, _call, *args, **kwargs):
+        payload_dest = kwargs.pop("payload_dest", "pycall_returns")
+        self.payload[payload_dest] = _call(*args, **kwargs)
+
 
 class ReturnBoolean(RuleFunctionBase):
     """
@@ -19,6 +43,9 @@ class SetPayloadProperty(RuleFunctionBase):
     """
 
     def execute(self, name, value=None):
+
+        if hasattr(value, 'copy'):
+            value = value.copy()
 
         self.payload[name] = value
         return True
@@ -136,13 +163,6 @@ class Route(RuleFunctionBase):
         if "_event_info" in self.payload:
             payload["_event_info"] = self.payload["_event_info"]
 
-            # import os
-            #
-            # if "_k_service_source" in payload["_event_info"]: # #TODO: WORKAROUND recursion
-            #     return
-            #
-            # if "K_SERVICE" in os.environ:
-            #     payload["_event_info"]["_k_service_source"] = os.environ["K_SERVICE"]
 
         message_router_factory().route(message, subject, payload, dispatch_policy=dispatch_policy)
 
