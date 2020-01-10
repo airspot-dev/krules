@@ -14,8 +14,8 @@ import rx
 
 import dependency_injector.providers as providers
 
-from krules_core.base_functions import IsTrue, IsFalse, Check, SetPayloadProperty, Route, with_payload
-from krules_core.route.dispatcher import BaseDispatcher
+from .route.dispatcher import BaseDispatcher
+
 from .route.router import MessageRouter
 from .core import RuleFactory
 
@@ -38,12 +38,12 @@ def _assert(expr, msg="test failed"):
 
 counter = 0
 
+settings_factory.override(
+    providers.Singleton(lambda: {})
+)
+
 @pytest.fixture
 def subject():
-    settings_factory.override(
-        providers.Singleton(lambda: {})
-    )
-
     from .subject.tests.mocksubject import MockSubject
     global counter
     counter += 1
@@ -98,6 +98,9 @@ def test_router(subject, router, results_rx):
 
 def test_filters(subject, router, results_rx):
 
+    from .base_functions import Check
+    from .base_functions import SetPayloadProperty
+
     RuleFactory.create('test-rule-filters-pass',
                        subscribe_to="test-message",
                        ruledata={
@@ -140,6 +143,9 @@ def test_filters(subject, router, results_rx):
 
 
 def test_with_payload(subject, router, results_rx):
+
+    from .base_functions import SetPayloadProperty
+    from .base_functions import with_payload
 
     RuleFactory.create('test-rule-copy-payload-data',
                            subscribe_to='test-message',
