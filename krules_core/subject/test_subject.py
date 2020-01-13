@@ -18,6 +18,7 @@ from dependency_injector import providers as providers
 from krules_core.subject import PayloadConst
 
 _test_messages = []
+
 class Router(object):
 
     def route(self, message, name, payload):
