@@ -14,6 +14,7 @@ import rx
 
 from dependency_injector import providers as providers
 
+from .subject.tests.sqlite_storage import SQLLiteSubjectStorage
 from .route.dispatcher import BaseDispatcher
 from .route.router import MessageRouter
 from .subject.tests.mocksubject import MockSubject
@@ -23,9 +24,13 @@ logger = logging.getLogger(__name__)
 
 settings_factory = providers.Singleton(object)
 
+subject_storage = providers.Factory(SQLLiteSubjectStorage)
 subject_factory = providers.Singleton(MockSubject)
 results_rx_factory = providers.Singleton(rx.subjects.ReplaySubject)
 message_router_factory = providers.Singleton(MessageRouter)
 message_dispatcher_factory = providers.Singleton(BaseDispatcher)
+
+_testing_subject_storage_factory = providers.Factory(object)  # should be overwritten specific implementation tests
+                                                              # see sqlite_storage tests (inmemory/onfile variants)
 
 

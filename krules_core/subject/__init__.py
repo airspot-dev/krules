@@ -9,6 +9,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
 class PayloadConst(object):
 
     PROPERTY_NAME = "property_name"
@@ -16,3 +18,42 @@ class PayloadConst(object):
     OLD_VALUE = "old_value"
 
 
+class PropertyType(object):
+
+    DEFAULT = 'p'
+    EXTENDED = 'e'
+
+
+class _JsonProperty(object):
+
+    def __init__(self, name, value=None):
+        self.name = name
+        self.value = value
+
+    def json_value(self, *args, **kwargs):
+
+        if callable(self.value):
+            self._computed = self.value(*args, **kwargs)
+            return json.dumps(self._computed)
+        return json.dumps(self.value)
+
+    def get_value(self, *args, **kwargs):
+        if hasattr(self, '_computed'):
+            return self._computed
+        if callable(self.value):
+            return self.value(*args, **kwargs)
+        return self.value
+
+
+class SubjectProperty(_JsonProperty):
+
+    def __init__(self, name, value=None):
+        super().__init__(name, value)
+        self.type = PropertyType.DEFAULT
+
+
+class SubjectExtProperty(_JsonProperty):
+
+    def __init__(self, name, value=None):
+        super().__init__(name, value)
+        self.type = PropertyType.EXTENDED

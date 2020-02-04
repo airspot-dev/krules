@@ -2,6 +2,9 @@
 
 .idea/
 
+# tests files
+subjectstore_test.sqlite
+
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/
