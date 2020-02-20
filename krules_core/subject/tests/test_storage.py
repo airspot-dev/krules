@@ -5,25 +5,25 @@ import pytest
 import time
 from multiprocessing import Process
 
-from krules_core.providers import _testing_subject_storage_factory
+from krules_core.providers import subject_storage_factory
 from krules_core.subject import SubjectProperty, SubjectExtProperty, PropertyType
 
 
 @pytest.fixture
 def storage_subject1():
-    return _testing_subject_storage_factory("subject1")
+    return subject_storage_factory("subject1")
 
 
 @pytest.fixture
 def storage_subject2():
-    return _testing_subject_storage_factory("subject2")
+    return subject_storage_factory("subject2")
 
 
 def test_factories(storage_subject1, storage_subject2):
 
     assert str(storage_subject1) != str(storage_subject2)
 
-    assert str(_testing_subject_storage_factory("subject1")) == str(storage_subject1)
+    assert str(subject_storage_factory("subject1")) == str(storage_subject1)
 
 
 def test_property_kinds():
