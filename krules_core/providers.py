@@ -22,7 +22,7 @@ from .subject.storaged_subject import Subject
 import logging
 logger = logging.getLogger(__name__)
 
-settings_factory = providers.Singleton(object)
+settings_factory = providers.Singleton(lambda: {})
 
 # for testing/development only
 subject_storage = providers.Factory(SQLLiteSubjectStorage)

@@ -20,7 +20,8 @@ import sqlite3
 import logging
 logger = logging.getLogger(__name__)
 
-from krules_core.subject import PropertyType
+from krules_core.subject import PropertyType, SubjectExtProperty, SubjectProperty
+
 
 class SQLLiteSubjectStorage(object):
 
@@ -53,6 +54,9 @@ class SQLLiteSubjectStorage(object):
         return "sqlite_{}_{}".format(dbtype, self._subject)
 
     def is_concurrency_safe(self):
+        return self._dbfile != ":memory:"
+
+    def is_persistent(self):
         return self._dbfile != ":memory:"
 
     def _get_connection(self):
@@ -94,7 +98,6 @@ class SQLLiteSubjectStorage(object):
     def store(self, inserts=[], updates=[], deletes=[]):
 
         conn = self._get_connection()
-        cursor = conn.cursor()
 
         sql_script = ""
 
@@ -123,7 +126,9 @@ class SQLLiteSubjectStorage(object):
                 self._subject, prop.name, prop.type
             )
 
-        cursor.executescript(sql_script)
+        # TODO: when fails shoud a failback function should be called
+        #   checking at least each insert property if needs update instead
+        conn.executescript(sql_script)
 
         self._close_connection()
 
@@ -135,10 +140,10 @@ class SQLLiteSubjectStorage(object):
         a row-level lock would be preferable
         """
         conn = self._get_connection()
-        c = conn.cursor()
-        c.execute("BEGIN IMMEDIATE")
+        #c = conn.cursor()
+        conn.execute("BEGIN IMMEDIATE")
 
-        res = c.execute("SELECT propvalue FROM subjects WHERE subject=? and property=? and proptype=?",
+        res = conn.execute("SELECT propvalue FROM subjects WHERE subject=? and property=? and proptype=?",
                         (self._subject, prop.name, prop.type)).fetchall()
 
         old_value = old_value_default
@@ -147,19 +152,19 @@ class SQLLiteSubjectStorage(object):
             if len(res):
                 old_value = json.loads(res[0][0])
 
-                c.execute("UPDATE subjects SET propvalue=? WHERE subject=? and property=? and proptype=?",
+                conn.execute("UPDATE subjects SET propvalue=? WHERE subject=? and property=? and proptype=?",
                           (prop.json_value(old_value), self._subject, prop.name, prop.type))
             else:
-                c.execute("INSERT INTO subjects (subject, property, proptype, propvalue) "\
+                conn.execute("INSERT INTO subjects (subject, property, proptype, propvalue) "\
                               "VALUES ('{}', '{}', '{}', '{}');\n".format(
                     self._subject, prop.name, prop.type, prop.json_value(old_value_default))
                 )
         except Exception as ex:
-            c.execute("ROLLBACK")
+            conn.execute("ROLLBACK")
             self._close_connection()
             raise ex
 
-        c.execute("COMMIT")
+        conn.execute("COMMIT")
         self._close_connection()
 
         new_value = prop.get_value(old_value)
@@ -171,8 +176,7 @@ class SQLLiteSubjectStorage(object):
         Rarise AttributeError if not found
         """
         conn = self._get_connection()
-        c = conn.cursor()
-        res = c.execute("SELECT propvalue FROM subjects WHERE subject=? and property=? and proptype=?",
+        res = conn.execute("SELECT propvalue FROM subjects WHERE subject=? and property=? and proptype=?",
                         (self._subject, prop.name, prop.type)).fetchall()
         if not len(res):
             self._close_connection()
@@ -180,18 +184,18 @@ class SQLLiteSubjectStorage(object):
         self._close_connection()
         return json.loads(res[0][0])
 
-    def incr(self, prop, n=1):
+    def incr(self, prop, amount=1):
         """
         some backends may have specialized functions for this operation (eg: redis)
         """
-        prop.value = lambda x: x is None and 0+n or x+n
+        prop.value = lambda x: x is None and 0 + amount or x + amount
         return self.set(prop)
 
-    def decr(self, prop, n=1):
+    def decr(self, prop, amount=1):
         """
         some backends may have specialized functions for this operation (eg: redis)
         """
-        prop.value = lambda x: x is None and 0-n or x-n
+        prop.value = lambda x: x is None and 0 - amount or x - amount
         return self.set(prop)
 
     def delete(self, prop):
@@ -207,8 +211,36 @@ class SQLLiteSubjectStorage(object):
 
         self._close_connection()
 
+    def get_ext_props(self):
+
+        conn = self._get_connection()
+
+        props = conn.execute("SELECT property, propvalue from subjects WHERE proptype = ? and subject = ?",
+                             (PropertyType.EXTENDED, self._subject)).fetchall()
+        #res = [SubjectExtProperty(pname, json.loads(pvalue)) for pname, pvalue in props]
+        self._close_connection()
+
+        return dict((k, json.loads(v)) for k, v in props)
 
 
+    ## WE DON?T NEED IT
+    # def get_all_properties(self):
+    #     """
+    #     Get all properties
+    #     """
+    #     conn = self._get_connection()
+    #     rows = conn.execute("SELECT property, proptype, propvalue FROM subjects WHERE subject = ?", (self._subject,))\
+    #         .fetchall()
+    #
+    #
+    #     res = []
+    #     for pname, ptype, pvalue in rows:
+    #         klass = ptype == PropertyType.DEFAULT and SubjectProperty or SubjectExtProperty
+    #         res.append(klass(pname, json.loads(pvalue)))
+    #
+    #     self._close_connection()
+    #
+    #     return res
 
     def flush(self):
 

@@ -14,14 +14,14 @@ import rx
 
 import dependency_injector.providers as providers
 
-from .route.dispatcher import BaseDispatcher
+from krules_core.route.dispatcher import BaseDispatcher
 
-from .route.router import MessageRouter
-from .core import RuleFactory
+from krules_core.route.router import MessageRouter
+from krules_core.core import RuleFactory
 
-from . import RuleConst
+from krules_core import RuleConst
 
-from .providers import (
+from krules_core.providers import (
     message_router_factory,
     results_rx_factory,
     subject_factory, settings_factory,

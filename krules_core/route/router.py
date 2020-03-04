@@ -34,6 +34,7 @@ class MessageRouter(object):
 
     def __init__(self, multiprocessing=True, wait_for_termination=True):
         self._callables = {}
+        # TODO: remove multiprocessing !!!!
         self._multiproc = multiprocessing
         self._wait_for_termination = wait_for_termination
 
@@ -65,6 +66,11 @@ class MessageRouter(object):
 
     def route(self, message, subject, payload, dispatch_policy=DispatchPolicyConst.DEFAULT):
 
+        if isinstance(subject, str):
+            # NOTE: this should have already happened if we want to take care or event info
+            from krules_core.providers import subject_factory
+            subject = subject_factory(subject)
+
         from ..providers import message_dispatcher_factory
         import os
         # import socket
@@ -73,36 +79,29 @@ class MessageRouter(object):
 
         _callables = self._callables.get(message, None)
 
-        if not dispatch_policy == DispatchPolicyConst.DIRECT:
-            if _callables is not None:
-                if self._multiproc:
-                    for _callable in _callables:
-                        p = Process(target=_callable, args=(message, subject, payload))
-                        p.start()
-                        jobs.append(p)
-                else:
-                    for _callable in _callables:
-                        _callable(message, subject, payload)
+        try:
+            if not dispatch_policy == DispatchPolicyConst.DIRECT:
+                if _callables is not None:
+                    if self._multiproc:
+                        for _callable in _callables:
+                            p = Process(target=_callable, args=(message, subject, payload))
+                            p.start()
+                            jobs.append(p)
+                    else:
+                        for _callable in _callables:
+                            _callable(message, subject, payload)
 
-        if self._multiproc and self._wait_for_termination:
-            for job in jobs:
-                job.join()
+            if self._multiproc and self._wait_for_termination:
+                for job in jobs:
+                    job.join()
+        finally:
+            subject.store()
 
         # TODO: unit test (policies)
         if dispatch_policy != DispatchPolicyConst.NEVER and _callables is None \
                 and dispatch_policy == DispatchPolicyConst.DEFAULT \
                 or dispatch_policy == DispatchPolicyConst.ALWAYS \
                 or dispatch_policy == DispatchPolicyConst.DIRECT:
-
-                #_event_info = payload.get("_event_info", {})  # TODO: unit test
-                #_event_info["message_name"] = message
-                #payload["_event_info"] = _event_info
-
-                # TODO: needs knative specific dispatcher
-                #if "K_SERVICE" in os.environ:
-                #payload["_event_info"]["message_source"] = os.environ.get("K_SERVICE", socket.gethostname())
-                #else:
-                #    payload["_event_info"]["message_source"] = os.environ.get("HOSTNAME",
 
                 logger.debug("dispatch {} to {} with payload {}".format(message, subject, payload))
                 return message_dispatcher_factory().dispatch(message, subject, payload)

@@ -212,4 +212,40 @@ def test_incr_decr(storage_subject1):
         storage_subject1.incr(SubjectProperty("p"), "noway")
 
 
+def test_ext_props(storage_subject1, storage_subject2):
+    storage_subject1.flush()
+    storage_subject2.flush()
+
+    storage_subject1.set(SubjectProperty("p1", 1))
+    storage_subject1.set(SubjectProperty("p2", 2))
+    storage_subject1.set(SubjectExtProperty("p3", 3))
+    storage_subject1.set(SubjectExtProperty("p4", 4))
+    storage_subject2.set(SubjectExtProperty("p5", 5))
+
+    props = storage_subject1.get_ext_props()
+    assert len(props) == 2
+
+    assert "p3" in props and props["p3"] == 3
+    assert "p4" in props and props["p4"] == 4
+
+# def test_get_all_properties(storage_subject1):
+#
+#     storage_subject1.flush()
+#
+#     storage_subject1.set(SubjectProperty("p1", 1))
+#     storage_subject1.set(SubjectProperty("p2", 2))
+#     storage_subject1.set(SubjectExtProperty("p3", 3))
+#     storage_subject1.set(SubjectExtProperty("p4", 4))
+#
+#     all_props = list(storage_subject1.get_all_properties())
+#     assert len(all_props) == 4
+#     all_props.sort(key=lambda x: x.name)
+#     assert all_props[0].type == PropertyType.DEFAULT and all_props[0].name == "p1" and all_props[0].value == 1
+#     assert all_props[1].type == PropertyType.DEFAULT and all_props[1].name == "p2" and all_props[1].value == 2
+#     assert all_props[2].type == PropertyType.EXTENDED and all_props[2].name == "p3" and all_props[2].value == 3
+#     assert all_props[3].type == PropertyType.EXTENDED and all_props[3].name == "p4" and all_props[3].value == 4
+
+
+
+
 
