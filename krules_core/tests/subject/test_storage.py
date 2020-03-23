@@ -42,6 +42,11 @@ def test_property_kinds():
     assert prop.get_value() == 2
     assert prop.json_value() == json.dumps(2)
 
+    # callable no args
+    prop = SubjectProperty("p", lambda: 10)
+    assert prop.json_value() == json.dumps(10)
+    assert prop.get_value() == 10
+    # callable with args
     prop = SubjectProperty("p", lambda x: x*2)
     assert prop.json_value(2) == json.dumps(4)
     assert prop.get_value() == 4
@@ -164,6 +169,7 @@ def test_set_and_get(storage_subject1):
     assert storage_subject1.get(SubjectProperty("pset")) == "1'2"
 
     # computed value
+    storage_subject1.set(SubjectProperty("pset", lambda: "1'2"))  # no args
     storage_subject1.set(SubjectProperty("pset", lambda x: x.replace("'", "$")))
 
     assert storage_subject1.get(SubjectProperty("pset")) == "1$2"

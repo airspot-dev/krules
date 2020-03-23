@@ -11,7 +11,7 @@ setup(
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules Python core package",
-    licence="Apache Licence 2.0",
+    license="Apache Licence 2.0",
     keywords="krules rules engine",
     url="...",  #TODO
     packages=find_packages(),#['krules_core'],
@@ -25,6 +25,7 @@ setup(
         'dependency-injector>=3.14.8',
         'rx==1.6.1',
         'wrapt>=1.11.2',
+        'jsonpath-rw-ext==1.2.2',
     ],
     setup_requires=[
         'pytest-runner',

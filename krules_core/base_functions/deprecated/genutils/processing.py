@@ -8,3 +8,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+from krules_core.base_functions import RuleFunctionBase
+
+
+class GenUUID(RuleFunctionBase):
+
+    def execute(self, payload_dest="uuid", strip_dash=False):
+
+        import uuid
+
+        gen = str(uuid.uuid4())
+
+        if strip_dash:
+            gen=gen.replace("-", "")
+
+        self.payload[payload_dest] = gen
+
+
+

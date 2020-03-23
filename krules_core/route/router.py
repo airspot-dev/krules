@@ -32,7 +32,7 @@ from multiprocessing import Pool
 
 class MessageRouter(object):
 
-    def __init__(self, multiprocessing=True, wait_for_termination=True):
+    def __init__(self, multiprocessing=False, wait_for_termination=False):
         self._callables = {}
         # TODO: remove multiprocessing !!!!
         self._multiproc = multiprocessing
@@ -40,19 +40,15 @@ class MessageRouter(object):
 
     def register(self, rule, message):
         logger.debug("register {0} for {1}".format(rule, message))
-        #rx_subject = rx.subjects.ReplaySubject()
         if message not in self._callables:
             self._callables[message] = []
-        #self._callables[message].append(rx_subject)
         self._callables[message].append(rule._process)
-        #return rx_subject.subscribe(rule._w_process)
 
     def unregister(self, message):
         logger.debug("unregister message {}".format(message))
         count = 0
         if message in self._callables:
             for r in self._callables[message]:
-                #r.dispose()
                 count += 1
             del self._callables[message]
         return count
@@ -72,30 +68,28 @@ class MessageRouter(object):
             subject = subject_factory(subject)
 
         from ..providers import message_dispatcher_factory
-        import os
-        # import socket
 
         jobs = []
 
         _callables = self._callables.get(message, None)
 
-        try:
-            if not dispatch_policy == DispatchPolicyConst.DIRECT:
-                if _callables is not None:
-                    if self._multiproc:
-                        for _callable in _callables:
-                            p = Process(target=_callable, args=(message, subject, payload))
-                            p.start()
-                            jobs.append(p)
-                    else:
-                        for _callable in _callables:
-                            _callable(message, subject, payload)
+#        try:
+        if not dispatch_policy == DispatchPolicyConst.DIRECT:
+            if _callables is not None:
+                if self._multiproc:
+                    for _callable in _callables:
+                        p = Process(target=_callable, args=(message, subject, payload))
+                        p.start()
+                        jobs.append(p)
+                else:
+                    for _callable in _callables:
+                        _callable(message, subject, payload)
 
-            if self._multiproc and self._wait_for_termination:
-                for job in jobs:
-                    job.join()
-        finally:
-            subject.store()
+        if self._multiproc and self._wait_for_termination:
+            for job in jobs:
+                job.join()
+#        finally:
+#            subject.store()
 
         # TODO: unit test (policies)
         if dispatch_policy != DispatchPolicyConst.NEVER and _callables is None \

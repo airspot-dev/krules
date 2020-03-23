@@ -13,7 +13,6 @@
 
 from abc import ABCMeta, abstractmethod
 #import jsonpath_rw_ext as jp
-from krules_core.subject.tests.mocksubject import MockSubject
 
 
 class with_payload(object):
@@ -78,8 +77,8 @@ class RuleFunctionBase:
 
     __metaclass__ = ABCMeta
 
-    # just for the ide happiness
-    subject = MockSubject("mock")
+    subject = object()  # just for the ide happiness
+
     payload = {}
     message = ""
 
@@ -116,8 +115,8 @@ class RuleFunctionBase:
                 params[index] = params[index](_cinst.subject)
             if isinstance(params[index], with_self):
                 params[index] = params[index](_cinst)
-            elif isinstance(params[index], (list, tuple, dict)):
-                params[index] = self._parse_params(params[index], _cinst.payload)
+            #elif isinstance(params[index], (list, tuple, dict)):
+            #    params[index] = self._parse_params(params[index], _cinst.payload)
         return params
 
     @abstractmethod
@@ -125,6 +124,9 @@ class RuleFunctionBase:
         raise NotImplementedError("execute")
 
 
-from .filters import *
-from .processing import *
+from krules_core.base_functions.filters import *
+from krules_core.base_functions.processing import *
 
+
+def Callable(_callable):
+    return type("_CallableRuleFunction", (RuleFunctionBase,), {"execute": _callable})

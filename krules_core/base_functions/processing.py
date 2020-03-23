@@ -8,150 +8,222 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
+import inspect
+from collections.abc import Mapping
 
 from krules_core.route.router import DispatchPolicyConst
-from . import RuleFunctionBase
+
+from krules_core.base_functions import RuleFunctionBase
 
 
-class PyCall(RuleFunctionBase):
+## PAYLOAD FUNCTIONS ##############################################################
+
+class UpdatePayload(RuleFunctionBase):
     """
-    Call a python function
-    """
-
-    def execute(self, _call, *args, **kwargs):
-        payload_dest = kwargs.pop("payload_dest", "pycall_returns")
-        self.payload[payload_dest] = _call(*args, **kwargs)
-
-
-class ReturnBoolean(RuleFunctionBase):
-    """
-    Just return provided parameter as booleand
-    It can be useful to enable/disable manually
-    the execution of a rule
+    Update the payload _merging_ the received arguments interpreted as a dictionary
     """
 
-    def execute(self, value):
+    @staticmethod
+    def _update(d, u):
+        for k, v in u.items():
+            if isinstance(v, Mapping):
+                d[k] = UpdatePayload._update(d.get(k, {}), v)
+            elif isinstance(v, list):
+                v.extend(d.get(k, []))
+                d[k] = v
+            else:
+                d[k] = v
+        return d
 
-        return bool(value)
+    def execute(self, merge_dict):
+        """
+        Args:
+            merge_dict: Dictionary to merge with
+        """
+        self._update(self.payload, merge_dict)
 
 
-class SetPayloadProperty(RuleFunctionBase):
+class SetPayloadProperties(RuleFunctionBase):
     """
-    Set property in payload, if value is not provided set as None
+    Set any number of properties in the payload. Existing properties are overridden
     """
 
-    def execute(self, name, value=None):
+    def execute(self, **kwargs):
+        """
+        Args:
+              **kwargs: Each named paramenter is the key and the value to update with. The value can be a callable
+                and it receives _eventually_ the previous value for that key. This means that the callable should be declared
+                with a variable length number of arguments (*args)
+        """
+        for k, v in kwargs.items():
+            if inspect.isfunction(v):
+                args = []
+                if k in self.payload:
+                    args.append(self.payload[k])
+                v = v(*args)
+            self.payload[k] = v
 
-        if hasattr(value, 'copy'):
-            value = value.copy()
 
-        self.payload[name] = value
-        return True
+class SetPayloadProperty(SetPayloadProperties):
+    """
+    Set a single property
+    """
+
+    def execute(self, property_name, value):
+        """
+        Args:
+            property_name: A key in the dictionary,
+            value: Value to set. Can be a callable (see SetPayloadProperties)
+        """
+        super().execute(**{property_name: value})
+
+
+## SUBJECT FUNCTIONS ################################################################
 
 
 class SetSubjectProperty(RuleFunctionBase):
     """
-    Set property in subject. In value is not provided set as None
+    Set a single property of the subject
     """
+    def execute(self, property_name, value, is_ext=False, is_mute=False, use_cache=True):
+        """
+        Args:
+            property_name: Name of the property to set. It may or may not exist
+            value: Value to set. It can be a callable and receives (optionally) the current property value.
+               If the property does not exist yet, it receives None
+               (it is not possible to discriminate from an existing variable with the value None)
+        """
+        if is_ext:
+            fn = lambda v: self.subject.set_ext(property_name, v, use_cache)
+        else:
+            fn = lambda v: self.subject.set(property_name, v, is_mute, use_cache)
 
-    def execute(self, name, value=None):
+        return fn(value)
 
-        setattr(self.subject, name, value)
-        return True
+
+class SetSubjectPropertySilently(SetSubjectProperty):
+    """
+    Set a property silently (no property changed event)
+    """
+    def execute(self, property_name, value, is_ext=False, use_cache=True, **kwargs):
+        return super().execute(property_name, value, is_ext=is_ext, is_mute=True, use_cache=use_cache)
+
+
+class StoreSubjectProperty(SetSubjectProperty):
+    """
+    Set a property directly to the storage without using the cache
+    """
+    def execute(self, property_name, value, is_ext=False, is_mute=False, **kwargs):
+        return super().execute(property_name, value, is_ext=is_ext, is_mute=is_mute, use_cache=False)
+
+
+class StoreSubjectPropertySilently(SetSubjectProperty):
+    """
+    Set a property directly to the storage without using the cache and without emit property changed events
+    """
+    def execute(self, property_name, value, is_ext=False, **kwargs):
+        return super().execute(property_name, value, is_ext=is_ext, is_mute=True, use_cache=False)
+
+
+class SetSubjectExtendedProperty(SetSubjectProperty):
+    """
+    Set an extended property of the subject
+    """
+    def execute(self, property_name, value, use_cache=True, **kwargs):
+        return super().execute(property_name, value, is_ext=True, is_mute=True, use_cache=use_cache)
+
 
 class SetSubjectProperties(RuleFunctionBase):
     """
-    Set multiple properties in subject from dictionary
+        Set multiple properties in subject from dictionary. This is allowed only by using cache
+        and not for extended properties
+        Selectively emit property changed events
     """
 
-    def execute(self, props):
-
-        # TODO: important! use single redis operation
-
+    def execute(self, props, unmuted=[]):
+        """
+        Args:
+            props: The properties to set
+            unmuted: List of property names for which emit property changed events
+        """
         for name, value in props.items():
-            setattr(self.subject, name, value)
-        return True
+            self.subject.set(name, value, is_mute=name not in unmuted)
 
-class SetSubjectExtendedProperty(RuleFunctionBase):
+
+class IncrementSubjectProperty(RuleFunctionBase):
     """
-    Set extended property
-    Each subject has a set of extended properties. They can only be of string type and are not reactive.
-    The use of this kind of property is open,
-    for example it can be used to define specific routing rules for different classes of subjects
-    in the dispatcher implementation
+    Increment a numeri property in the subject. This function is provided because some storage backends
+    natively support atomic increment/decrement operations efficiently. So, this function implicitly
+    call directly the storage backend bypassing the cache
     """
+    def execute(self, property_name, amount=1, is_mute=False):
+        return self.subject.incr(property_name, amount, is_mute)
 
-    def execute(self, name, value):
-        self.subject.set_ext(name, value)
+
+class IncrementSubjectPropertySilently(IncrementSubjectProperty):
+
+    def execute(self, property_name, amount=1, **kwargs):
+        super().execute(property_name, amount, True)
 
 
-class SetSubjectPropertyDefault(RuleFunctionBase):
+class DecrementSubjectProperty(RuleFunctionBase):
     """
-    if the property does not yet exist it sets the default value
+    Increment a numeri property in the subject. This function is provided because some storage backends
+    natively support atomic increment/decrement operations efficiently. So, this function implicitly
+    call directly the storage backend bypassing the cache
     """
-
-    def execute(self, name, value):
-        """
-        :param name: Name of the property
-        :param value: Set this value if the property does not exist
-        """
-
-        try:
-            getattr(self.subject, name)
-        except AttributeError:
-            setattr(self.subject, name, value)
-
-        return True  # can be used in filters
+    def execute(self, property_name, amount=1, is_mute=False):
+        return self.subject.decr(property_name, amount, is_mute)
 
 
-class IncrSubjectProperty(RuleFunctionBase):
+class DecrementSubjectPropertySilently(DecrementSubjectProperty):
+
+    def execute(self, property_name, amount=1, **kwargs):
+        return super().execute(property_name, amount, True)
+
+
+class StoreSubject(RuleFunctionBase):
     """
-    Increment subject property
-    """
-
-    def execute(self, name, value=1):
-
-        try:
-            prop = getattr(self.subject, name)
-            prop.incr(value)
-        except AttributeError:
-            setattr(self.subject, name, 0)
-            prop.incr(value)
-
-
-class DecrSubjectProperty(RuleFunctionBase):
-    """
-    Decrement subject property
+    Flush the cache
     """
 
-    def execute(self, name, value=1):
-        try:
-            prop = getattr(self.subject, name)
-            prop.decr(value)
-        except AttributeError:
-            setattr(self.subject, name, 0)
-            prop.decr(value)
+    def execute(self):
+        self.subject.store()
 
 
 class FlushSubject(RuleFunctionBase):
+    """
+    Remove this subject and all of his properties
+    """
 
     def execute(self):
-
         self.subject.flush()
 
 
+#####################################################################################
+
+
 class Route(RuleFunctionBase):
+    """
+    Send a message (produce an event) inside and/or outside the rulesset according to _dispatch_policy_
+    For "sending outside" the message we mean to deliver it to the dispatcher component
+    """
 
     def execute(self, message=None, subject=None, payload=None, dispatch_policy=DispatchPolicyConst.DEFAULT):
         """
-        Route message
-        :param message:
-        :param subject:
-        :param payload:
-        :return:
+        Args:
+            message: Name of the message (event _type_). Default is current processing message
+            subject: New subject or the current subject as default
+            payload: The payload of the message or the current payload
+            dispatch_policy: Router -> dispatcher policy. Available choices are defined in
+                 krules_core.route.router.DispatchPolicyConst as:
+
+                    DEFAULT: Dispatched outside only when no handler is found in current rulesset
+                    ALWAYS: Always dispatched even if an handler is found and processed in the current rulesset
+                    NEVER: Never dispatched outside
+                    DIRECT: Skip to search for a local handler and send outside directly
         """
+
         from krules_core.providers import message_router_factory
         if message is None:
             message = self.message
@@ -159,10 +231,6 @@ class Route(RuleFunctionBase):
             subject = self.subject
         if payload is None:
             payload = self.payload
-
-        if "_event_info" in self.payload:
-            payload["_event_info"] = self.payload["_event_info"]
-
 
         message_router_factory().route(message, subject, payload, dispatch_policy=dispatch_policy)
 
@@ -176,32 +244,5 @@ class RaiseException(RuleFunctionBase):
 
     def execute(self, ex):
         """
-
-        :param class_: Exception class (default: Exception)
-        :param args: Exception args
-        :param kwargs: Exception kwargs
-        :return:
-        """
         raise ex
-
-
-# TODO: unit tests
-class MapList(RuleFunctionBase):
-
-    def execute(self, _list, func, payload_dest=None, subject_dest=None):
-
-        # TODO: workaround when used with with_subject or with_payload
-        try:
-            iter(_list)
-        except TypeError:
-            _list = _list.result()
-
-        ll = list(map(func, _list))
-
-        if payload_dest:
-            self.payload[payload_dest] = ll
-
-        if subject_dest:
-            setattr(self.subject, subject_dest, ll)
-
-
+        """

@@ -19,6 +19,7 @@ from krules_core.subject import PayloadConst, PropertyType
 
 _test_events = []
 
+
 class Router(object):
 
     def route(self, type, subject, payload):
@@ -33,6 +34,11 @@ def setup_module(_):
         providers.Singleton(Router)
     )
 
+
+def teardown_module(_):
+    from krules_core.providers import message_router_factory
+
+    message_router_factory.reset_last_overriding()
 
 
 counter = 0

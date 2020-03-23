@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
+import inspect
 from uuid import uuid4
 
 from . import RuleConst as Const
@@ -76,13 +76,11 @@ class Rule:
             #Const.EVENT_INFO: getattr(subject, "__event_info", {}),
         }
 
-        # # TODO: tests
-        # if "_event_info" in payload:
-        #     subject.__event_info = payload["_event_info"]
-        #     res_full[Const.ORIGIN_ID] = payload["_event_info"].get("origin_id", None)
         res_in = {}
         try:
             for _c in self._filters:
+                if inspect.isclass(_c):
+                    _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
                 _cinst.message = message
@@ -127,6 +125,8 @@ class Rule:
             res_full[Const.PROCESSED] = True
 
             for _c in self._processing:
+                if inspect.isclass(_c):
+                    _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
                 _cinst.message = message

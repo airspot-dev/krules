@@ -14,7 +14,8 @@ import rx
 
 from dependency_injector import providers as providers
 
-from .subject.tests.sqlite_storage import SQLLiteSubjectStorage
+from krules_core.tests.subject.sqlite_storage import SQLLiteSubjectStorage
+
 from .route.dispatcher import BaseDispatcher
 from .route.router import MessageRouter
 from .subject.storaged_subject import Subject
@@ -33,6 +34,6 @@ results_rx_factory = providers.Singleton(rx.subjects.ReplaySubject)
 message_router_factory = providers.Singleton(MessageRouter)
 message_dispatcher_factory = providers.Singleton(BaseDispatcher)
 
-# TODO: why _testing... ?
+
 
 

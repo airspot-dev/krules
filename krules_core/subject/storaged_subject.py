@@ -57,8 +57,15 @@ class Subject(object):
                 old_value = vals[prop]
             except KeyError:
                 old_value = None
-            if inspect.isfunction(value) and len(inspect.signature(value).parameters) == 1:
-                value = value(old_value)
+            if inspect.isfunction(value):
+                n_params = len(inspect.signature(value).parameters)
+                if n_params == 0:
+                    value = value()
+                elif n_params == 1:
+                    value = value(old_value)
+                else:
+                    raise ValueError("to many arguments for {}".format(prop))
+
             vals[prop] = value
         else:
             klass, k = is_ext and (SubjectExtProperty, PropertyType.EXTENDED) or (SubjectProperty, PropertyType.DEFAULT)
