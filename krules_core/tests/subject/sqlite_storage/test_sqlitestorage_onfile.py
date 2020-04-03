@@ -16,7 +16,7 @@ def test_memorydatabase():
         os.unlink(TEST_FNAME)
 
     subject_storage_factory.override(
-        providers.Factory(lambda x: subject_storage(TEST_FNAME, x))
+        providers.Factory(lambda x: subject_storage(x, TEST_FNAME))
     )
     assert subject_storage_factory("test-subject").is_persistent()
     assert subject_storage_factory("test-subject").is_concurrency_safe()

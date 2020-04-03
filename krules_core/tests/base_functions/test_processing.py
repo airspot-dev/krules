@@ -244,12 +244,6 @@ def test_subject_functions(subject, router, asserted):
         )
     )
 
-    def _pdb(x):  # TODO: remove me
-        from pprint import pprint
-        pprint(x)
-        import pdb; pdb.set_trace()
-
-
     router.route("test-set-subject-property", subject, {})
 
     assert subject.get("my_prop") == 11

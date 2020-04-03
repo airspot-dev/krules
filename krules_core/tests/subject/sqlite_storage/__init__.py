@@ -25,7 +25,7 @@ from krules_core.subject import PropertyType, SubjectExtProperty, SubjectPropert
 
 class SQLLiteSubjectStorage(object):
 
-    def __init__(self, dbfile, subject):
+    def __init__(self, subject, dbfile):
         self._dbfile = dbfile
         self._subject = subject
         self._conn = sqlite3.connect(dbfile)
@@ -173,7 +173,7 @@ class SQLLiteSubjectStorage(object):
     def get(self, prop):
         """
         Get a single property
-        Rarise AttributeError if not found
+        Raises AttributeError if not found
         """
         conn = self._get_connection()
         res = conn.execute("SELECT propvalue FROM subjects WHERE subject=? and property=? and proptype=?",
@@ -184,19 +184,19 @@ class SQLLiteSubjectStorage(object):
         self._close_connection()
         return json.loads(res[0][0])
 
-    def incr(self, prop, amount=1):
-        """
-        some backends may have specialized functions for this operation (eg: redis)
-        """
-        prop.value = lambda x: x is None and 0 + amount or x + amount
-        return self.set(prop)
-
-    def decr(self, prop, amount=1):
-        """
-        some backends may have specialized functions for this operation (eg: redis)
-        """
-        prop.value = lambda x: x is None and 0 - amount or x - amount
-        return self.set(prop)
+    # def incr(self, prop, amount=1):
+    #     """
+    #     some backends may have specialized functions for this operation (eg: redis)
+    #     """
+    #     prop.value = lambda x: x is None and 0 + amount or x + amount
+    #     return self.set(prop)
+    #
+    # def decr(self, prop, amount=1):
+    #     """
+    #     some backends may have specialized functions for this operation (eg: redis)
+    #     """
+    #     prop.value = lambda x: x is None and 0 - amount or x - amount
+    #     return self.set(prop)
 
     def delete(self, prop):
         """

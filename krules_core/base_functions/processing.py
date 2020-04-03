@@ -152,12 +152,15 @@ class SetSubjectProperties(RuleFunctionBase):
 
 class IncrementSubjectProperty(RuleFunctionBase):
     """
-    Increment a numeri property in the subject. This function is provided because some storage backends
-    natively support atomic increment/decrement operations efficiently. So, this function implicitly
+    Increment a numeric property in the subject. This is a conveniencs functions
+    useful to accessing counters in a concurrent system. Implicitly
     call directly the storage backend bypassing the cache
     """
     def execute(self, property_name, amount=1, is_mute=False):
-        return self.subject.incr(property_name, amount, is_mute)
+        if not isinstance(amount, (int, float, complex)):
+            raise TypeError("amount must be a numeric type")
+        return self.subject.set(
+            property_name, lambda x: x is None and 0 + amount or x + amount, is_mute, use_cache=False)
 
 
 class IncrementSubjectPropertySilently(IncrementSubjectProperty):
@@ -168,12 +171,16 @@ class IncrementSubjectPropertySilently(IncrementSubjectProperty):
 
 class DecrementSubjectProperty(RuleFunctionBase):
     """
-    Increment a numeri property in the subject. This function is provided because some storage backends
-    natively support atomic increment/decrement operations efficiently. So, this function implicitly
+    Increment a numeric property in the subject. This is a conveniencs functions
+    useful to accessing counters in a concurrent system. Implicitly
     call directly the storage backend bypassing the cache
     """
     def execute(self, property_name, amount=1, is_mute=False):
-        return self.subject.decr(property_name, amount, is_mute)
+        if not isinstance(amount, (int, float, complex)):
+            raise TypeError("amount must be a numeric type")
+
+        return self.subject.set(
+            property_name, lambda x: x is None and 0 - amount or x - amount, is_mute, use_cache=False)
 
 
 class DecrementSubjectPropertySilently(DecrementSubjectProperty):

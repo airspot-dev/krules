@@ -165,32 +165,32 @@ class Subject(object):
     def delete_ext(self, prop, use_cache=None):
         self._delete(prop, True, False, use_cache)
 
-    def incr(self, prop, amount=1, is_mute=False):
-        """
-        Works with numeric values only (starting from zero). Only for normal properties and it use the storage backend directly.
-        """
-        value, old_value = self._storage.incr(SubjectProperty(prop), amount)
-        # when cache is loaded store (silebntly) the old value first to correctly trigger the subject property change event
-        if self._cached:
-            if not is_mute:
-                self.set(prop, old_value, True, True)
-            self.set(prop, value, is_mute, True)
-        # otherwise trigger event directly and do not load the cache
-        else:
-            if not is_mute:
-                payload = {PayloadConst.PROPERTY_NAME: prop, PayloadConst.OLD_VALUE: old_value,
-                           PayloadConst.VALUE: value}
-
-                from krules_core.providers import message_router_factory
-                from krules_core import messages
-                message_router_factory().route(messages.SUBJECT_PROPERTY_CHANGED, self, payload)
-        return value, old_value
-
-    def decr(self, prop, amount=1, is_mute=False):
-        """
-        Works with numeric values only (starting from zero). Only for normal properties and it use the storage backend directly.
-        """
-        return self.incr(prop, -amount, is_mute)
+    # def incr(self, prop, amount=1, is_mute=False):
+    #     """
+    #     Works with numeric values only (starting from zero). Only for normal properties and it use the storage backend directly.
+    #     """
+    #     value, old_value = self._storage.set(SubjectProperty(prop), lambda x: x is None and 0 + amount or x + amount)
+    #     # when cache is loaded store (silently) the old value first to correctly trigger the subject property change event
+    #     if self._cached:
+    #         if not is_mute:
+    #             self.set(prop, old_value, True, True)
+    #         self.set(prop, value, is_mute, True)
+    #     # otherwise trigger event directly and do not load the cache
+    #     else:
+    #         if not is_mute:
+    #             payload = {PayloadConst.PROPERTY_NAME: prop, PayloadConst.OLD_VALUE: old_value,
+    #                        PayloadConst.VALUE: value}
+    #
+    #             from krules_core.providers import message_router_factory
+    #             from krules_core import messages
+    #             message_router_factory().route(messages.SUBJECT_PROPERTY_CHANGED, self, payload)
+    #     return value, old_value
+    #
+    # def decr(self, prop, amount=1, is_mute=False):
+    #     """
+    #     Works with numeric values only (starting from zero). Only for normal properties and it use the storage backend directly.
+    #     """
+    #     return self.incr(prop, -amount, is_mute)
 
     def get_ext_props(self):
         # If we have a cache we use it, otherwise we don't load any cache
@@ -323,12 +323,12 @@ class _SubjectPropertyProxy(wrapt.ObjectProxy):
         def incr(self, amount=1):
             if self._is_ext:
                 raise TypeError("not supported for extended properties")
-            return self._subject.incr(self._prop, amount, self._is_mute)
+            return self._subject.set(self._prop, lambda v: v+amount, self._is_mute, False)
 
         def decr(self, amount=1):
             if self._is_ext:
                 raise TypeError("not supported for extended properties")
-            return self._subject.decr(self._prop, amount, self._is_mute)
+            return self._subject.set(self._prop, lambda v: v-amount, self._is_mute, False)
 
 
 

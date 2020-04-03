@@ -1,3 +1,14 @@
+# Copyright 2019 The KRules Authors
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 
 import pytest
@@ -192,30 +203,6 @@ def test_set_and_get(storage_subject1):
         storage_subject1.set(SubjectProperty("psetX", lambda x: x+1))
         p.join()
         assert storage_subject1.get(SubjectProperty("psetX")) == 2
-
-
-def test_incr_decr(storage_subject1):
-
-    storage_subject1.flush()
-    new_value, old_value = storage_subject1.incr(SubjectProperty("p"))
-    assert new_value == 1
-    assert old_value is None
-    new_value, old_value = storage_subject1.incr(SubjectProperty("p"), 2)
-    assert new_value == 3
-    assert old_value == 1
-
-    new_value, old_value = storage_subject1.decr(SubjectProperty("p"))
-    assert new_value == 2
-    assert old_value == 3
-    new_value, old_value = storage_subject1.decr(SubjectProperty("p"), 2.1)
-    assert round(new_value, 1) == -.1
-
-    storage_subject1.delete(SubjectProperty("p"))
-    new_value, old_value = storage_subject1.decr(SubjectProperty("p"))
-    assert new_value == -1
-    assert old_value is None
-    with pytest.raises(TypeError):
-        storage_subject1.incr(SubjectProperty("p"), "noway")
 
 
 def test_ext_props(storage_subject1, storage_subject2):
