@@ -35,10 +35,10 @@ setup(
     install_requires=[
         'redis>=3.3.5',
         'anyjson>=0.3.3',
-        'krules-core',
+        #'krules-core',  # TODO
     ],
     dependency_links=[  # TODO
-        'git+ssh://git@bitbucket.org/byters/krules-core.git#egg=krules-core',
+        #'git+ssh://git@bitbucket.org/byters/krules-core.git#egg=krules-core',
     ],
     setup_requires=[
         'pytest-runner',
