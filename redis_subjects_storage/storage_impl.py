@@ -73,6 +73,7 @@ class SubjectsRedisStorage(object):
                     with self._conn.pipeline() as pipe:
                         pipe.watch(skey)
                         old_value = pipe.hget(skey, pname)
+                        pipe.multi()
                         if old_value is None:
                             old_value = old_value_default
                         else:
