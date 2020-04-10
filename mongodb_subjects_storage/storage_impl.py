@@ -88,7 +88,10 @@ class SubjectsMongoStorage(object):
             PropertyType.EXTENDED: {}
         }
 
-        doc = self._get_collection().find_one({"name": self._subject})
+        doc = self._get_collection().find_one(
+            {"name": self._subject},
+            projection={"_id": False, "_lock": False}
+        )
         if doc is None:
             doc = {}
 
