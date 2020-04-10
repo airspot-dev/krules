@@ -90,7 +90,7 @@ class SubjectsMongoStorage(object):
 
         doc = self._get_collection().find_one(
             {"name": self._subject},
-            projection={"_id": False, "_lock": False, "name": False}
+            projection={"_id": False, "_lock": False, "name": False, "_event_info": False}
         )
         if doc is None:
             doc = {}
@@ -241,7 +241,7 @@ class SubjectsMongoStorage(object):
         props = {}
         res = self._get_collection().find_one(
             {"name": self._subject},
-            projection={"_id": False, "_lock": False, "name": False}
+            projection={"_id": False, "_lock": False, "name": False, "_event_info": False}
         )
         if res is not None:
             for pname, pvalue in res.items():
