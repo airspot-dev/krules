@@ -88,13 +88,15 @@ class SubjectsMongoStorage(object):
             PropertyType.EXTENDED: {}
         }
 
-        doc = self._get_collection().find_one({"name": self._subject})
+        doc = self._get_collection().find_one(
+            {"name": self._subject},
+            projection={"_id": False, "_lock": False, "name": False}
+        )
         if doc is None:
             doc = {}
 
         for k, v in doc.items():
-            if k not in ["_id", "name"]:
-                res[k[0]][k[1:]] = v
+            res[k[0]][k[1:]] = v
         return res[PropertyType.DEFAULT], res[PropertyType.EXTENDED]
 
     def store(self, inserts=[], updates=[], deletes=[]):
@@ -239,7 +241,7 @@ class SubjectsMongoStorage(object):
         props = {}
         res = self._get_collection().find_one(
             {"name": self._subject},
-            projection={"_id": False, "_lock": False}
+            projection={"_id": False, "_lock": False, "name": False}
         )
         if res is not None:
             for pname, pvalue in res.items():
