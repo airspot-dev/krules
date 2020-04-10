@@ -11,9 +11,10 @@ subject_storage.override(
 )
 
 mongodb_url = os.environ.get("TEST_MONGODB_SUBJECTS_STORAGE_URL", "mongodb://localhost:27017/admin")
+database = os.environ.get("TEST_MONGODB_SUBJECTS_STORAGE_DATABASE", "test")
 
 subject_storage_factory.override(
     providers.Factory(
-        lambda x: subject_storage(x, mongodb_url, os.environ.get("TEST_MONGODB_SUBJECTS_STORAGE_DATABASE", "test"),
-                                  "test-subjects-atomic-ops",  use_atomic_ops_collection=True))
+        lambda x: subject_storage(x, database, "test-subjects-atomic-ops", client_args=(mongodb_url,),
+                                  use_atomic_ops_collection=True))
 )

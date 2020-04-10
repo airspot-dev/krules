@@ -26,7 +26,9 @@ from krules_core.subject import PropertyType
 class SubjectsMongoStorage(object):
     atomic_ops_coll = "_atomic_ops"
 
-    def __init__(self, subject, url, db, collection,
+    def __init__(self, subject, db, collection,
+                 client_args=(),
+                 client_kwargs={},
                  use_atomic_ops_collection=True,
                  atomic_ops_collection_size=5242880,
                  atomic_ops_collection_max=1000):
@@ -41,7 +43,7 @@ class SubjectsMongoStorage(object):
 
         self._subject = str(subject)
         self._use_atomic_ops = use_atomic_ops_collection
-        client = MongoClient(url)
+        client = MongoClient(*client_args, **client_kwargs)
 
         if collection not in client[db].list_collection_names():
             try:
