@@ -300,7 +300,7 @@ class Subject(object):
 
 class _SubjectPropertyProxy(wrapt.ObjectProxy):
         """
-        This class wraps subject propoerties and it is ment primarily
+        This class wraps subject properties and it is ment primarily
         to use in interactive mode.
         It also provides access to incr / decr methods of the storage backend
         """
