@@ -91,19 +91,19 @@ class CheckSubjectProperty(RuleFunctionBase):
     If the property does not exists returns False
     """
 
-    def execute(self, property_name, property_value=lambda _none_: None, is_ext=False, use_cache=True):
+    def execute(self, property_name, property_value=lambda _none_: None, extended=False, cached=True):
         """
         Args:
             property_name: The name of the property
             property_value: Value to compare. If omitted, only the presence of the property is checked.
               If a callable is provided, this is invoked (optionally) with the property value
             See tests for examples
-            is_ext: If True, check extended property
-            use_cache: If False it checks the actual value on the storage backend bypassing the cached value
+            extended: If True, check extended property
+            cached: If False it checks the actual value on the storage backend bypassing the cached value
         """
         if property_name not in self.subject:
             return False
-        _get = is_ext and self.subject.get_ext or self.subject.get
+        _get = extended and self.subject.get_ext or self.subject.get
         if inspect.isfunction(property_value):
             sign = inspect.signature(property_value)
             if str(sign) == '(_none_)':
@@ -111,11 +111,11 @@ class CheckSubjectProperty(RuleFunctionBase):
             n_args = len(sign.parameters)
             args = []
             if n_args > 0:
-                args.append(_get(property_name, use_cache=use_cache))
+                args.append(_get(property_name, cached=cached))
             # if n_args > 1:
             #     args.append(self.payload)
             return property_value(*args)
-        return _get(property_name, use_cache=use_cache) == property_value
+        return _get(property_name, cached=cached) == property_value
 
 
 class CheckStoredSubjectProperty(CheckSubjectProperty):
@@ -123,9 +123,9 @@ class CheckStoredSubjectProperty(CheckSubjectProperty):
     Same as CheckSubjectProperty but explicitily bypass cache
     """
 
-    def execute(self, property_name, property_value=lambda _none_: None, is_ext=False, **kwargs):
+    def execute(self, property_name, property_value=lambda _none_: None, extended=False, **kwargs):
 
-        return super().execute(property_name, property_value, use_cache=False, is_ext=is_ext)
+        return super().execute(property_name, property_value, cached=False, extended=extended)
 
 
 class CheckSubjectExtendedProperty(CheckSubjectProperty):
@@ -133,9 +133,9 @@ class CheckSubjectExtendedProperty(CheckSubjectProperty):
     Same as CheckSubjectProperty but explicitly for extended properties
     """
 
-    def execute(self, property_name, property_value=lambda _none_: None, use_cache=True, **kwargs):
+    def execute(self, property_name, property_value=lambda _none_: None, cached=True, **kwargs):
 
-        return super().execute(property_name, property_value, is_ext=True, use_cache=use_cache)
+        return super().execute(property_name, property_value, extended=True, cached=cached)
 
 
 class CheckStoredSubjectExtendedProperty(CheckSubjectExtendedProperty):
@@ -145,7 +145,7 @@ class CheckStoredSubjectExtendedProperty(CheckSubjectExtendedProperty):
 
     def execute(self, property_name, property_value=lambda _none_: None, **kwargs):
 
-        return super().execute(property_name, property_value, use_cache=False)
+        return super().execute(property_name, property_value, cached=False)
 
 
 class CheckPayloadMatch(RuleFunctionBase):

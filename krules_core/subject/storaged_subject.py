@@ -40,15 +40,15 @@ class Subject(object):
         self._cached[PropertyType.DEFAULT]["values"] = props
         self._cached[PropertyType.EXTENDED]["values"] = ext_props
 
-    def _set(self, prop, value, is_ext, is_mute, use_cache):
+    def _set(self, prop, value, extended, muted, cached):
 
-        if use_cache is None:
-            use_cache = self._use_cache
-        if use_cache:
+        if cached is None:
+            cached = self._use_cache
+        if cached:
             if self._cached is None:
                 self._load()
-            kprops = is_ext and PropertyType.EXTENDED or PropertyType.DEFAULT
-            vals = is_ext and self._cached[kprops]["values"] or self._cached[kprops]["values"]
+            kprops = extended and PropertyType.EXTENDED or PropertyType.DEFAULT
+            vals = extended and self._cached[kprops]["values"] or self._cached[kprops]["values"]
             if prop in vals:
                 self._cached[kprops]["updated"].add(prop)
             else:
@@ -68,7 +68,7 @@ class Subject(object):
 
             vals[prop] = value
         else:
-            klass, k = is_ext and (SubjectExtProperty, PropertyType.EXTENDED) or (SubjectProperty, PropertyType.DEFAULT)
+            klass, k = extended and (SubjectExtProperty, PropertyType.EXTENDED) or (SubjectProperty, PropertyType.DEFAULT)
             value, old_value = self._storage.set(klass(prop, value))
             # update cached
             if self._cached:
@@ -80,7 +80,7 @@ class Subject(object):
                 if prop in self._cached[k]["deleted"]:
                     self._cached[k]["deleted"].remove(prop)
 
-        if not is_mute:
+        if not muted:
             payload = {PayloadConst.PROPERTY_NAME: prop, PayloadConst.OLD_VALUE: old_value,
                        PayloadConst.VALUE: value}
 
@@ -90,19 +90,19 @@ class Subject(object):
 
         return value, old_value
 
-    def set(self, prop, value, is_mute=False, use_cache=None):
-        return self._set(prop, value, False, is_mute, use_cache)
+    def set(self, prop, value, muted=False, cached=None):
+        return self._set(prop, value, False, muted, cached)
 
-    def set_ext(self, prop, value, use_cache=None):
-        return self._set(prop, value, True, True, use_cache)
+    def set_ext(self, prop, value, cached=None):
+        return self._set(prop, value, True, True, cached)
 
-    def _get(self, prop, is_ext, use_cache):
-        if use_cache is None:
-            use_cache = self._use_cache
-        if use_cache:
+    def _get(self, prop, extended, cached):
+        if cached is None:
+            cached = self._use_cache
+        if cached:
             if self._cached is None:
                 self._load()
-            if is_ext:
+            if extended:
                 vals = self._cached[PropertyType.EXTENDED]["values"]
             else:
                 vals = self._cached[PropertyType.DEFAULT]["values"]
@@ -110,7 +110,7 @@ class Subject(object):
                 raise AttributeError(prop)
             return vals[prop]
         else:
-            klass, k = is_ext and (SubjectExtProperty, PropertyType.EXTENDED) or (SubjectProperty, PropertyType.DEFAULT)
+            klass, k = extended and (SubjectExtProperty, PropertyType.EXTENDED) or (SubjectProperty, PropertyType.DEFAULT)
             val = self._storage.get(klass(prop))
             # update cache if present
             if self._cached is not None:
@@ -121,19 +121,19 @@ class Subject(object):
                 self._cached[k]["updated"].add(prop)
             return val
 
-    def get(self, prop, use_cache=None):
-        return self._get(prop, False, use_cache)
+    def get(self, prop, cached=None):
+        return self._get(prop, False, cached)
 
-    def get_ext(self, prop, use_cache=None):
-        return self._get(prop, True, use_cache)
+    def get_ext(self, prop, cached=None):
+        return self._get(prop, True, cached)
 
-    def _delete(self, prop, is_ext, is_mute, use_cache):
-        if use_cache is None:
-            use_cache = self._use_cache
-        if use_cache:
+    def _delete(self, prop, extended, muted, cached):
+        if cached is None:
+            cached = self._use_cache
+        if cached:
             if self._cached is None:
                 self._load()
-            k = is_ext and PropertyType.EXTENDED or PropertyType.DEFAULT
+            k = extended and PropertyType.EXTENDED or PropertyType.DEFAULT
             vals = self._cached[k]["values"]
             if prop not in vals:
                 raise AttributeError(prop)
@@ -143,7 +143,7 @@ class Subject(object):
                     self._cached[k][_set].remove(prop)
             self._cached[k]["deleted"].add(prop)
         else:
-            klass, k = is_ext and (SubjectExtProperty, PropertyType.EXTENDED) or (SubjectProperty, PropertyType.DEFAULT)
+            klass, k = extended and (SubjectExtProperty, PropertyType.EXTENDED) or (SubjectProperty, PropertyType.DEFAULT)
             self._storage.delete(klass(prop))
             if self._cached is not None:
                 if prop in self._cached[k]["values"]:
@@ -152,45 +152,19 @@ class Subject(object):
                     if prop in self._cached[k][_set]:
                         self._cached[k][_set].remove(prop)
 
-        if not is_mute:
+        if not muted:
             payload = {PayloadConst.PROPERTY_NAME: prop}
 
             from krules_core.providers import message_router_factory
             from krules_core import messages
             message_router_factory().route(messages.SUBJECT_PROPERTY_DELETED, self, payload)
 
-    def delete(self, prop, is_mute=False, use_cache=None):
-        self._delete(prop, False, is_mute, use_cache)
+    def delete(self, prop, muted=False, cached=None):
+        self._delete(prop, False, muted, cached)
 
-    def delete_ext(self, prop, use_cache=None):
-        self._delete(prop, True, False, use_cache)
+    def delete_ext(self, prop, cached=None):
+        self._delete(prop, True, False, cached)
 
-    # def incr(self, prop, amount=1, is_mute=False):
-    #     """
-    #     Works with numeric values only (starting from zero). Only for normal properties and it use the storage backend directly.
-    #     """
-    #     value, old_value = self._storage.set(SubjectProperty(prop), lambda x: x is None and 0 + amount or x + amount)
-    #     # when cache is loaded store (silently) the old value first to correctly trigger the subject property change event
-    #     if self._cached:
-    #         if not is_mute:
-    #             self.set(prop, old_value, True, True)
-    #         self.set(prop, value, is_mute, True)
-    #     # otherwise trigger event directly and do not load the cache
-    #     else:
-    #         if not is_mute:
-    #             payload = {PayloadConst.PROPERTY_NAME: prop, PayloadConst.OLD_VALUE: old_value,
-    #                        PayloadConst.VALUE: value}
-    #
-    #             from krules_core.providers import message_router_factory
-    #             from krules_core import messages
-    #             message_router_factory().route(messages.SUBJECT_PROPERTY_CHANGED, self, payload)
-    #     return value, old_value
-    #
-    # def decr(self, prop, amount=1, is_mute=False):
-    #     """
-    #     Works with numeric values only (starting from zero). Only for normal properties and it use the storage backend directly.
-    #     """
-    #     return self.incr(prop, -amount, is_mute)
 
     def get_ext_props(self):
         # If we have a cache we use it, otherwise we don't load any cache
@@ -259,7 +233,7 @@ class Subject(object):
                     propname = item[4:]
                     is_ext = True
 
-                value = self._get(propname, is_ext=is_ext, use_cache=False)
+                value = self._get(propname, extended=is_ext, cached=False)
             except KeyError:
                 raise ex
             return _SubjectPropertyProxy(self, propname, value, is_ext, is_mute)
@@ -279,7 +253,7 @@ class Subject(object):
             is_mute = True
             is_ext = True
             propname = item[4:]
-        return self._set(propname, value, is_ext, is_mute, use_cache=False)
+        return self._set(propname, value, is_ext, is_mute, cached=False)
 
     def __delattr__(self, item):
         if item in ('name',) or item.startswith("_"):
@@ -302,33 +276,34 @@ class _SubjectPropertyProxy(wrapt.ObjectProxy):
         """
         This class wraps subject properties and it is ment primarily
         to use in interactive mode.
-        It also provides access to incr / decr methods of the storage backend
+        I also provides convenience methods to dial with counters (incr/decr)
+        All operations are not cached and immediately effective
         """
 
         _subject = None
         _prop = None
-        _is_ext = None
-        _is_mute = None
+        _extended = None
+        _muted = None
 
-        def __init__(self, subject, prop, value, is_ext, is_mute):
+        def __init__(self, subject, prop, value, extended, muted):
             super().__init__(value)
             self._subject = subject
             self._prop = prop
-            self._is_ext = is_ext
-            self._is_mute = is_mute
+            self._extended = extended
+            self._muted = muted
 
         def __repr__(self):
             return self.__class__.__repr__(self.__wrapped__)
 
         def incr(self, amount=1):
-            if self._is_ext:
+            if self._extended:
                 raise TypeError("not supported for extended properties")
-            return self._subject.set(self._prop, lambda v: v+amount, self._is_mute, False)
+            return self._subject.set(self._prop, lambda v: v+amount, self._muted, False)
 
         def decr(self, amount=1):
-            if self._is_ext:
+            if self._extended:
                 raise TypeError("not supported for extended properties")
-            return self._subject.set(self._prop, lambda v: v-amount, self._is_mute, False)
+            return self._subject.set(self._prop, lambda v: v-amount, self._muted, False)
 
 
 

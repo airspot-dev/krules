@@ -85,7 +85,7 @@ class SetSubjectProperty(RuleFunctionBase):
     """
     Set a single property of the subject
     """
-    def execute(self, property_name, value, is_ext=False, is_mute=False, use_cache=True):
+    def execute(self, property_name, value, extended=False, muted=False, cached=True):
         """
         Args:
             property_name: Name of the property to set. It may or may not exist
@@ -93,10 +93,10 @@ class SetSubjectProperty(RuleFunctionBase):
                If the property does not exist yet, it receives None
                (it is not possible to discriminate from an existing variable with the value None)
         """
-        if is_ext:
-            fn = lambda v: self.subject.set_ext(property_name, v, use_cache)
+        if extended:
+            fn = lambda v: self.subject.set_ext(property_name, v, cached)
         else:
-            fn = lambda v: self.subject.set(property_name, v, is_mute, use_cache)
+            fn = lambda v: self.subject.set(property_name, v, muted, cached)
 
         return fn(value)
 
@@ -105,32 +105,32 @@ class SetSubjectPropertySilently(SetSubjectProperty):
     """
     Set a property silently (no property changed event)
     """
-    def execute(self, property_name, value, is_ext=False, use_cache=True, **kwargs):
-        return super().execute(property_name, value, is_ext=is_ext, is_mute=True, use_cache=use_cache)
+    def execute(self, property_name, value, extended=False, cached=True, **kwargs):
+        return super().execute(property_name, value, extended=extended, muted=True, cached=cached)
 
 
 class StoreSubjectProperty(SetSubjectProperty):
     """
     Set a property directly to the storage without using the cache
     """
-    def execute(self, property_name, value, is_ext=False, is_mute=False, **kwargs):
-        return super().execute(property_name, value, is_ext=is_ext, is_mute=is_mute, use_cache=False)
+    def execute(self, property_name, value, extended=False, muted=False, **kwargs):
+        return super().execute(property_name, value, extended=extended, muted=muted, cached=False)
 
 
 class StoreSubjectPropertySilently(SetSubjectProperty):
     """
     Set a property directly to the storage without using the cache and without emit property changed events
     """
-    def execute(self, property_name, value, is_ext=False, **kwargs):
-        return super().execute(property_name, value, is_ext=is_ext, is_mute=True, use_cache=False)
+    def execute(self, property_name, value, extended=False, **kwargs):
+        return super().execute(property_name, value, extended=extended, muted=True, cached=False)
 
 
 class SetSubjectExtendedProperty(SetSubjectProperty):
     """
     Set an extended property of the subject
     """
-    def execute(self, property_name, value, use_cache=True, **kwargs):
-        return super().execute(property_name, value, is_ext=True, is_mute=True, use_cache=use_cache)
+    def execute(self, property_name, value, cached=True, **kwargs):
+        return super().execute(property_name, value, extended=True, muted=True, cached=cached)
 
 
 class SetSubjectProperties(RuleFunctionBase):
@@ -147,7 +147,7 @@ class SetSubjectProperties(RuleFunctionBase):
             unmuted: List of property names for which emit property changed events
         """
         for name, value in props.items():
-            self.subject.set(name, value, is_mute=name not in unmuted)
+            self.subject.set(name, value, muted=name not in unmuted)
 
 
 class IncrementSubjectProperty(RuleFunctionBase):
@@ -156,11 +156,11 @@ class IncrementSubjectProperty(RuleFunctionBase):
     useful to accessing counters in a concurrent system. Implicitly
     call directly the storage backend bypassing the cache
     """
-    def execute(self, property_name, amount=1, is_mute=False):
+    def execute(self, property_name, amount=1, muted=False):
         if not isinstance(amount, (int, float, complex)):
             raise TypeError("amount must be a numeric type")
         return self.subject.set(
-            property_name, lambda x: x is None and 0 + amount or x + amount, is_mute, use_cache=False)
+            property_name, lambda x: x is None and 0 + amount or x + amount, muted, cached=False)
 
 
 class IncrementSubjectPropertySilently(IncrementSubjectProperty):
@@ -180,7 +180,7 @@ class DecrementSubjectProperty(RuleFunctionBase):
             raise TypeError("amount must be a numeric type")
 
         return self.subject.set(
-            property_name, lambda x: x is None and 0 - amount or x - amount, is_mute, use_cache=False)
+            property_name, lambda x: x is None and 0 - amount or x - amount, is_mute, cached=False)
 
 
 class DecrementSubjectPropertySilently(DecrementSubjectProperty):
@@ -250,6 +250,6 @@ class RaiseException(RuleFunctionBase):
     """
 
     def execute(self, ex):
-        """
+
         raise ex
-        """
+

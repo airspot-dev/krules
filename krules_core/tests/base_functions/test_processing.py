@@ -127,7 +127,7 @@ def test_subject_functions(subject, router, asserted):
             if not subject_storage_factory(self.subject.name).is_concurrency_safe():
                 return True   # skip test
             subject = subject_factory(self.subject.name)
-            return subject.get(prop, use_cache=False) == expected_value
+            return subject.get(prop, cached=False) == expected_value
 
 
     from datetime import datetime
