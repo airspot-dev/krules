@@ -5,15 +5,12 @@ import os
 import socket
 import jsonpath_rw_ext as jp
 
-import redis
 import rx
 import yaml
 from dependency_injector import providers
 
 from krules_core import TopicsDefault, RuleConst
-from subject_redis import ConfigKeyConst as RedisConfigKeyConst
 
-from krules_core.providers import message_router_factory
 from krules_core.providers import (
     settings_factory,
     subject_factory,
@@ -22,7 +19,6 @@ from krules_core.providers import (
     message_dispatcher_factory,
 )
 from krules_core.route.router import DispatchPolicyConst, MessageRouter
-from subject_redis.providers import redis_client_factory
 
 config_path = os.environ.get("KRULES_CONFIG_PATH", "/krules/config/config_krules.yaml")
 krules_settings = yaml.load(open(config_path, "r"), Loader=yaml.FullLoader)
@@ -35,10 +31,7 @@ class RulesConst(object):
 
 class _JSONEncoder(json.JSONEncoder):
     def default(self, obj):
-        from krules_core.base_functions import with_subject, with_payload, with_self
-        if isinstance(obj, with_self) or isinstance(obj, with_payload) or isinstance(obj, with_subject):
-            return obj.result()
-        elif inspect.isfunction(obj):
+        if inspect.isfunction(obj):
             return obj.__name__
         elif isinstance(obj, object):
             return str(type(obj))
