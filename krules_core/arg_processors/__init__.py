@@ -10,7 +10,6 @@
 # limitations under the License.
 
 import inspect
-import jsonpath_rw_ext as jp
 
 processors = []
 
@@ -66,7 +65,7 @@ class CallableWithPayload:
         return arg(instance.payload)
 
 
-#processors.append(CallableWithPayload)
+processors.append(CallableWithPayload)
 
 
 class CallableWithSubject:
@@ -84,31 +83,6 @@ class CallableWithSubject:
         return arg(instance.subject)
 
 
-#processors.append(CallableWithSubject)
+processors.append(CallableWithSubject)
 
 
-class JPPayloadMatchBase:
-
-    def __init__(self, expr):
-        self._expr = expr
-
-    @classmethod
-    def interested_in(cls, arg):
-        return isinstance(arg, cls)
-
-
-class JPPayloadMatch(JPPayloadMatchBase):
-
-    @staticmethod
-    def process(instance, arg):
-        return jp.match(arg._expr, instance.payload)
-
-
-class JPPayloadMatchOne(JPPayloadMatchBase):
-
-    @staticmethod
-    def process(instance, arg):
-        return jp.match1(arg._expr, instance.payload)
-
-
-# processors.extend((jp_match, jp_match1))

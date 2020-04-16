@@ -14,7 +14,6 @@ import re
 import pytest
 import rx
 from dependency_injector import providers
-from krules_core.base_functions import with_self
 from krules_core.base_functions.filters import Returns, CheckSubjectProperty, CheckSubjectExtendedProperty, \
     CheckStoredSubjectProperty, CheckPayloadMatch, CheckSubjectMatch, CheckSubjectDoesNotMatch, IsTrue, IsFalse, \
     CheckPayloadMatchOne, OnSubjectPropertyChanged
@@ -97,9 +96,7 @@ def test_truth(subject, router, asserted):
                        ruledata={
                            filters: [
                                IsTrue(
-                                   with_self(
-                                       lambda self: self.payload["it-works"]
-                                   )
+                                    lambda payload: payload["it-works"]
                                ),
                            ],
                        })
@@ -109,9 +106,7 @@ def test_truth(subject, router, asserted):
                        ruledata={
                            filters: [
                                IsFalse(
-                                   with_self(
-                                       lambda self: self.payload["it-works"] is False
-                                   )
+                                   lambda payload: payload["it-works"] is False
                                ),
                            ],
                        })
@@ -146,9 +141,7 @@ def test_subject_match(router, asserted):
                            filters: [
                                CheckSubjectMatch(r"^user\|(?P<user_id>.+)", payload_dest="user_info"),
                                IsTrue(
-                                   with_self(
-                                       lambda self: "user_id" in self.payload.get("user_info", {})
-                                   )
+                                   lambda payload: "user_id" in payload.get("user_info", {})
                                )
                            ]
                        })
@@ -340,7 +333,7 @@ def test_check_payload_match(router, subject, asserted):
                 CheckPayloadMatch("$.batch_data[?@.value>100]", lambda m: len(m) == 2),
                 CheckPayloadMatch("$.batch_data[?@.value>100]", payload_dest="jpexpr_match"),
                 IsTrue(
-                    with_self(lambda self: len(self.payload['jpexpr_match']) == 2)
+                    lambda payload: len(payload['jpexpr_match']) == 2
                 )
             ]
         }
@@ -355,7 +348,7 @@ def test_check_payload_match(router, subject, asserted):
                 CheckPayloadMatchOne("$.device_info.id", payload_dest="device_id"),
                 CheckPayloadMatchOne("$.device.info.disabled", lambda disabled: not disabled),
                 IsTrue(
-                    with_self(lambda self: self.payload["device_id"] == "0AFB1110")
+                    lambda payload: payload["device_id"] == "0AFB1110"
                 )
             ]
         }

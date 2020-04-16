@@ -89,13 +89,6 @@ def test_with_self():
 
 def test_with_payload_and_subject():
 
-    from krules_core.arg_processors import (
-        processors,
-        CallableWithSubject,
-        CallableWithPayload,
-    )
-    processors.extend((CallableWithPayload, CallableWithSubject))
-
     class WithPayloadSet(RuleFunctionBase):
 
         def execute(self, arg1, arg2, arg3):
@@ -121,7 +114,6 @@ def test_with_payload_and_subject():
 
     _subject.set("value_from", 2)
 
-
     message_router_factory().route("test-argprocessors-payload-and-subject", _subject, _payload)
 
     assert _payload["arg1"] == 1
@@ -129,7 +121,10 @@ def test_with_payload_and_subject():
     assert inspect.isfunction(_payload["arg3"])
 
 
-def test_jp_match():
+def test_extend_jp_match():
+
+    import jsonpath_rw_ext as jp
+    from krules_core.arg_processors import processors
 
     class JPMatchSet(RuleFunctionBase):
 
@@ -138,15 +133,28 @@ def test_jp_match():
             self.payload["values"] = values
             self.payload["elem-2"] = arg2
 
-    from krules_core.arg_processors import (
-        processors,
-        JPPayloadMatch as jp_match,
-        JPPayloadMatchOne as jp_match1
-    )
+    class JPPayloadMatchBase:
 
+        def __init__(self, expr):
+            self._expr = expr
+
+        @classmethod
+        def interested_in(cls, arg):
+            return isinstance(arg, cls)
+
+    class jp_match(JPPayloadMatchBase):
+
+        @staticmethod
+        def process(instance, arg):
+            return jp.match(arg._expr, instance.payload)
+
+    class jp_match1(JPPayloadMatchBase):
+
+        @staticmethod
+        def process(instance, arg):
+            return jp.match1(arg._expr, instance.payload)
 
     processors.extend((jp_match, jp_match1))
-
 
     RuleFactory.create(
         "test-with-jp-expr",
