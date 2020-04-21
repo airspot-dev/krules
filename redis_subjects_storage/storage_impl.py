@@ -84,6 +84,7 @@ class SubjectsRedisStorage(object):
                         break
                 except redis.WatchError:
                     continue
+            new_value = json.loads(new_value)
         else:
             with self._conn.pipeline() as pipe:
                 pipe.hget(skey, pname)
