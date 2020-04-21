@@ -202,7 +202,21 @@ def test_ext_props(storage_subject1, storage_subject2):
     assert "p4" in props and props["p4"] == 4
 
 
+def test_ret_values(storage_subject1):
 
+    storage_subject1.flush()
+
+    vp1 = 1
+
+    new_val, old_val = storage_subject1.set(SubjectProperty("p1", vp1))
+
+    assert new_val == vp1
+    assert old_val is None
+
+    new_val, old_val = storage_subject1.set(SubjectProperty("p1", lambda v: v+1))
+
+    assert old_val == vp1
+    assert new_val == vp1+1
 
 
 
