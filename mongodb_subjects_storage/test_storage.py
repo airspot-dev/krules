@@ -20,12 +20,11 @@ import pytest
 import time
 from multiprocessing import Process
 
-from krules_core.providers import subject_storage_factory, subject_storage
-from krules_core.subject import SubjectProperty, SubjectExtProperty, PropertyType
+from krules_core.providers import subject_storage_factory
+from krules_core.subject import SubjectProperty, SubjectExtProperty
 
 
 def teardown_module(_):
-    subject_storage.reset_last_overriding()
     subject_storage_factory.reset_last_overriding()
 
 
