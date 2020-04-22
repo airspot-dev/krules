@@ -22,7 +22,7 @@ from krules_core.route.router import DispatchPolicyConst, MessageRouter
 
 config_base_path = os.environ.get("KRULES_CONFIG_BASE_PATH", "/krules/config")
 
-from settings_loader import load_from_path
+from krules_env.settings_loader import load_from_path
 krules_settings = load_from_path(config_base_path)
 
 
