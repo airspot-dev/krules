@@ -21,6 +21,10 @@ class Subject(object):
         self._event_info = event_info
         self._cached = None
 
+    def __str__(self):
+
+        return self.name
+
     def _load(self):
 
         props, ext_props = self._storage.load()
