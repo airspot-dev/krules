@@ -18,7 +18,7 @@ def read(fname):
 
 setup(
     name='krules-subjects-storage-redis',
-    version="0.1.0",
+    version="0.1.1",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules redis subjects storage implementation",
