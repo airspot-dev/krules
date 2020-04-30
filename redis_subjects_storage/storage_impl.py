@@ -49,7 +49,7 @@ class SubjectsRedisStorage(object):
         if len(inserts)+len(updates)+len(deletes) == 0:
             return
 
-        skey = f"s:{self._subject}"
+        skey = f"s:{self._subject.name}"
         hset = {}
         for prop in tuple(inserts)+tuple(updates):
             hset[f"{prop.type}{prop.name}"] = prop.json_value()
@@ -65,7 +65,7 @@ class SubjectsRedisStorage(object):
         Set value for property, works both in update and insert
         Returns old value
         """
-        skey = f"s:{self._subject}"
+        skey = f"s:{self._subject.name}"
         pname = f"{prop.type}{prop.name}"
         if callable(prop.value):
             while True:
