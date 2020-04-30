@@ -1,12 +1,11 @@
 import base64
 import json
 import os
-import socket
 import sys
 import logging
-import uuid
 from datetime import datetime
 import json_logging
+import binascii
 
 from flask import Flask
 from flask import Response
@@ -20,8 +19,7 @@ from krules_core.utils import load_rules_from_rulesdata
 import krules_env
 import env as app_env
 
-krules_env.init()
-app_env.init()
+from rules import rulesdata
 
 app = Flask("rulesset")
 
@@ -32,19 +30,30 @@ json_logging.init_request_instrument(app)
 # app.logger.setLevel(int(os.environ.get("LOGGING_LEVEL", logging.INFO)))
 # app.logger.propagate = False
 
+# TODO: KRUL-47
 logger = logging.getLogger(app.name)
 logger.setLevel(int(os.environ.get("LOGGING_LEVEL", logging.INFO)))
 logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.propagate = False
 
+logger_core = logging.getLogger("__core__")
+logger_core.setLevel(int(os.environ.get("CORE_LOGGING_LEVEL", logging.ERROR)))
+logger_core.addHandler(logging.StreamHandler(sys.stdout))
+logger_core.propagate = False
+
+logger_router = logging.getLogger("__router__")
+logger_router.setLevel(int(os.environ.get("ROUTER_LOGGING_LEVEL", logging.ERROR)))
+logger_router.addHandler(logging.StreamHandler(sys.stdout))
+logger_router.propagate = False
+
 req_logger = logging.getLogger("flask-request-logger")
 req_logger.setLevel(logging.ERROR)
 req_logger.propagate = False
 
-from rules import rulesdata
+krules_env.init()
+app_env.init()
 
 load_rules_from_rulesdata(rulesdata)
-
 
 @app.route('/', methods=['POST'])
 def main():
@@ -55,6 +64,7 @@ def main():
         event_info = {}
 
         payload = json.loads(request.data)
+
         headers = request.headers
 
         app.logger.debug("RCVR: {}".format(payload))
