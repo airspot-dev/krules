@@ -94,7 +94,9 @@ class RuleFunctionBase:
             v = self._args[i]
             for processor in processors:
                 if processor.interested_in(v):
+                #if processor.interested_in(self._args[i]):
                     args[i] = processor.process(instance, v)
+                    #self._args[i] = processor.process(instance, v)
                     break
                 else:
                     pass
@@ -106,7 +108,8 @@ class RuleFunctionBase:
         for key in kwargs:
             for processor in processors:
                 if processor.interested_in(kwargs[key]):
-                    kwargs[key] = processor.process(instance, kwargs[key])
+                #if processor.interested_in(self._kwargs[key]):
+                    kwargs[key] = processor.process(instance, self._kwargs[key])
                     break
         return kwargs
 

@@ -84,7 +84,7 @@ class Subject(object):
                 if prop in self._cached[k]["deleted"]:
                     self._cached[k]["deleted"].remove(prop)
 
-        if not muted:
+        if not muted and value != old_value:
             payload = {PayloadConst.PROPERTY_NAME: prop, PayloadConst.OLD_VALUE: old_value,
                        PayloadConst.VALUE: value}
 
