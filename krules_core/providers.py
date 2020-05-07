@@ -19,6 +19,7 @@ from krules_core.tests.subject.sqlite_storage import SQLLiteSubjectStorage
 from .route.dispatcher import BaseDispatcher
 from .route.router import MessageRouter
 from .subject.storaged_subject import Subject
+from .exceptions_dumpers import ExceptionsDumpers
 
 import logging
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ subject_factory = providers.Factory(Subject)
 results_rx_factory = providers.Singleton(rx.subjects.ReplaySubject)
 message_router_factory = providers.Singleton(MessageRouter)
 message_dispatcher_factory = providers.Singleton(BaseDispatcher)
+exceptions_dumpers_factory = providers.Singleton(ExceptionsDumpers)
 
 
 

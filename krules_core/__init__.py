@@ -47,8 +47,7 @@ class RuleConst(object):
     GOT_ERRORS = "got_errors"
     EXCEPTION = "exception"
     EXC_INFO = "exc_info"
-    #EXC_ORDER = "exc_order"
-
+    EXC_EXTRA_INFO = "exc_extra_info"
 
 class ConfigKeyConst(object):
 
