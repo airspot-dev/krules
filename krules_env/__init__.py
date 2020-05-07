@@ -10,6 +10,7 @@ import yaml
 from dependency_injector import providers
 
 from krules_core import TopicsDefault, RuleConst
+from krules_core.exceptions_dumpers import ExceptionDumperBase, RequestsHTTPErrorDumper
 
 from krules_core.providers import (
     settings_factory,
@@ -17,6 +18,7 @@ from krules_core.providers import (
     results_rx_factory,
     message_router_factory,
     message_dispatcher_factory,
+    exceptions_dumpers_factory,
 )
 from krules_core.route.router import DispatchPolicyConst, MessageRouter
 
@@ -111,6 +113,11 @@ def init():
         providers.Singleton(lambda: MessageRouter(multiprocessing=False))
     )
 
+    exceptions_dumpers = exceptions_dumpers_factory()
+    exceptions_dumpers.set(ExceptionDumperBase)
+    exceptions_dumpers.set(RequestsHTTPErrorDumper)
+
+    # TODO: do it better
     source = None
     if "K_SERVICE" in os.environ:
         source = os.environ["K_SERVICE"]
