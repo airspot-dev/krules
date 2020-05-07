@@ -1,11 +1,10 @@
-import base64
 import json
 import os
 import sys
 import logging
 from datetime import datetime
 import json_logging
-import binascii
+import importlib
 
 from flask import Flask
 from flask import Response
@@ -18,8 +17,6 @@ from krules_core.utils import load_rules_from_rulesdata
 
 import krules_env
 import env as app_env
-
-from rules import rulesdata
 
 app = Flask("rulesset")
 
@@ -53,7 +50,9 @@ req_logger.propagate = False
 krules_env.init()
 app_env.init()
 
-load_rules_from_rulesdata(rulesdata)
+m_rules = importlib.import_module("rules")
+
+load_rules_from_rulesdata(m_rules.rulesdata)
 
 @app.route('/', methods=['POST'])
 def main():
