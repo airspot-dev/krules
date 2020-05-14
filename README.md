@@ -9,5 +9,3 @@ In addition to the core part, you need at least one subject implementation
 **NOTE**: the project is at an early stage of development. 
 The documentation is not yet available and we do not guarantee 
 in any way backwards compatibility and support. Use it at your own risk
-
-Soon other modules will be released to complement the core module

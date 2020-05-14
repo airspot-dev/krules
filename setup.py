@@ -13,8 +13,8 @@ setup(
     description="KRules Python core package",
     license="Apache Licence 2.0",
     keywords="krules rules engine",
-    url="...",  #TODO
-    packages=find_packages(),#['krules_core'],
+    url="https://github.com/airspot-dev/krules-core",
+    packages=find_packages(),
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -33,7 +33,4 @@ setup(
     tests_require=[
         'pytest',
     ],
-    # extras_require={
-    #     'subject_redis': 'git+ssh://git@bitbucket.org/byters/krules-subject-redis.git#egg=krules-subject-redis-0.0.1'
-    # }
 )
