@@ -8,7 +8,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import pytest
 from krules_core.subject import PayloadConst
 
 
@@ -20,9 +20,11 @@ from krules_core.providers import (
     settings_factory,
     message_router_factory,
     message_dispatcher_factory,
+    subject_storage_factory,
     subject_factory)
 from krules_core.route.router import MessageRouter
 from .route.dispatcher import CloudEventsDispatcher
+from krules_core.tests.subject.sqlite_storage import SQLLiteSubjectStorage
 
 httpserver = plugin.httpserver
 
@@ -34,23 +36,12 @@ message_router_factory.override(
     providers.Singleton(MessageRouter)
 )
 
-# TODO: use mock subject
-settings_factory.override(
-    providers.Singleton(lambda: {
-        'SUBJECT_REDIS_CONNECT_KWARGS': {
-            'host': 'localhost',
-            'port': 6379,
-            'db': 0,
-        },
-        'RKEY_PREFIX': 'pytest',
-    })
+subject_storage_factory.override(
+    providers.Factory(lambda x: SQLLiteSubjectStorage(x, ":memory:"))
 )
 
-from subject_redis.core import SubjectRedis
-subject_factory.override(
-    providers.Factory(SubjectRedis)
-)
 
+@pytest.mark.skip
 def test_dispatched_event(httpserver):
     from krules_core import messages
 
