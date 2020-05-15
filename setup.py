@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='krules-env',
-    version="0.0.1",
+    version="0.2.0",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules environment base package",
