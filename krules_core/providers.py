@@ -14,18 +14,27 @@ import rx
 
 from dependency_injector import providers as providers
 
+from krules_core.tests.subject.sqlite_storage import SQLLiteSubjectStorage
+
 from .route.dispatcher import BaseDispatcher
 from .route.router import MessageRouter
-from .subject.tests.mocksubject import MockSubject
+from .subject.storaged_subject import Subject
+from .exceptions_dumpers import ExceptionsDumpers
 
 import logging
 logger = logging.getLogger(__name__)
 
-settings_factory = providers.Singleton(object)
+settings_factory = providers.Singleton(lambda: {})
 
-subject_factory = providers.Singleton(MockSubject)
+# for testing/development only
+subject_storage_factory = providers.Factory(lambda x: SQLLiteSubjectStorage(":memory:", x))
+
+subject_factory = providers.Factory(Subject)
 results_rx_factory = providers.Singleton(rx.subjects.ReplaySubject)
 message_router_factory = providers.Singleton(MessageRouter)
 message_dispatcher_factory = providers.Singleton(BaseDispatcher)
+exceptions_dumpers_factory = providers.Singleton(ExceptionsDumpers)
+
+
 
 

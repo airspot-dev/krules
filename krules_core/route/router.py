@@ -32,26 +32,23 @@ from multiprocessing import Pool
 
 class MessageRouter(object):
 
-    def __init__(self, multiprocessing=True, wait_for_termination=True):
+    def __init__(self, multiprocessing=False, wait_for_termination=False):
         self._callables = {}
+        # TODO: remove multiprocessing !!!!
         self._multiproc = multiprocessing
         self._wait_for_termination = wait_for_termination
 
     def register(self, rule, message):
         logger.debug("register {0} for {1}".format(rule, message))
-        #rx_subject = rx.subjects.ReplaySubject()
         if message not in self._callables:
             self._callables[message] = []
-        #self._callables[message].append(rx_subject)
         self._callables[message].append(rule._process)
-        #return rx_subject.subscribe(rule._w_process)
 
     def unregister(self, message):
         logger.debug("unregister message {}".format(message))
         count = 0
         if message in self._callables:
             for r in self._callables[message]:
-                #r.dispose()
                 count += 1
             del self._callables[message]
         return count
@@ -65,14 +62,18 @@ class MessageRouter(object):
 
     def route(self, message, subject, payload, dispatch_policy=DispatchPolicyConst.DEFAULT):
 
+        if isinstance(subject, str):
+            # NOTE: this should have already happened if we want to take care or event info
+            from krules_core.providers import subject_factory
+            subject = subject_factory(subject)
+
         from ..providers import message_dispatcher_factory
-        import os
-        # import socket
 
         jobs = []
 
         _callables = self._callables.get(message, None)
 
+#        try:
         if not dispatch_policy == DispatchPolicyConst.DIRECT:
             if _callables is not None:
                 if self._multiproc:
@@ -87,22 +88,14 @@ class MessageRouter(object):
         if self._multiproc and self._wait_for_termination:
             for job in jobs:
                 job.join()
+#        finally:
+#            subject.store()
 
         # TODO: unit test (policies)
         if dispatch_policy != DispatchPolicyConst.NEVER and _callables is None \
                 and dispatch_policy == DispatchPolicyConst.DEFAULT \
                 or dispatch_policy == DispatchPolicyConst.ALWAYS \
                 or dispatch_policy == DispatchPolicyConst.DIRECT:
-
-                #_event_info = payload.get("_event_info", {})  # TODO: unit test
-                #_event_info["message_name"] = message
-                #payload["_event_info"] = _event_info
-
-                # TODO: needs knative specific dispatcher
-                #if "K_SERVICE" in os.environ:
-                #payload["_event_info"]["message_source"] = os.environ.get("K_SERVICE", socket.gethostname())
-                #else:
-                #    payload["_event_info"]["message_source"] = os.environ.get("HOSTNAME",
 
                 logger.debug("dispatch {} to {} with payload {}".format(message, subject, payload))
                 return message_dispatcher_factory().dispatch(message, subject, payload)

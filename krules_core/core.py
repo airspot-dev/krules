@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
+import inspect
 from uuid import uuid4
 
 from . import RuleConst as Const
@@ -22,6 +22,7 @@ import traceback
 import logging
 logger = logging.getLogger("__core__")
 
+from .providers import exceptions_dumpers_factory
 
 class Rule:
 
@@ -76,13 +77,11 @@ class Rule:
             #Const.EVENT_INFO: getattr(subject, "__event_info", {}),
         }
 
-        # # TODO: tests
-        # if "_event_info" in payload:
-        #     subject.__event_info = payload["_event_info"]
-        #     res_full[Const.ORIGIN_ID] = payload["_event_info"].get("origin_id", None)
         res_in = {}
         try:
             for _c in self._filters:
+                if inspect.isclass(_c):
+                    _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
                 _cinst.message = message
@@ -127,6 +126,8 @@ class Rule:
             res_full[Const.PROCESSED] = True
 
             for _c in self._processing:
+                if inspect.isclass(_c):
+                    _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
                 _cinst.message = message
@@ -181,8 +182,9 @@ class Rule:
                     Const.ARGS: res_in[Const.ARGS],
                     Const.KWARGS: res_in[Const.KWARGS],
                     Const.RETURNS: None,
-                    Const.EXCEPTION: type(e).__name__,
-                    Const.EXC_INFO: traceback.format_exception(type_, value_, traceback_)
+                    Const.EXCEPTION: ".".join([type(e).__module__, type(e).__name__]),
+                    Const.EXC_INFO: traceback.format_exception(type_, value_, traceback_),
+                    Const.EXC_EXTRA_INFO: exceptions_dumpers_factory().dump(e),
                 }
                 logger.error(res_out)
                 logger.debug("# unprocessed: {0}".format(res_out))
@@ -202,7 +204,11 @@ class RuleFactory:
         rule.set_processing(ruledata.get(Const.PROCESSING, []))
         rule.set_finally(ruledata.get(Const.FINALLY, []))
 
-        return message_router_factory().register(rule, subscribe_to)
+        if isinstance(subscribe_to, str):
+            subscribe_to = (subscribe_to,)
+        for el in subscribe_to:
+            message_router_factory().register(rule, el)
+        #return message_router_factory().register(rule, subscribe_to)
 
 
 

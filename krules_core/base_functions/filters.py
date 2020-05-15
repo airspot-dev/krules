@@ -8,74 +8,65 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import json
 
 from krules_core.subject import PayloadConst
-from . import RuleFunctionBase
 
+from krules_core.base_functions import RuleFunctionBase
+import inspect
 
-class IsTrue(RuleFunctionBase):
-
-    def execute(self, value):
-
-        return value is True
-
-
-class IsFalse(RuleFunctionBase):
-
-    def execute(self, value):
-
-        return value is False
-
-class ForAction(RuleFunctionBase):
-
+class Returns(RuleFunctionBase):
     """
-    For testing purpose. Check action
+    Simply returns expression
     """
 
-    def execute(self, action):
-
-        return self.action == action
-
-
-# TODO: tests
-class Check(RuleFunctionBase):
-
-    def execute(self, expr):
-
-        # TODO: bug!!! does not work with with_subject
-        return expr
+    def execute(self, expression):
+        """
+        Args:
+            expression: We expect expression to be something callable that can be evaluated
+        """
+        return expression
 
 
-With = Check
+class IsTrue(Returns):
+    """
+    True if True
+    """
 
-class CheckPayload(RuleFunctionBase):
+    def execute(self, expression):
+        """
+        Args:
+            expression: We expect expression to be something callable that can be evaluated as a boolean
+        """
 
-    def execute(self, func):
-
-        return func(self.payload)
-
-
-WithPayload = CheckPayload
-
-
-# TODO: refactor: CheckSubject
-class SubjectCheck(RuleFunctionBase):
-
-    def execute(self, func):
-
-        return func(self.subject)
+        return bool(super().execute(expression))
 
 
-# TODO: make effective
-class CheckSubject(SubjectCheck):
-    pass
+class IsFalse(Returns):
+    """
+    True if False
+    """
+
+    def execute(self, expression):
+        """
+        Args:
+            expression: We expect expression to be something callable that can be evaluated as a boolean
+        """
+
+        return not bool(super().execute(expression))
 
 
-# TODO: unit tests
-class SubjectMatch(RuleFunctionBase):
+class CheckSubjectMatch(RuleFunctionBase):
+    """
+    Checks if the subject's name matches the **regular expression**
+    """
 
     def execute(self, regex, payload_dest="subject_match"):
+        """
+        Args:
+            regex: Check expression
+            payload_dest: Name of the key in the payload where the value of any groups contained in the expression is saved
+        """
         import re
         match = re.search(regex, self.subject.name)
         if match is None:
@@ -84,61 +75,95 @@ class SubjectMatch(RuleFunctionBase):
         return True
 
 
-class SubjectDoesNotMatch(RuleFunctionBase):
+class CheckSubjectDoesNotMatch(CheckSubjectMatch):
+    """
+    Opposite of CheckSubjectMatch
+    """
 
-    def execute(self, regex):
-        import re
-        match = re.search(regex, self.subject.name)
-        if match is None:
-            return True
-        return False
+    def execute(self, regex, **kwargs):  # TODO: best inheritage support (**kwargs satisfy base class signature)
+
+        return not super().execute(regex)
 
 
-# TODO: unit tests
-class CheckSubjectPropertyValue(RuleFunctionBase):
+class CheckSubjectProperty(RuleFunctionBase):
+    """
+    Check the value of a property in the subject
+    If the property does not exists returns False
+    """
 
-    def execute(self, property_name, property_value, default=False):
-
+    def execute(self, property_name, property_value=lambda _none_: None, extended=False, cached=True):
+        """
+        Args:
+            property_name: The name of the property
+            property_value: Value to compare. If omitted, only the presence of the property is checked.
+              If a callable is provided, this is invoked (optionally) with the property value
+            See tests for examples
+            extended: If True, check extended property
+            cached: If False it checks the actual value on the storage backend bypassing the cached value
+        """
         if property_name not in self.subject:
-            #setattr(self.subject, property_name, None)
-            if default is True:
-                return True
             return False
-
-        return getattr(self.subject, property_name) == property_value
-
-
-
-# TODO: unit tests
-class CheckSubjectPropertyValueIn(RuleFunctionBase):
-
-    def execute(self, property_name, property_values, default=False):
-
-        if property_name not in self.subject:
-            if default is True:
+        _get = extended and self.subject.get_ext or self.subject.get
+        if inspect.isfunction(property_value):
+            sign = inspect.signature(property_value)
+            if str(sign) == '(_none_)':
                 return True
-            return False
-
-        return getattr(self.subject, property_name) in property_values
-
-
-# TODO: unit tests
-class CheckSubjectPropertyValueNotIn(RuleFunctionBase):
-
-    def execute(self, property_name, property_values, default=True):
-
-        if property_name not in self.subject:
-            #setattr(self.subject, property_name, None)
-            #return False
-            return default
-
-        return getattr(self.subject, property_name) not in property_values
+            n_args = len(sign.parameters)
+            args = []
+            if n_args > 0:
+                args.append(_get(property_name, cached=cached))
+            # if n_args > 1:
+            #     args.append(self.payload)
+            return property_value(*args)
+        return _get(property_name, cached=cached) == property_value
 
 
-# TODO: unit tests
-class CheckPayloadJPMatch(RuleFunctionBase):
+class CheckStoredSubjectProperty(CheckSubjectProperty):
+    """
+    Same as CheckSubjectProperty but explicitily bypass cache
+    """
 
-    def execute(self, jp_expr, payload_dest=None, single_match=False):
+    def execute(self, property_name, property_value=lambda _none_: None, extended=False, **kwargs):
+
+        return super().execute(property_name, property_value, cached=False, extended=extended)
+
+
+class CheckSubjectExtendedProperty(CheckSubjectProperty):
+    """
+    Same as CheckSubjectProperty but explicitly for extended properties
+    """
+
+    def execute(self, property_name, property_value=lambda _none_: None, cached=True, **kwargs):
+
+        return super().execute(property_name, property_value, extended=True, cached=cached)
+
+
+class CheckStoredSubjectExtendedProperty(CheckSubjectExtendedProperty):
+    """
+    Same as CheckSubjectExtendedProperty but explicitly bypass subject cache
+    """
+
+    def execute(self, property_name, property_value=lambda _none_: None, **kwargs):
+
+        return super().execute(property_name, property_value, cached=False)
+
+
+class CheckPayloadMatch(RuleFunctionBase):
+    """
+    It allows to process the payload with a jsonpath expression to check its content and possibly isolate part of it
+    in a target variable
+    """
+
+    def execute(self, jp_expr, match_value=lambda _none_: None, payload_dest=None, single_match=False):
+        """
+        Args:
+            jp_expr: Jsonpath expression
+            payload_dest: If specified store the epression match result in that key in payload
+            match_value: If specified the return value of the jp expression is compared by
+                              determining the filter result. This can be a callable receiving (optionally)
+                              the jp expression value
+            single_match: if True produce a single value as result, a list of values otherwise
+        """
 
         import jsonpath_rw_ext as jp
 
@@ -154,212 +179,107 @@ class CheckPayloadJPMatch(RuleFunctionBase):
         if payload_dest:
             self.payload[payload_dest] = match
 
+        if inspect.isfunction(match_value):
+            sign = inspect.signature(match_value)
+            if str(sign) != '(_none_)':
+                n_args = len(sign.parameters)
+                args = []
+                if n_args > 0:
+                    args.append(match)
+
+                matched = match_value(*args)
+        else:
+            matched = match_value
+
         return matched
 
 
-# TODO: unit tests
-class CheckPayloadPropertyValue(RuleFunctionBase):
+class CheckPayloadMatchOne(CheckPayloadMatch):
+    """
+    Same as CheckPayloadJPMatch but expects just one element as result
+    """
 
-    def execute(self, property_name, property_value):
-
-        if property_name not in self.payload:
-            return False
-
-        if self.payload[property_name] != property_value:
-            return False
-
-        return True
-
-
-# TODO: unit tests
-class CheckPayloadPropertyValueIn(RuleFunctionBase):
-
-    def execute(self, property_name, property_values):
-
-        if property_name not in self.payload:
-            return False
-
-        if self.payload[property_name] in property_values:
-            return True
-
-        return False
+    def execute(self, jp_expr, match_value=lambda _none_: None, payload_dest=None, **kwargs):
+        """
+        Args:
+            jp_expr: Jsonpath expression
+            payload_dest: Destination key in payload
+        """
+        return super().execute(jp_expr, match_value, payload_dest, True)
 
 
-# TODO: unit tests
-class CheckPayloadPropertyValueNotIn(RuleFunctionBase):
-
-    def execute(self, property_name, property_values):
-
-        if property_name not in self.payload:
-            return False
-
-        if self.payload[property_name] in property_values:
-            return False
-
-        return True
-
-
-# TODO: unit tests
-class CheckPayloadPropertyValueMatch(RuleFunctionBase):
-
-    def execute(self, jp_expr, value_re, payload_dest=None):
-        import jsonpath_rw_ext as jp
-        import re
-
-
-
-        if not jp_expr.startswith("$."):
-            jp_expr = "$."+jp_expr
-
-        value = jp.match1(jp_expr, self.payload)
-        if value is None:
-            return False
-
-        m = re.match(value_re, value)
-
-        if m is None:
-            return False
-
-        if payload_dest:
-            _dict = m.groupdict()
-            if len(_dict):
-                self.payload[payload_dest] = _dict
-                return True
-
-            _groups = m.groups()
-            _len = len(_groups)
-            if _len:
-                if _len == 1:
-                    self.payload[payload_dest] = _groups[0]
-                else:
-                    self.payload[payload_dest] = _groups
-
-        return True
-
-
-# TODO: unit tests
-class CheckPayloadPropertyValueDoesNotMatch(RuleFunctionBase):
-
-    def execute(self, jp_expr, value_re):
-        import jsonpath_rw_ext as jp
-        import re
-
-        if not jp_expr.startswith("$."):
-            jp_expr = "$."+jp_expr
-
-        value = jp.match1(jp_expr, self.payload)
-        if value is None:
-            return True
-
-        m = re.match(value_re, value)
-
-        if m is None:
-            return True
-
-        return False
-
-
-# TODO: unit tests
 class OnSubjectPropertyChanged(RuleFunctionBase):
+    """
+    Catch the event subject property changed
+    """
 
-    def execute(self, property_name, not_null=True):
+    def execute(self, property_name, value=lambda _none_: None, old_value=lambda _none_: None):
+        """
+        Args:
+            property_name: Name of property changed. Accept callable receiving (optionally) the property name, In that
+               case it must returns a boolean
+            value: If not a callable the value is compared, otherwise it can receive no parameters,
+               or the value of the property and eventually also the previous value of the property (old_value).
+               It must returns a boolean
+            old_value: If not a callable the value is compared, otherwise it receives (optionally) the old_value and
+               must returns a boolean
+        """
 
-        assert(isinstance(not_null, bool))  # prevent common programming errors
+        # property_name
+        if inspect.isfunction(property_name):
+            sign = inspect.signature(property_name)
+            n_args = len(sign.parameters)
+            if n_args == 0:
+                matched = self.payload[PayloadConst.PROPERTY_NAME] == property_name()
+            elif n_args == 1:
+                matched = property_name(self.payload[PayloadConst.PROPERTY_NAME])
+            else:
+                raise TypeError("takes at most two arguments (received {})".format(n_args))
+        else:
+            matched = self.payload[PayloadConst.PROPERTY_NAME] == property_name
 
-        _property_name = self.payload.get(PayloadConst.PROPERTY_NAME, None)
-        if _property_name is None:
+        if not matched:
             return False
 
-        match = _property_name == property_name
-        if match and not_null == True:
-            if self.payload[PayloadConst.VALUE] is None:
-                return False
-        return match
+        # value
+        if inspect.isfunction(value):
+            sign = inspect.signature(value)
+            if str(sign) != '(_none_)':
+                n_args = len(sign.parameters)
+                if n_args == 0:
+                    matched = self.payload[PayloadConst.VALUE] == value()
+                elif n_args == 1:
+                    matched = value(self.payload[PayloadConst.VALUE])
+                elif n_args == 2:
+                    args = [self.payload[PayloadConst.VALUE], self.payload[PayloadConst.OLD_VALUE]]  # for IDE happiness
+                    matched = value(*args)
+                else:
+                    raise TypeError("takes at most three arguments (received {})".format(n_args))
+        else:
+            matched = self.payload[PayloadConst.VALUE] == value
 
-
-# TODO: unit tests
-class OnSubjectPropertyChangedIn(RuleFunctionBase):
-
-    def execute(self, *property_names):
-
-        _property_name = self.payload.get(PayloadConst.PROPERTY_NAME, None)
-        if _property_name is None:
+        if not matched:
             return False
 
-        return _property_name in property_names
+        # old_value
+        if inspect.isfunction(old_value):
+            sign = inspect.signature(old_value)
+            if str(sign) != '(_none_)':
+                n_args = len(sign.parameters)
+                if n_args == 0:
+                    matched = self.payload[PayloadConst.OLD_VALUE] == old_value()
+                elif n_args == 1:
+                    matched = old_value(self.payload[PayloadConst.OLD_VALUE])
+                else:
+                    raise TypeError("takes at most two arguments (received {})".format(n_args))
+        else:
+            matched = self.payload[PayloadConst.OLD_VALUE] == old_value
 
-
-# TODO: unit tests
-class OnSubjectPropertyChangedNotIn(RuleFunctionBase):
-
-    def execute(self, *property_names):
-
-        _property_name = self.payload.get(PayloadConst.PROPERTY_NAME, None)
-        if _property_name is None:
-            return True
-
-        return _property_name not in property_names
-
-
-# TODO: unit tests
-class OnSubjectPropertyChangedValue(RuleFunctionBase):
-
-    def execute(self, property_name, property_value):
-
-        _property_name = self.payload.get(PayloadConst.PROPERTY_NAME, None)
-        if _property_name is None:
+        if not matched:
             return False
-        _property_value = self.payload.get(PayloadConst.VALUE, None)
-
-        return _property_name == property_name and _property_value == property_value
-
-
-# TODO: unit tests
-class OnSubjectPropertyChangedValueIn(RuleFunctionBase):
-
-    def execute(self, property_name, property_value):
-
-        _property_name = self.payload.get(PayloadConst.PROPERTY_NAME, None)
-        if _property_name is None:
-            return False
-        _property_value = self.payload.get(PayloadConst.VALUE, None)
-
-        return _property_name == property_name and _property_value in property_value
-
-
-# TODO: unit tests
-class OnSubjectPropertyChangedValueExpr(RuleFunctionBase):
-
-    def execute(self, property_name, expr):
-
-        _property_name = self.payload.get(PayloadConst.PROPERTY_NAME, None)
-        if _property_name is None:
-            return False
-        _property_value = self.payload.get(PayloadConst.VALUE, None)
-
-        return expr(_property_value)
-
-
-# TODO: unit tests
-class OnSubjectPropertyChangedTransition(RuleFunctionBase):
-
-    def execute(self, property_name, value_from, value_to):
-        _property_name = self.payload.get(PayloadConst.PROPERTY_NAME, None)
-        if _property_name is None:
-            return False
-
-        _value_from = self.payload.get(PayloadConst.OLD_VALUE)
-        _value_to = self.payload.get(PayloadConst.VALUE)
-
-        return _property_name == property_name and _value_from == value_from and _value_to == value_to
-
-
-# TODO: unit tests
-class ExceptionIfOrTrue(RuleFunctionBase):
-
-    def execute(self, condition, ex):
-
-        if condition:
-            raise ex
 
         return True
+
+
+
+

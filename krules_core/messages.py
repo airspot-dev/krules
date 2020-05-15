@@ -14,7 +14,6 @@ from . import ConfigKeyConst
 
 
 _settings = settings_factory()
-#import pdb; pdb.set_trace()
 
 
 def format_message_name(message):
@@ -24,5 +23,5 @@ def format_message_name(message):
 _m = format_message_name
 
 
-SUBJECT_PROPERTY_CHANGED = _m("SubjectPropertyChanged")
-SUBJECT_PROPERTY_DELETED = _m("SubjectPropertyDeleted")
+SUBJECT_PROPERTY_CHANGED = _m("subject-property-changed")
+SUBJECT_PROPERTY_DELETED = _m("subject-property-deleted")
