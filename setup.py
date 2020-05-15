@@ -13,17 +13,16 @@ setup(
     description="KRules environment base package",
     license="Apache Licence 2.0",
     keywords="krules rules engine",
-    url="...",  #TODO
+    url="https://github.com/airspot-dev/krules-env",
     packages=find_packages(),
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
-        "Framework :: KRules",
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
-        # krules_cloudevents
-        # krules_core
+        "krules-dispatcher-cloudevents==0.2.0",
+        "krules-core==0.2.0"
     ],
     setup_requires=[
         'pytest-runner',
@@ -31,7 +30,4 @@ setup(
     tests_require=[
         'pytest',
     ],
-    # extras_require={
-    #     'subject_redis': 'git+ssh://git@bitbucket.org/byters/krules-subject-redis.git#egg=krules-subject-redis-0.0.1'
-    # }
 )
