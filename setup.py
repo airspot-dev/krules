@@ -18,27 +18,23 @@ def read(fname):
 
 setup(
     name='krules-subjects-storage-redis',
-    version="0.1.1",
+    version="0.2.0",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules redis subjects storage implementation",
     licence="Apache Licence 2.0",
     keywords="krules subject redis",
-    url="",  #TODO
+    url="https://github.com/airspot-dev/krules-subjects-redis-storage.git",
     packages=find_packages(),
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
-        "Framework :: KRules",
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
         'redis>=3.3.5',
         'anyjson>=0.3.3',
-        #'krules-core',  # TODO
-    ],
-    dependency_links=[  # TODO
-        #'git+ssh://git@bitbucket.org/byters/krules-core.git#egg=krules-core',
+        'krules-core==0.2.0',
     ],
     setup_requires=[
         'pytest-runner',
