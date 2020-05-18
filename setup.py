@@ -1,4 +1,6 @@
 import os
+
+import setuptools
 from setuptools import setup, find_packages
 
 
@@ -14,7 +16,7 @@ setup(
     licence="Apache Licence 2.0",
     keywords="krules cloudevents router",
     url="https://github.com/airspot-dev/krules-dispatcher-cloudevents",
-    packages=['krules_cloudevents'],
+    packages=setuptools.find_packages(),
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
