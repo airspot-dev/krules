@@ -1,6 +1,5 @@
 FROM python:3.7-alpine
-MAINTAINER Alberto Degli Esposti <alberto@byters.it>
-# TODO: clean unused!!
+MAINTAINER Airspot <info@airspot.tech>
 RUN apk add --no-cache --virtual build-dependencies python3 \
     && apk add --virtual build-runtime \
     build-base python3-dev openblas-dev freetype-dev pkgconfig gfortran \
@@ -32,14 +31,10 @@ RUN apk add --no-cache alpine-sdk \
     && pip install --upgrade pip \
     && pip install pyyaml anyjson wrapt redis rx==1.6.1 dependency-injector \
     pytest jsonpath-rw jsonpath-rw-ext python-dateutil pytz requests gunicorn \
-    flask json-logging pycurl
-    #git+ssh://git@bitbucket.org/byters/krules-core.git
+    flask json-logging pycurl krules-env==0.2.0 krules-dispatcher-cloudevents==0.2.0
 
 
 ADD ./app /app
-ADD ./.t_commonlib/ /app/
-
-#ADD ipython_config.py /root/.ipython/profile_default/
 
 ENV PYTHONPATH /app
 ENV FLASK_APP /app/main.py
