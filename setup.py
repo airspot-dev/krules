@@ -18,7 +18,7 @@ def read(fname):
 
 setup(
     name='krules-subjects-storage-mongodb',
-    version="0.1.0",
+    version="0.2.0",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules mongodb subjects storage implementation",
@@ -34,10 +34,7 @@ setup(
     ],
     install_requires=[
         'pymongo>=3.10.1',
-        #'krules-core',  # TODO
-    ],
-    dependency_links=[  # TODO
-        #'git+ssh://git@bitbucket.org/byters/krules-core.git#egg=krules-core',
+        'krules-core==0.2.0',
     ],
     setup_requires=[
         'pytest-runner',
