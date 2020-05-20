@@ -24,7 +24,7 @@ setup(
     description="KRules mongodb subjects storage implementation",
     licence="Apache Licence 2.0",
     keywords="krules mongodb",
-    url="",  #TODO
+    url="https://github.com/airspot-dev/krules-subjects-mongodb-storage.git",
     packages=find_packages(),
     long_description=read('README.md'),
     classifiers=[
