@@ -29,7 +29,6 @@ setup(
     long_description=read('README.rst'),
     classifiers=[
         "Development Status :: 3 - Alpha",
-        "Framework :: KRules",
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
