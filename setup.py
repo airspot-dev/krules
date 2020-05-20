@@ -26,7 +26,7 @@ setup(
     keywords="krules mongodb",
     url="https://github.com/airspot-dev/krules-subjects-mongodb-storage.git",
     packages=find_packages(),
-    long_description=read('README.md'),
+    long_description=read('README.rst'),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Framework :: KRules",
