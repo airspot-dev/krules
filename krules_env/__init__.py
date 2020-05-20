@@ -47,7 +47,7 @@ def publish_results_all(result):
 
     data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
 
-    event_info = data[RuleConst.PAYLOAD]["_event_info"]
+    event_info = data[RuleConst.PAYLOAD].get("_event_info", {})
     result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
 
     message_router_factory().route(
