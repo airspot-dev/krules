@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 settings_factory = providers.Singleton(lambda: {})
 
 # for testing/development only
-subject_storage_factory = providers.Factory(lambda x: SQLLiteSubjectStorage(":memory:", x))
+subject_storage_factory = providers.Factory(lambda x: SQLLiteSubjectStorage(x, ":memory:"))
 
 subject_factory = providers.Factory(Subject)
 results_rx_factory = providers.Singleton(rx.subjects.ReplaySubject)
