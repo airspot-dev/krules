@@ -58,7 +58,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         ext_props = subject.get_ext_props()
         property_name = payload.get(PayloadConst.PROPERTY_NAME, None)
         if property_name is not None:
-            ext_props.update(("propertyname", property_name))
+            ext_props.update({"propertyname": property_name})
         for prop, value in ext_props.items():
             headers["Ce-{}".format(prop.capitalize())] = value
 
