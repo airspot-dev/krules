@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='krules-env',
-    version="0.2.3",
+    version="0.2.4",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules environment base package",
@@ -21,7 +21,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
-        "krules-dispatcher-cloudevents==0.2.2",
+        "krules-dispatcher-cloudevents==0.2.3",
     ],
     setup_requires=[
         'pytest-runner',
