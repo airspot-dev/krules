@@ -12,7 +12,8 @@
 import logging
 import uuid
 from datetime import datetime
-from io import StringIO, BytesIO
+import pytz
+from io import BytesIO
 import json
 
 import pycurl
@@ -44,12 +45,12 @@ class CloudEventsDispatcher(BaseDispatcher):
 
         headers = {
             'Content-Type': 'application/json',
-            'Ce-Specversion': '0.3',
+            'Ce-Specversion': '1.0',
             'Ce-Id': _id,
             'Ce-Originid': str(_event_info.get("Originid", _id)),
             'Ce-Source': self._source,
             'Ce-Subject': str(subject),
-            'Ce-Time': datetime.utcnow().isoformat(),
+            'Ce-Time': datetime.utcnow().replace(tzinfo=pytz.UTC).isoformat(),
             'Ce-Type': message,
             'Accept-Encoding': 'gzip'
         }
