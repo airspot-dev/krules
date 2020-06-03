@@ -31,7 +31,7 @@ RUN apk add --no-cache alpine-sdk \
     && pip install --upgrade pip \
     && pip install pyyaml anyjson wrapt redis rx==1.6.1 dependency-injector \
     pytest jsonpath-rw jsonpath-rw-ext python-dateutil pytz requests gunicorn \
-    flask json-logging pycurl krules-env==0.2.2 bumpversion
+    flask json-logging pycurl krules-env==0.2.5 bumpversion
 
 
 ADD ./app /app
