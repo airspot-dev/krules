@@ -1,6 +1,6 @@
-#Technical Overview
+# Technical Overview
 
-##What is KRules?
+## What is KRules?
 KRules is an open source framework that provides Python developers with a flexible and fast way to build cloud native applications, creating event driven, context aware, and reactive microservices in a Kubernetes cluster. 
 KRules adopts a rules-based approach  based on paradigm events-condtions-actions.
 KRules is inspired by [reactive manifesto](https://www.reactivemanifesto.org/en) taking full advantages of the Kubernetes cluster and Knative eventing:  
@@ -14,9 +14,9 @@ All these features make the framework an ideal choice both for native cloud appl
 The purpose of KRules is not to provide a serverless or an eventing manager infrastructure, Knative deals with that, but acts at a higher level to empower building application logic defined through rule sets in the form of Python data structures. 
 
 
-##Concepts
+## Concepts
 
-###The subject
+### The subject
 One of the most important concept behind the KRules  programming paradigm is the subject. Every time some type of event is produced, it can always be traced back to some type of entity, that produced it or that in some way is related to it.
 
 In the KRules world this is the abstract representation around which we are shaping logic. 
@@ -130,7 +130,7 @@ WARM
 The temp_status property transition could therefore activate further rules by triggering new  actions handled by his own isolated services (for example, turning on a fan), but also activating different operating modes. Suppose that we are monitoring the transport of perishable goods, we could activate an alert state by monitoring the time spent in an overheated status, thus generating new thresholds (the goods have been exposed too long at an inadequate temperature and will consequently be produced a notification for an operator upon reaching the next control gate).
 
 
-###Rules
+### Rules
 **Rules** are grouped into **rulessets**. The rulessets are in fact the microservices that are deployed on the cluster and respond independently to specific events type and attributes thank to Knative's triggers. There are no particular constraints on the establishment of these triggers or on what events are to be received by a rulesset. The more granular the definition of the triggers and the corresponding rulessets will be, the more resilient the resulting system will be as each service, or better said, each rulesset, is scalable independently. Inside the rulesset we can have more rules each one subscribing to different event types (if captured by the triggers) and with different activation criteria based on the received payload. Each rule, is always contextualized to a subject
 
 Events can be produced outside or inside the cluster 
@@ -370,9 +370,9 @@ rulesdata = [
 The last rule needs some more explanation. Because when an event is emitted, it is first managed inside the container or propagated outside only when no subscriber is found, we need to create a rule to explicitly dispatch the “subject-property-changed”  event outside, if we want to give the opportunity to other services to react to this change. 
 
 
-##Observability and errors management
+## Observability and errors management
 Everything is an event, also the very fact that a rule is processed is itself an event. This is because the rules, during their processing, produce a detail metric, in the form of an event, relative to each process step of the pipeline in which they are contained.
-```json
+```
 {'_event_info': {'Id': '393b237d-2529-46d4-865f-42bd6612bd73',
                  'Knativearrivaltime': '2020-06-15T09:44:52.668735338Z',
                  'Knativehistory': 'default-kne-trigger-kn-channel.iot-demo-gcp-01.svc.cluster.local',
