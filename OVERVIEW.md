@@ -104,7 +104,7 @@ The transition between a previous and new value can often occur in a concurrent 
 Let's move on to an example in the real world to demonstrate how it is possible through the rules (which will be discussed later) to react to changes in a property by causing cascade effects by implementing an isolated logic.
 
 Let’s start again creating a subject.
-```python
+```
 >> device = subject_factory(“device|00000A”)
 ```
 This time, instead of a generic "foo", we chose a speaking name, containing some information characteristic of the subject. In this case the name  is composed of the generic category that indicates that the subject is a device with a specific unique identifier. 
