@@ -1,7 +1,7 @@
 # Technical Overview
 
 ## What is KRules?
-KRules is an open source framework that provides Python developers with a flexible and fast way to build cloud native applications, creating event driven, context aware, and reactive microservices in a Kubernetes cluster. 
+KRules is an open source framework that provides, to Python developers, a flexible and fast way to build cloud native applications, creating event driven, context aware, and reactive microservices in a Kubernetes cluster.
 KRules adopts a rules-based approach  based on paradigm events-condtions-actions.
 KRules is inspired by [reactive manifesto](https://www.reactivemanifesto.org/en) taking full advantages of the Kubernetes cluster and Knative eventing:  
 - **Responsive**: The system responds in a timely manner if at all possible;
@@ -17,11 +17,11 @@ The purpose of KRules is not to provide a serverless or an eventing manager infr
 ## Concepts
 
 ### The subject
-One of the most important concept behind the KRules  programming paradigm is the subject. Every time some type of event is produced, it can always be traced back to some type of entity, that produced it or that in some way is related to it.
+One of the most important concept behind the KRules  programming paradigm is **the subject**. Every time some type of event is produced, it can always be traced back to some type of entity, that produced it or that in some way is related to it.
 
 In the KRules world this is the abstract representation around which we are shaping logic. 
 
-KRules provides the ability to track the state for the represented subjects and react to its changes. The state of subjects is defined through what we call **reactive properties**. The set of properties for a subject is dynamic and they start to exists (and consequentially the subject himself) when we assign values to them
+KRules provides the ability to track the _state_ for the represented subjects and react to its changes. The state of subjects is defined through what we call **reactive properties**. The set of properties for a subject is dynamic and they start to exists (and consequentially the subject itself) when we assign values to them.
 
 Behind the scenes there is a component called **Subject Property Store** that besides reactivity provides also all the facilities to work efficiently in a highly concurrent system. 
 
@@ -33,7 +33,7 @@ In short, everything in the application domain which could produce events and co
 
 In addition to  reactive properties is possible to define also **extended properties**. 
 
-An extended property is more like the subject’s metadata. For example if we are dealing with devices an extended property can be the fleet it belongs to. Extended properties are understood by the Knative eventing infrastructure so they are more intended to define logic at the transport layer, for example, to direct all events regarding a subset of subject of the same class to a specific broker triggering isolated group of microservices in the same cluster or even in a different one. Thinking about a real-world application,  in an IoT fleet managements system they can be useful to tag each device sending a similar payload but owned by different tenants, for which we provide a set of common logic but also a more customized additional set of functionalities tailored  on the specific needs and requests. Ideally, while some common logics could be activated on a public cloud, others, for performance reasons, or for relevance to sensitive data could be located on an edge infrastructure
+An extended property is more like a subject’s metadata. For example, if we are dealing with devices, an extended property may be the fleet to which it belongs. Extended properties are understood by the Knative eventing infrastructure so they are more intended to define logic at the transport layer, for example, to direct all events regarding a subset of subject of the same class to a specific broker, triggering isolated group of microservices in the same cluster or even in a different one. Thinking about a real-world application, in an IoT fleet managements system they can be useful to tag each device sending a similar payload but owned by different tenants, for which we provide a set of common logics but also a more customized additional set of functionalities tailored on the specific needs and requests. Ideally, while some common logics could be activated on a public cloud, others, for performance reasons, or for relevance to sensitive data could be located on an edge infrastructure.
 
 And now let's move on to some practical examples. 
 
@@ -95,9 +95,9 @@ As you can see, the event also contains a extension called propertyname which in
 
 Note that the name of the altered property is repeated both in the payload and as an extended property. This happens because at the transport and addressing level of the event the content of the message is not taken into account, it is instead used by the service that consumes the event (in our case a rulesset).
 
-Looking at the content of the payload you can see how the event contains, in addition the name of the property and the new value of it, also the old property value. This is very useful when you want to implement a logic established not just on the new value of the property but on his transition. 
+Looking at the content of the payload you can see how the event contains, in addition the name of the property and the new value of it, also the old property value. This is very useful when you want to implement a logic established not just on the new value of the property but also on its transitions. 
 
-The transition between a previous and new value can often occur in a concurrent environment. Assuming that multiple processes need to update the value of the moo property, the subjects backend implementation helps to solve the problems related to concurrency and avoid conflicts and inconsistent situations supporting atomic operations:
+The transition between a previous and new value can often occur in a concurrent environment. Assuming that multiple processes need to update the value of the moo property, the subject's backend implementation helps to solve the problems related to concurrency and avoid conflicts and inconsistent situations supporting _atomic operations_:
 ```python
 >> foo.moo = lambda moo: moo + 1   
 ```
@@ -107,7 +107,7 @@ Let’s start again creating a subject.
 ```
 >> device = subject_factory(“device|00000A”)
 ```
-This time, instead of a generic "foo", we chose a speaking name, containing some information characteristic of the subject. In this case the name  is composed of the generic category that indicates that the subject is a device with a specific unique identifier. 
+This time, instead of a generic "foo", we have chosen a speaking name, containing some information characteristic of the subject. In this case the name  is composed of the generic category that indicates that the subject is a device with a specific unique identifier. 
 
 We define the **tempc** property (the temperature expressed in Celsius degrees) and the thresholds in order to contextualize its value and save it in a **temp_status** property (tempc <= 20 COLD, 20 < tempc < 30 NORMAL, tempc >= 30 WARM, tempc >= 45 CRITICAL).
 ```python
@@ -115,13 +115,13 @@ We define the **tempc** property (the temperature expressed in Celsius degrees) 
 >> device.temp_status
  NORMAL
 ```
-Assigning a value within the NORMAL threshold to tempc, temp_status property will not be changed.
+Assigning a value within the NORMAL range to tempc, temp_status property will not be changed.
 ```python
 >> device.tempc = 28
 >> device.temp_status
 NORMAL
 ```
-On the other hand, it can be seen that, using a value higher than the limits of the NORMAL threshold, the property temp_status will also be modified.
+On the other hand, it can be seen that, using a value higher than the limits of the NORMAL range, the property temp_status will also be modified.
 ```python
 >> device.tempc = 32
 >> device.temp_status
@@ -131,25 +131,25 @@ The temp_status property transition could therefore activate further rules by tr
 
 
 ### Rules
-**Rules** are grouped into **rulessets**. The rulessets are in fact the microservices that are deployed on the cluster and respond independently to specific events type and attributes thank to Knative's triggers. There are no particular constraints on the establishment of these triggers or on what events are to be received by a rulesset. The more granular the definition of the triggers and the corresponding rulessets will be, the more resilient the resulting system will be as each service, or better said, each rulesset, is scalable independently. Inside the rulesset we can have more rules each one subscribing to different event types (if captured by the triggers) and with different activation criteria based on the received payload. Each rule, is always contextualized to a subject
+**Rules** are grouped into **rulessets**. The rulessets are in fact the microservices that are deployed on the cluster and respond independently to specific events type and attributes thank to Knative's triggers. There are no particular constraints on the establishment of these triggers or on what events are to be received by a rulesset. The more granular the definition of the triggers and the corresponding rulessets will be, the more resilient the resulting system will be as each service, or better said, each rulesset, is scalable independently. Inside the rulesset we can have more rules each one subscribing to different event types (if captured by the triggers) and with different activation criteria based on the received payload. Each rule, is always contextualized to a subject.
 
 Events can be produced outside or inside the cluster 
 
-For the outside world [Knative Eventing Sources](https://knative.dev/docs/eventing/sources/) are used. According to the Knative documentation, Event Sources are Kubernetes Custom Resources which provide a mechanism for registering interest in a class of events from a particular software system
+For the outside world [Knative Eventing Sources](https://knative.dev/docs/eventing/sources/) are used. According to the Knative documentation, Event Sources are Kubernetes Custom Resources which provide a mechanism for registering interest in a class of events from a particular software system.
 
 A growing number of already made sources are available. Anyway, Knative offers a good framework to implement new ones easily and quickly.
 
-Returning to our example, where we are building logic around an hypothetical fleet of devices, we can have multiple sources. the most obvious one is the middleware  from which we receive the devices telemetry. But before that we need to get some basic attributes of the onboarded devices like their unique identifiers, the class to which they belong (which may imply different logics), the time within which it is expected to receive data (which can determine a state of activity or inactivity of the device), etc.
+Going back to our example, where we are building logic around an hypothetical fleet of devices, we can have multiple sources. The most obvious one is the middleware from which we receive the devices telemetry. But before that we need to get some basic attributes of the onboarded devices like their unique identifiers, the class to which they belong to (which may imply different logics), the time within which it is expected to receive data (which can determine a state of activity or inactivity of the device), etc.
 
 Simplifying a real case we can assume that this information will be entered into the system by loading a csv file on a storage area. The folder to which the file is uploaded will determine the class the deivice belongs to. Each row of the csv will contain the basic information of a single device.
 
 So, what is the **source**? Who is the **subject**? What type of event is **produced**?
 
-The source is the bucket on which the file is uploaded because the presence of a new file on the bucket can be intended as an event (the type of of the event is the _finalization_ of a write operation). the subject, however, is the file itself.
+The source is the bucket on which the file is uploaded because the presence of a new file on the bucket can be intended as an event (the type of of the event is the _finalization_ of a write operation). The subject, however, is the file itself.
 
-In the specific case, we assumed to use a GCP bucket where an [already made source](https://github.com/google/knative-gcp/blob/master/docs/examples/cloudstoragesource/README.md) implementation allows us to have a complete abstraction on the bucket and all the stuffs needed to get the event into our rulesset
+In the specific case, we assumed to use a GCP bucket where an [already made source](https://github.com/google/knative-gcp/blob/master/docs/examples/cloudstoragesource/README.md) implementation allows us to have a complete abstraction on the bucket and all the stuffs needed to get the event into our rulesset.
 
-Once the event has been produced we intercept it in a rule, where, after downloading the file, for each line it contains, a new event addressed to each device (the new **subject**) of **type** _onboard-device_ will be emitted. Some other one or more rule, in the same or another rulesset will be able to catch that new event activating his own logic (may be a notification to another system or the effective registration inside the IoT middleware 's device manager)
+Once the event has been produced we intercept it in a rule, where, after downloading the file, for each line it contains, a new event addressed to each device (the new **subject**) of **type** _onboard-device_ will be emitted. Some other one or more rule, in the same or another rulesset, will be able to catch that new event activating his own logic (maybe a notification to another system or the effective registration inside the IoT middleware's device manager)
 
 Let’s see it
 
@@ -194,7 +194,7 @@ rulesdata = [
     # ... more rules
 ]
 ```
-So the rulesset data is loaded just one time and it is static (potentially it can be even injected from the out side). However, the blocks it contains need to access runtime information that are available when an event is processed. We will come back to this later, now let's see how a rule is composed in detail
+So the rulesset data is loaded just one time and it is static (potentially it can be even injected from the outside). However, the blocks it contains need to access runtime information that are available when an event is processed. We will come back to this later, now let's see how a rule is composed in detail.
 
 The rule is up of 2 sections: **filters** and **processing**.
 
@@ -203,7 +203,7 @@ Both sections are a pipeline of small functions which represent the essential bu
 At each step within the pipeline the payload can be altered enriching it with information available for subsequent blocks.
 
 
-The **subscribe_to** parameter indicates the event to which the rule reacts and corresponds to the **type** attribute of the cloudevent. As described above we are only interested in finalize operations. 
+The **subscribe_to** parameter indicates the event to which the rule reacts and corresponds to the **type** attribute of the cloudevent. As described above we are only interested in _finalize_ operations. 
 
 Following, in **ruledata** we have the pipeline composed by the **filter** and **processing** sections. 
 
@@ -211,7 +211,7 @@ The **filters** have 2 generic functions, already provided by the framework:
 
 The first is **SubjectMatch** which verifies that the subject name matches a given regular expression. Because we receive the path of the uploaded file as the subject we use it to check his location and to extract from it some useful information that we put in the payload for later use in the **processing** part. 
 
-The next function, **IsTrue**, is a very general use function. To make it possible to use the most generic functions, an extensible mechanism to process arguments before they are passed to the function is provided. In this case we simply use a lambda receiving the payload and a preloaded argument processor class instance recognizes its interest in the argument processing it using the required runtime information.
+The next function, **IsTrue**, is a very general purpose function. To make it possible to use the most generic functions, an extensible mechanism to process arguments before they are passed to the function is provided. In this case we simply use a lambda function receiving the payload and a preloaded argument processor class instance recognizes its interest in the argument processing it using the required runtime information.
 In this case the lambda function, thanks to the argument processors, is able to access the payload (at the stage of the pipeline processing step) and check the contentType.
 
 After talking about generic functions, let's move on to the **processing** section where we use a more specialized function. To provide an understanding of how a function can be easily created within an application context, follow its implementation:
@@ -235,7 +235,7 @@ class ProcessCSV_AsDict(RuleFunctionBase):
 ```
 Classes derived from **RuleFunctionBase** are meta classes statically created together with the definition of the rulesset. The performing instance is created during each pipeline execution while the runtime information are injected into the object. In fact, as can be seen in the example, the payload properties are treated internally in the execute method. 
 
-So, in the previous example, we produced an event of type _onboard-device_. Here the subject is the device and the payload contains all the initial data obtained from the csv. Somewhere in the cloud we can now intercept this event and finally setup the basic properties of each new onboarded device.
+So, in the previous example, we produced an event _onboard-device_ type. Here the subject is the device and the payload contains all the initial data obtained from the csv. Somewhere in the cloud we can now intercept this event and finally setup the basic properties of each new onboarded device.
 
 ```python
 rulesdata = [
@@ -264,13 +264,13 @@ rulesdata = [
 
 ]
 ```
-In addition to setting the basic properties we do more few interesting things. 
+In addition, to set the basic properties, we do more few interesting things. 
 
-We set deviceclass as an extended property. This means that from now on, this subject is tagged with that attribute and this information will be part of each event contextualized to this device. We can use Knative triggers for example to convey all these events to a dedicated broker, where a subset of rules will subscribe, activating logic specific only to that class of devices
+We set deviceclass as an extended property. This means that from now on, this subject is tagged with that attribute and this information will be part of each event contextualized to this device. We can use Knative triggers for example to convey all these events to a dedicated broker, where a subset of rules will subscribe, activating logic specific only to that class of devices.
 
 We also set a status property to ‘READY’. As seen in the beginning, properties are reactive so that the system can be made aware of this new status. For example an independent service could take further steps to actually complete the onboarding procedure
 
-This is a very important feature and to better explain it we can take the example presented at the beginning where, in an interactive shell were we explicitly set the received value of a temperature sensor. Now we are supposing to receive that value as part of an ingestion event. This is happening in the first rule, the following ones instead react to that change setting the temp_status property. Please note that the minimum and maximum temperatures are read as property of the subject. This is because we set them during onboarding by acquiring them from the csv
+This is a very important feature and, to better explain it, we can take the example presented at the beginning where, in an interactive shell, we explicitly set the received value of a temperature sensor. Now we are supposing to receive that value as part of an ingestion event. This is happening in the first rule; the following ones instead react to that change setting the temp_status property. Please note that the minimum and maximum temperatures are read as property of the subject. This is because we set them during onboarding phase by acquiring them from the csv
 ```python
 rulesdata = [
 
@@ -367,7 +367,7 @@ rulesdata = [
     },
 ]
 ```
-The last rule needs some more explanation. Because when an event is emitted, it is first managed inside the container or propagated outside only when no subscriber is found, we need to create a rule to explicitly dispatch the “subject-property-changed”  event outside, if we want to give the opportunity to other services to react to this change. 
+The last rule needs some more explanation. Because when an event is emitted it is first managed inside the container and then propagated outside only if no subscriber is found, we need to create a rule to explicitly dispatch the **subject-property-changed** event outside, if we want to give the opportunity to other services to react to this change. 
 
 
 ## Observability and errors management
@@ -458,7 +458,7 @@ Everything is an event, also the very fact that a rule is processed is itself an
  'subject': 'onboarding/import/class-b/nonsense.csv'}
 ```
 
-As we can see in this trace event, referring to the rule of the csv loading in the previous example, the payload is altered during the blocks execution (acquiring information such as the file name and the device class). We focus on the **got_errors** entry, which indicates whether or not an exception was raised during the execution of the rule. In this case it is True and that means that some problems was encountered during the rule execution (maybe for a badly formatted or even damaged file). Also, while the metrics of the rules that have been executed correctly have remained unchanged, in the metrics of the rule that raised the exception, was added all useful information to be able to manage it: the exception type, the exception args and the stack trace. Now we can implemented a logic to handle rulessets exceptions in a general way. 
+As we can see in this trace event, referring to the rule of the csv loading in the previous example, the payload is altered during the blocks execution (acquiring information such as the file name and the device class). We focus on the **got_errors** entry, which indicates whether or not an exception was raised during the execution of the rule. In this case it is _True_ and that means that some problems was encountered during the rule execution (maybe for a badly formatted or even damaged file). Furthermore, while the metrics of the rules that have been executed correctly have remained unchanged, all the information useful for managing them has been added to the metrics of the rule that generated the exception: the exception type, the exception args and the stack trace. Now we can implemented a logic to handle rulessets exceptions in a general way. 
 
 ```python
 rulesdata = [
@@ -521,13 +521,13 @@ rulesdata = [
 
 ]
 ```
-We have added a rule that has received an error event, or better, the error event propagated by the rule we have just defined, and the name of the file that raised the exception (in the payload) will remove the above mentioned file.
+We have added a rule that received an error event, or better, the error event propagated by the rule we have just defined, and the name of the file that raised the exception (in the payload) will remove the above mentioned file.
 
-This mechanism handles exceptions in a very general and basic way, we can have multiple generic strategies to handle exceptions. For example, we can integrate with specialized platforms and collect the stacktrace to send it on common notification systems. We can also store all events containing errors on a database with all  data related to the original event in order to reproduce it again after fixed the problem. 
+This mechanism handles exceptions in a very general and basic way, we can have multiple generic strategies to handle exceptions. For example, we can integrate with specialized platforms and collect the stacktrace to send it on common notification systems. We can also store all events containing errors on a database with all data related to the original event in order to reproduce it again after fixed the problem. 
 
 There are also many cases where an error is predictable and we want define some recovery logic in the real time. 
 
-KRules provides and allows to write new exception dumpers to give more detailed extra information about a specific exception (for example a timeout or a bad http status code). This information is obviously available for creating rules
+KRules provides and allows to write new _exception dumpers_ to give more detailed extra information about a specific exception (for example a timeout or a bad http status code). This information is obviously available for creating rules
 
 Suppose we want to post the data processed by rules on an external API server and we want to manage the case in which the service becomes unavailable for maintenance (status code 503).
 
@@ -578,4 +578,4 @@ rulesdata = [
 
 ]
 ```
-The first rule make the call to the service and raise an exception in case it is not successful, the second one intercepts any error and, if the exception is linked to the 503 state, we suppose the problem is temporary so the event triggering the first rule is scheduled in 10 seconds. This mechanism allows, even in cases of absence of service, not to lose data and, once it is available again, to resume any application flow linked to the response of the API. Obviously this is an extreme simplification but it can make the idea about how much control and flexibility we can have.  This can be very useful in a distributed asynchronous system where a single service failing can lead to an incomplete and inconsistent situation.
+The first rule make the call to the service and raise an exception in case it is not successful, the second one intercepts any error and, if the exception is linked to the 503 state, we suppose the problem is temporary so the event triggering the first rule is scheduled in 10 seconds. This mechanism allows, even in cases of absence of service, to not lose any data and, once it is available again, to resume any application flow linked to the response of the API. Obviously this is an extreme simplification but it can make the idea about how much control and flexibility we can have.  This can be very useful in a distributed asynchronous system where a single service failing can lead to an incomplete and inconsistent situation.
