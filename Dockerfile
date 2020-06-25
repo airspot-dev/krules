@@ -31,7 +31,7 @@ RUN apk add --no-cache alpine-sdk \
     && pip install --upgrade pip \
     && pip install pyyaml anyjson wrapt redis rx==1.6.1 dependency-injector \
     pytest jsonpath-rw jsonpath-rw-ext python-dateutil pytz requests gunicorn \
-    flask json-logging pycurl krules-env==0.2.6 bumpversion
+    flask json-logging pycurl bumpversion
 
 
 ADD ./app /app
@@ -39,5 +39,3 @@ ADD ./app /app
 ENV PYTHONPATH /app
 ENV FLASK_APP /app/main.py
 ENV FLASK_ENV production
-
-CMD exec gunicorn --bind :8080 --workers 1 --threads 8 main:app
