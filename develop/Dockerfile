@@ -1,4 +1,4 @@
-FROM rulesset-image-base-setup:latest
+FROM rulesset-image-base-setup
 
 ADD ${KRULES_DEV_PACKAGES_DIR} /app/
 

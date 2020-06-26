@@ -1,4 +1,4 @@
-FROM rulesset-image-base-setup:latest
+FROM rulesset-image-base-setup
 
 RUN pip install krules-env==0.2.6
 
