@@ -31,8 +31,7 @@ RUN apk add --no-cache alpine-sdk \
     && pip install --upgrade pip \
     && pip install pyyaml anyjson wrapt redis rx==1.6.1 dependency-injector \
     pytest jsonpath-rw jsonpath-rw-ext python-dateutil pytz requests gunicorn \
-    flask json-logging pycurl bumpversion
-
+    flask json-logging pycurl bumpversion cloudevents==0.3.0
 
 ADD ./app /app
 

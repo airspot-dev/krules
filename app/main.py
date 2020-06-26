@@ -17,6 +17,10 @@ from krules_core.utils import load_rules_from_rulesdata
 
 import krules_env
 import env as app_env
+import io
+
+from cloudevents.sdk.event import v1
+from cloudevents.sdk import marshaller
 
 app = Flask("rulesset")
 
@@ -60,19 +64,17 @@ def main():
     try:
         dispatch_policy = os.environ.get("DISPATCH_POLICY", DispatchPolicyConst.NEVER)
 
-        event_info = {}
+        m = marshaller.NewDefaultHTTPMarshaller()
+        event = m.FromRequest(v1.Event(), request.headers, io.StringIO(request.data), lambda x: json.loads(x.read()))
 
-        payload = json.loads(request.data)
+        event_info = event.Properties()
 
-        headers = request.headers
+        payload = event.Data()
 
         app.logger.debug("RCVR: {}".format(payload))
-        message = headers.get("ce-type")
-        subject = headers.get("ce-subject", "sys-0")
+        message = event_info.get("type")
+        subject = event_info.get("subject", "sys-0")
 
-        ce_keys = list(filter(lambda x: x.lower().startswith("ce-"), headers.keys()))
-        for k in ce_keys:
-            event_info[k[3:]] = headers.get(k)
 
         # TODO: important!!
         # need to find a way to avoid a return of messages from the same service
