@@ -65,7 +65,7 @@ def main():
         dispatch_policy = os.environ.get("DISPATCH_POLICY", DispatchPolicyConst.NEVER)
 
         m = marshaller.NewDefaultHTTPMarshaller()
-        event = m.FromRequest(v1.Event(), request.headers, io.StringIO(request.data), lambda x: json.loads(x.read()))
+        event = m.FromRequest(v1.Event(), request.headers, io.BytesIO(request.data), lambda x: json.load(x))
 
         event_info = event.Properties()
 
@@ -81,10 +81,11 @@ def main():
         # (for example when resending it again after intercepted in the first time)
         # this workaround only works when in a knative service or at least when SOURCE environment
         # variable is set
-        if event_info["Source"] == os.environ.get("K_SERVICE", os.environ.get("SOURCE")):
+
+        if event_info["source"] == os.environ.get("K_SERVICE", os.environ.get("SOURCE")):
             return Response(status=201)
 
-        event_info["Originid"] = event_info.get("Originid", event_info.get("Id"))
+        event_info["Originid"] = event_info.get("originid", event_info.get("id"))
 
         logger.debug("subject: {}".format(subject))
         logger.debug("payload: {}".format(payload))
