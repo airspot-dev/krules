@@ -12,7 +12,7 @@ import pytest
 from krules_core.subject import PayloadConst
 
 
-from pytest_localserver import http, plugin
+from pytest_localserver import plugin
 
 from dependency_injector import providers
 
@@ -41,7 +41,6 @@ subject_storage_factory.override(
 )
 
 
-@pytest.mark.skip
 def test_dispatched_event(httpserver):
     from krules_core import messages
 
@@ -51,26 +50,28 @@ def test_dispatched_event(httpserver):
     router = message_router_factory()
     subject = subject_factory("test-subject")
     subject.set_ext("ext1", "val1")
-    subject.set_ext("ext2", 2)
+    subject.set_ext("ext2", "2")
     _id, code, sent_headers = router.route("test-message", subject, {"key1": "hello"})
+    print(sent_headers)
+
     assert(200 <= code < 300)
-    assert (sent_headers.get("Ce-Id") == _id)
-    assert(sent_headers.get("Ce-Source") == "pytest")
-    assert(sent_headers.get("Ce-Subject") == "test-subject")
-    assert(sent_headers.get("Ce-Type") == "test-message")
-    assert(sent_headers.get("Ce-Originid") == _id)
-    assert(sent_headers.get("Ce-Ext1") == "val1")
-    assert(sent_headers.get("Ce-Ext2") == "2")
+    assert (sent_headers.get("ce-id") == _id)
+    assert(sent_headers.get("ce-source") == "pytest")
+    assert(sent_headers.get("ce-subject") == "test-subject")
+    assert(sent_headers.get("ce-type") == "test-message")
+    assert(sent_headers.get("ce-Originid") == _id)
+    assert(sent_headers.get("ce-ext1") == "val1")
+    assert(sent_headers.get("ce-ext2") == "2")
 
     # with event info
     subject = subject_factory("test-subject", event_info={"Originid": 1234})
     _, _, sent_headers = router.route("test-message", subject, {"key1": "hello"})
-    assert(sent_headers.get("Ce-Id") != sent_headers.get("Ce-Originid"))
-    assert(sent_headers.get("Ce-Originid") == '1234')
+    assert(sent_headers.get("id") != sent_headers.get("ce-Originid"))
+    assert(sent_headers.get("ce-Originid") == '1234')
 
     # property name
     _, _, sent_headers = router.route(messages.SUBJECT_PROPERTY_CHANGED, subject, {PayloadConst.PROPERTY_NAME: "foo"})
-    assert (sent_headers.get("Ce-Propertyname") == 'foo')
+    assert (sent_headers.get("ce-propertyname") == 'foo')
 
 
 

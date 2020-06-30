@@ -13,10 +13,8 @@ import logging
 import uuid
 from datetime import datetime
 import pytz
-from io import BytesIO
 import json
 
-import pycurl
 
 from krules_core.subject import PayloadConst
 
@@ -24,8 +22,13 @@ from krules_core.providers import subject_factory
 
 from krules_core.route.dispatcher import BaseDispatcher
 
+from cloudevents.sdk import converters
+from cloudevents.sdk import marshaller
+from cloudevents.sdk.converters import structured, binary
+from cloudevents.sdk.event import v1
 
-# import requests
+import requests
+
 
 class CloudEventsDispatcher(BaseDispatcher):
 
@@ -43,49 +46,36 @@ class CloudEventsDispatcher(BaseDispatcher):
         _id = str(uuid.uuid4())
         logging.debug("new event id: {}".format(_id))
 
-        headers = {
-            'Content-Type': 'application/json',
-            'Ce-Specversion': '1.0',
-            'Ce-Id': _id,
-            'Ce-Originid': str(_event_info.get("Originid", _id)),
-            'Ce-Source': self._source,
-            'Ce-Subject': str(subject),
-            'Ce-Time': datetime.utcnow().replace(tzinfo=pytz.UTC).isoformat(),
-            'Ce-Type': message,
-            'Accept-Encoding': 'gzip'
-        }
+        event = v1.Event()
+        event.SetContentType('application/json')
+        event.SetEventID(_id)
+        event.SetSource(self._source)
+        event.SetSubject(str(subject))
+        event.SetEventTime(datetime.utcnow().replace(tzinfo=pytz.UTC).isoformat())
+        event.SetEventType(message)
 
         # set extended properties
         ext_props = subject.get_ext_props()
         property_name = payload.get(PayloadConst.PROPERTY_NAME, None)
         if property_name is not None:
             ext_props.update({"propertyname": property_name})
-        for prop, value in ext_props.items():
-            headers["Ce-{}".format(prop.capitalize())] = value
+        event.SetExtensions(ext_props)
+        event.Set('Originid', str(_event_info.get("Originid", _id)))
+        event.SetData(payload)
 
+        m = marshaller.NewHTTPMarshaller([binary.NewBinaryHTTPCloudEventConverter()])
 
-        # if payload contains a property_name attribute it is set as ce extension
-        # property_name = payload.get(PayloadConst.PROPERTY_NAME, None)
-        # if property_name is not None:
-        #     headers["Ce-Propertyname"] = property_name
+        headers, body = m.ToRequest(event, converters.TypeBinary, json.dumps)
+        # headers['Ce-Originid'] = str(_event_info.get("Originid", _id))
 
-        # used pycurl to avoid thread safety issues
-        c = pycurl.Curl()
-        c.setopt(c.URL, self._dispatch_url)
+        response = requests.post(self._dispatch_url,
+                                 headers=headers,
+                                 data=body)
 
-        b = BytesIO()
-        c.setopt(c.POST, 1)
-        c.setopt(c.HTTPHEADER, ["{}: {}".format(n, v) for n, v in headers.items()])
-        c.setopt(c.WRITEFUNCTION, b.write)
-        #c.setopt(c.POSTFIELDS, data.read())
-        c.setopt(c.POSTFIELDS, json.dumps(payload))
-        c.perform()
-        response_code = c.getinfo(pycurl.RESPONSE_CODE)
-        b.close()
-        c.close()
+        response.raise_for_status()
 
         if self._test:
-            return _id, response_code, headers
+            return _id, response.status_code, headers
         return _id
 
 
