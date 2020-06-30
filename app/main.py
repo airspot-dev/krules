@@ -66,10 +66,9 @@ def main():
 
         m = marshaller.NewDefaultHTTPMarshaller()
         event = m.FromRequest(v1.Event(), request.headers, io.BytesIO(request.data), lambda x: json.load(x))
-
         event_info = event.Properties()
-
-        payload = event.Data()
+        event_info.update(event_info.pop("extensions"))
+        payload = event_info.pop("data")
 
         app.logger.debug("RCVR: {}".format(payload))
         message = event_info.get("type")
@@ -85,7 +84,7 @@ def main():
         if event_info["source"] == os.environ.get("K_SERVICE", os.environ.get("SOURCE")):
             return Response(status=201)
 
-        event_info["Originid"] = event_info.get("originid", event_info.get("id"))
+        event_info["originid"] = event_info.get("originid", event_info.get("id"))
 
         logger.debug("subject: {}".format(subject))
         logger.debug("payload: {}".format(payload))
