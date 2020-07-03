@@ -27,6 +27,8 @@ from krules_core.providers import (
     subject_factory,
     subject_storage_factory)
 
+from .. import get_value_from_payload_diffs
+
 counter = 0
 asserted = []
 
@@ -82,7 +84,7 @@ def test_pycall(subject, router, asserted):
             processing: [
                 PyCall(_func, ([1, 2], True),
                        on_success=lambda self, x: x.reverse(),
-                       on_error=lambda self, x: self.payload.update({"got_error": True}))
+                       on_error=lambda self, x: self.payload.update({"got_errors": True}))
             ]
         }
     )
@@ -95,7 +97,7 @@ def test_pycall(subject, router, asserted):
                 PyCall(_func, ([1, 2],), kwargs={"raise_error": False},
                        on_success=lambda self, x: (
                            x.reverse(),
-                           self.payload.update({"got_error": False})
+                           self.payload.update({"got_errors": False})
                        ))
             ]
         }
@@ -104,20 +106,21 @@ def test_pycall(subject, router, asserted):
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-pycall-no-error" and _assert(
             x[rule_name],
-            x[processing][0]["payload"]["pycall_returns"] == [2, 1] and
-            not x[processing][0]["payload"]["got_error"]
+            get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload"], default_value=None) == [2, 1]
+            and not get_value_from_payload_diffs("got_errors", x[processing][0]["payload"], default_value=False)
         )
     )
 
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-pycall-with-error" and _assert(
             x[rule_name],
-            "pycall_returns" not in x[processing][0]["payload"] and
-            x[processing][0]["payload"]["got_error"]
+            not get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload"], default_value=None) and
+            get_value_from_payload_diffs("got_errors", x[processing][0]["payload"], default_value=False)
         )
     )
 
     router.route("test-pycall", subject, {})
 
+    print(asserted)
     assert "test-pycall-no-error" in asserted
     assert "test-pycall-with-error" in asserted

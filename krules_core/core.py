@@ -23,6 +23,7 @@ import logging
 logger = logging.getLogger("__core__")
 
 from .providers import exceptions_dumpers_factory
+import jsonpatch
 
 class Rule:
 
@@ -56,6 +57,31 @@ class Rule:
             dd[Const.PAYLOAD].pop("_event_info", None)
             return dd
 
+        def __copy_list(ll):
+            from collections.abc import Mapping
+            dst = []
+            for el in ll:
+                if isinstance(el, Mapping):
+                    dst.append(__copy(el))
+                elif isinstance(el, list):
+                    dst.append(__copy_list(el))
+                else:
+                    dst.append(el)
+            return dst
+
+        def __copy(pp):
+            from collections.abc import Mapping
+            cp = {}
+            for k, v in pp.items():
+                if isinstance(v, Mapping):
+                    cp[k] = {}
+                    cp[k] = __copy(v)
+                elif isinstance(v, list):
+                    cp[k] = __copy_list(v)
+                else:
+                    cp[k] = v
+            return cp
+
         logger.debug("process {0} for {1}".format(message, self.name))
 
         if type(subject) == str:
@@ -66,8 +92,8 @@ class Rule:
         results_rx = results_rx_factory()  # one event for each processed rule
 
         process_id = str(uuid4())
-        payload_copy = payload.copy()
-        event_info = payload_copy.pop("_event_info")
+        payload_copy = __copy(payload)
+        event_info = payload_copy.pop("_event_info", {})
 
         res_full = {
             Const.MESSAGE: message,
@@ -79,6 +105,8 @@ class Rule:
             Const.GOT_ERRORS: False,
             Const.EVENT_INFO: event_info,
         }
+
+        last_payload = payload_copy
 
         res_in = {}
         try:
@@ -107,6 +135,9 @@ class Rule:
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
                     raise TypeError(msg + str(ex))
+
+                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload)
+                last_payload = __copy(payload)
                 res_out = {
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
                     Const.MESSAGE: res_in[Const.MESSAGE],
@@ -114,7 +145,9 @@ class Rule:
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD: payload.copy(),
+                    Const.PAYLOAD: {
+                        Const.PAYLOAD_DIFFS: payload_patches.patch
+                    },
                     Const.ARGS: res_in[Const.ARGS],
                     Const.KWARGS: res_in[Const.KWARGS],
                     Const.RETURNS: res
@@ -153,6 +186,8 @@ class Rule:
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
                     raise TypeError(msg + str(ex))
+                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload)
+                last_payload = __copy(payload)
                 res_out = {
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
                     Const.MESSAGE: res_in[Const.MESSAGE],
@@ -160,7 +195,9 @@ class Rule:
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD: payload.copy(),
+                    Const.PAYLOAD: {
+                        Const.PAYLOAD_DIFFS: payload_patches.patch
+                    },
                     Const.ARGS: res_in[Const.ARGS],
                     Const.KWARGS: res_in[Const.KWARGS],
                     Const.RETURNS: res,
@@ -173,6 +210,8 @@ class Rule:
         except Exception as e:
             logger.error("catched exception of type {0} ({1})".format(type(e), getattr(e, 'message', str(e))))
             if results_rx:
+                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload)
+
                 type_, value_, traceback_ = sys.exc_info()
                 res_out = {
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
@@ -181,7 +220,9 @@ class Rule:
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD: payload.copy(),
+                    Const.PAYLOAD: {
+                        Const.PAYLOAD_DIFFS: payload_patches.patch
+                    },
                     Const.ARGS: res_in[Const.ARGS],
                     Const.KWARGS: res_in[Const.KWARGS],
                     Const.RETURNS: None,

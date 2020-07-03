@@ -25,6 +25,7 @@ setup(
         'dependency-injector>=3.14.8',
         'rx==1.6.1',
         'wrapt>=1.11.2',
+        'jsonpatch==1.26',
         'jsonpath-rw-ext==1.2.2',
     ],
     setup_requires=[

@@ -49,6 +49,8 @@ class RuleConst(object):
     EXC_INFO = "exc_info"
     EXC_EXTRA_INFO = "exc_extra_info"
 
+    PAYLOAD_DIFFS = "payload_diffs"
+
 class ConfigKeyConst(object):
 
     MESSAGE_TOPICS_PREFIX = "MESSAGE_TOPICS_PREFIX"
