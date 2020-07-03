@@ -53,6 +53,7 @@ class Rule:
             del dd[Const.SUBJECT]
             del dd[Const.RULE_NAME]
             del dd[Const.SECTION]
+            dd[Const.PAYLOAD].pop("_event_info", None)
             return dd
 
         logger.debug("process {0} for {1}".format(message, self.name))
@@ -65,16 +66,18 @@ class Rule:
         results_rx = results_rx_factory()  # one event for each processed rule
 
         process_id = str(uuid4())
+        payload_copy = payload.copy()
+        event_info = payload_copy.pop("_event_info")
 
         res_full = {
             Const.MESSAGE: message,
             Const.SUBJECT: str(subject.name),
             Const.RULE_NAME: self.name,
-            Const.PAYLOAD: payload.copy(),
+            Const.PAYLOAD: payload_copy,
             Const.FILTERS: [],
             Const.PROCESSING: [],
             Const.GOT_ERRORS: False,
-            #Const.EVENT_INFO: getattr(subject, "__event_info", {}),
+            Const.EVENT_INFO: event_info,
         }
 
         res_in = {}
@@ -209,8 +212,3 @@ class RuleFactory:
         for el in subscribe_to:
             message_router_factory().register(rule, el)
         #return message_router_factory().register(rule, subscribe_to)
-
-
-
-
-
