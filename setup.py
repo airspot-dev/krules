@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name='krules-dispatcher-cloudevents',
-    version="0.2.6",
+    version="0.2.7",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules cloudevents dispatcher",
@@ -24,7 +24,7 @@ setup(
     ],
     install_requires=[
         'pycurl==7.43.0.3',
-        'krules-core==0.2.1',
+        'krules-core==0.2.2',
     ],
     setup_requires=[
         'pytest-runner',
