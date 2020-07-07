@@ -54,4 +54,3 @@ class RuleConst(object):
 class ConfigKeyConst(object):
 
     MESSAGE_TOPICS_PREFIX = "MESSAGE_TOPICS_PREFIX"
-
