@@ -110,7 +110,7 @@ def init():
     )
 
     message_router_factory.override(
-        providers.Singleton(lambda: MessageRouter(multiprocessing=False))
+        providers.Singleton(lambda: MessageRouter())
     )
 
     exceptions_dumpers = exceptions_dumpers_factory()
