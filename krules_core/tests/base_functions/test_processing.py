@@ -20,10 +20,7 @@ from krules_core.base_functions import UpdatePayload, SetPayloadProperties, SetP
     DecrementSubjectProperty, IncrementSubjectPropertySilently, DecrementSubjectPropertySilently
 
 from krules_core.core import RuleFactory
-<<<<<<< HEAD
 from .. import get_value_from_payload_diffs
-=======
->>>>>>> 30e47a7d0c47c64d0dc75ce776423c0170f9da82
 
 from krules_core.providers import (
     message_router_factory,
@@ -96,43 +93,26 @@ def test_payload_functions(subject, router, asserted):
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-alter-payload" and _assert(
             "test-update-1",
-<<<<<<< HEAD
             get_value_from_payload_diffs("k3", x[processing][0]["payload"]) == 3 and
             "a" in x["payload"]["k2"]["k2b"] and x["payload"]["k2"]["k2b"]["a"] == payload["k2"]["k2b"]["a"] and
             not get_value_from_payload_diffs("k2/k2b/a", x[processing][0]["payload"]) and
             get_value_from_payload_diffs("k2/k2b/b", x[processing][0]["payload"]) == 3 and
             get_value_from_payload_diffs("k2/k2b/c", x[processing][0]["payload"]) == 4 and
             not get_value_from_payload_diffs("k2", x[processing][0]["payload"], default_value=None)
-=======
-            "k3" in x[processing][0].get("payload") and x[processing][0]["payload"].get("k3") == 3 and
-            "a" in x[processing][0]["payload"]["k2"]["k2b"] and x[processing][0]["payload"]["k2"]["k2b"].get("a") == 1 and
-            x[processing][0]["payload"]["k2"]["k2b"].get("b") == 3 and
-            "c" in x[processing][0]["payload"]["k2"]["k2b"] and x[processing][0]["payload"]["k2"]["k2b"].get("c") == 4
->>>>>>> 30e47a7d0c47c64d0dc75ce776423c0170f9da82
         )
     )
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-alter-payload" and _assert(
             "test-update-2",
-<<<<<<< HEAD
             get_value_from_payload_diffs("k1", x[processing][1]["payload"]) == 0 and
             get_value_from_payload_diffs("k3", x[processing][1]["payload"]) == 4 and
             get_value_from_payload_diffs("k4", x[processing][1]["payload"]) == -1
-=======
-            x[processing][1]["payload"].get("k1") == 0 and
-            x[processing][1]["payload"].get("k3") == 4 and
-            x[processing][1]["payload"].get("k4") == -1
->>>>>>> 30e47a7d0c47c64d0dc75ce776423c0170f9da82
         )
     )
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-alter-payload" and _assert(
             "test-update-3",
-<<<<<<< HEAD
             get_value_from_payload_diffs("k4", x[processing][1]["payload"]) == 0
-=======
-            x[processing][1]["payload"].get("k4") == 0
->>>>>>> 30e47a7d0c47c64d0dc75ce776423c0170f9da82
         )
     )
 
@@ -292,4 +272,3 @@ def test_subject_functions(subject, router, asserted):
     assert "test-muted-property" not in asserted
     assert "test-direct-property" in asserted
     assert "test-multi-set-properties-unmuted" in asserted
-

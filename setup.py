@@ -7,11 +7,7 @@ def read(fname):
 
 setup(
     name='krules-core',
-<<<<<<< HEAD
     version="0.2.4",
-=======
-    version="0.2.0",
->>>>>>> 30e47a7d0c47c64d0dc75ce776423c0170f9da82
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules Python core package",
@@ -29,10 +25,7 @@ setup(
         'dependency-injector>=3.14.8',
         'rx==1.6.1',
         'wrapt>=1.11.2',
-<<<<<<< HEAD
         'jsonpatch==1.26',
-=======
->>>>>>> 30e47a7d0c47c64d0dc75ce776423c0170f9da82
         'jsonpath-rw-ext==1.2.2',
     ],
     setup_requires=[
