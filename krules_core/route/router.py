@@ -9,34 +9,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-
-from multiprocessing import Process
-
 import logging
 import socket
 
 logger = logging.getLogger("__router__")
 
-class DispatchPolicyConst:
 
+class DispatchPolicyConst:
     DEFAULT = "default"
     ALWAYS = "always"
     NEVER = "never"
     DIRECT = "direct"
 
-from multiprocessing import Pool
-
-
-
 
 class MessageRouter(object):
 
-    def __init__(self, multiprocessing=False, wait_for_termination=False):
+    def __init__(self):
         self._callables = {}
-        # TODO: remove multiprocessing !!!!
-        self._multiproc = multiprocessing
-        self._wait_for_termination = wait_for_termination
 
     def register(self, rule, message):
         logger.debug("register {0} for {1}".format(rule, message))
@@ -69,34 +58,20 @@ class MessageRouter(object):
 
         from ..providers import message_dispatcher_factory
 
-        jobs = []
-
         _callables = self._callables.get(message, None)
 
-#        try:
+        #        try:
         if not dispatch_policy == DispatchPolicyConst.DIRECT:
             if _callables is not None:
-                if self._multiproc:
-                    for _callable in _callables:
-                        p = Process(target=_callable, args=(message, subject, payload))
-                        p.start()
-                        jobs.append(p)
-                else:
-                    for _callable in _callables:
-                        _callable(message, subject, payload)
-
-        if self._multiproc and self._wait_for_termination:
-            for job in jobs:
-                job.join()
-#        finally:
-#            subject.store()
+                for _callable in _callables:
+                    _callable(message, subject, payload)
+        #        finally:
+        #            subject.store()
 
         # TODO: unit test (policies)
         if dispatch_policy != DispatchPolicyConst.NEVER and _callables is None \
                 and dispatch_policy == DispatchPolicyConst.DEFAULT \
                 or dispatch_policy == DispatchPolicyConst.ALWAYS \
                 or dispatch_policy == DispatchPolicyConst.DIRECT:
-
-                logger.debug("dispatch {} to {} with payload {}".format(message, subject, payload))
-                return message_dispatcher_factory().dispatch(message, subject, payload)
-
+            logger.debug("dispatch {} to {} with payload {}".format(message, subject, payload))
+            return message_dispatcher_factory().dispatch(message, subject, payload)
