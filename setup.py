@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name='krules-dispatcher-cloudevents',
-    version="0.2.9",
+    version="0.2.10",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules cloudevents dispatcher",
