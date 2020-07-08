@@ -1,0 +1,3 @@
+dependency-injector>=3.14.8
+cloudstorage==0.10.0
+jsonpatch==1.26
