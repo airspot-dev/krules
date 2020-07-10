@@ -373,7 +373,7 @@ The last rule needs some more explanation. Because when an event is emitted it i
 ## Observability and errors management
 Everything is an event, also the very fact that a rule is processed is itself an event. This is because the rules, during their processing, produce a detail metric, in the form of an event, relative to each process step of the pipeline in which they are contained.
 ```
-{'_event_info': {'Id': '393b237d-2529-46d4-865f-42bd6612bd73',
+{'event_info': {'Id': '393b237d-2529-46d4-865f-42bd6612bd73',
                  'Knativearrivaltime': '2020-06-15T09:44:52.668735338Z',
                  'Knativehistory': 'default-kne-trigger-kn-channel.iot-demo-gcp-01.svc.cluster.local',
                  'Originid': '393b237d-2529-46d4-865f-42bd6612bd73',
@@ -386,34 +386,12 @@ Everything is an event, also the very fact that a rule is processed is itself an
  'filters': [{'args': ['onboarding/import/(?P<deviceclass>.+)/(?P<filename>.+)'],
               'func_name': 'CheckSubjectMatch',
                'kwargs': {'payload_dest': 'path_info'},
-               'payload': {'bucket': 'krules-dev-demo-02',
-                           'contentType': 'text/csv',
-                           'id': 'krules-dev-demo-02/onboarding/import/class-b/nonsense.csv/1592214290865122',
-                           'kind': 'storage#object',
-                           'name': 'onboarding/import/class-b/nonsense.csv',
-                           'path_info': {'deviceclass': 'class-b',
-                                         'filename': 'nonsense.csv'},
-                           'size': '60',
-                           'storageClass': 'STANDARD',
-                           'timeCreated': '2020-06-15T09:44:50.864Z',
-                           'timeStorageClassUpdated': '2020-06-15T09:44:50.864Z',
-                           'updated': '2020-06-15T09:44:50.864Z'},
+               'payload_diffs': [],
                'returns': True},
               {'args': ['True'],
                'func_name': 'IsTrue',
                'kwargs': {},
-               'payload': {'bucket': 'krules-dev-demo-02',
-                           'contentType': 'text/csv',
-                           'id': 'krules-dev-demo-02/onboarding/import/class-b/nonsense.csv/1592214290865122',
-                           'kind': 'storage#object',
-                           'name': 'onboarding/import/class-b/nonsense.csv',
-                           'path_info': {'deviceclass': 'class-b',
-                                         'filename': 'nonsense.csv'},
-                           'size': '60',
-                           'storageClass': 'STANDARD',
-                           'timeCreated': '2020-06-15T09:44:50.864Z',
-                           'timeStorageClassUpdated': '2020-06-15T09:44:50.864Z',
-                            'updated': '2020-06-15T09:44:50.864Z'},
+               'payload_diffs': [],
               'returns': True}],
  'got_errors': True,
  'message': 'com.google.cloud.storage.object.finalize',
@@ -441,24 +419,13 @@ Everything is an event, also the very fact that a rule is processed is itself an
                  'kwargs': {'bucket': 'krules-dev-demo-02',
                  'driver': <class 'abc.ABCMeta'>,
                  'func': '<lambda>'},
-                 'payload': {'bucket': 'krules-dev-demo-02',
-                             'contentType': 'text/csv',
-                             'id': 'krules-dev-demo-02/onboarding/import/class-b/nonsense.csv/1592214290865122',
-                             'kind': 'storage#object',
-                             'name': 'onboarding/import/class-b/nonsense.csv',
-                             'path_info': {'deviceclass': 'class-b',
-                                           'filename': 'nonsense.csv'},
-                             'size': '60',
-                             'storageClass': 'STANDARD',
-                             'timeCreated': '2020-06-15T09:44:50.864Z',
-                             'timeStorageClassUpdated': '2020-06-15T09:44:50.864Z',
-                             'updated': '2020-06-15T09:44:50.864Z'},
+                 'payload_diffs': [],
                  'returns': None}],
  'rulename': 'on-csv-upload-import-devices-error',
  'subject': 'onboarding/import/class-b/nonsense.csv'}
 ```
 
-As we can see in this trace event, referring to the rule of the csv loading in the previous example, the payload is altered during the blocks execution (acquiring information such as the file name and the device class). We focus on the **got_errors** entry, which indicates whether or not an exception was raised during the execution of the rule. In this case it is _True_ and that means that some problems was encountered during the rule execution (maybe for a badly formatted or even damaged file). Furthermore, while the metrics of the rules that have been executed correctly have remained unchanged, all the information useful for managing them has been added to the metrics of the rule that generated the exception: the exception type, the exception args and the stack trace. Now we can implemented a logic to handle rulessets exceptions in a general way. 
+As we can see in this trace event, referring to the rule of the csv loading in the previous example, the payload was altered during the blocks execution (acquiring information such as the file name and the device class). We focus on the **got_errors** entry, which indicates whether or not an exception was raised during the execution of the rule. In this case it is _True_ and that means that some problems was encountered during the rule execution (maybe for a badly formatted or even damaged file). Furthermore, while the metrics of the rules that have been executed correctly have remained unchanged, all the information useful for managing them has been added to the metrics of the rule that generated the exception: the exception type, the exception args and the stack trace. Now we can implemented a logic to handle rulessets exceptions in a general way. 
 
 ```python
 rulesdata = [
