@@ -54,7 +54,7 @@ class Rule:
             del dd[Const.SUBJECT]
             del dd[Const.RULE_NAME]
             del dd[Const.SECTION]
-            dd[Const.PAYLOAD].pop("_event_info", None)
+            dd.get(Const.PAYLOAD, {}).pop("_event_info", None)
             return dd
 
         def __copy_list(ll):
@@ -106,7 +106,7 @@ class Rule:
             Const.EVENT_INFO: event_info,
         }
 
-        last_payload = payload
+        last_payload = __copy(payload)
 
         res_in = {}
         try:
@@ -136,7 +136,7 @@ class Rule:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
                     raise TypeError(msg + str(ex))
 
-                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload)
+                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload).patch
                 last_payload = __copy(payload)
                 res_out = {
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
@@ -145,12 +145,12 @@ class Rule:
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD_DIFFS: payload_patches.patch,
+                    Const.PAYLOAD_DIFFS: payload_patches,
                     Const.ARGS: res_in[Const.ARGS],
                     Const.KWARGS: res_in[Const.KWARGS],
                     Const.RETURNS: res
                 }
-                logger.debug("< processed: {0}".format({'payload': res_out[Const.PAYLOAD], 'returns': res_out[Const.RETURNS]}))
+                logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS], 'returns': res_out[Const.RETURNS]}))
                 res_full[Const.FILTERS].append(__clean(res_out))
                 if not res:
                     res_full[Const.PROCESSED] = False
@@ -184,7 +184,7 @@ class Rule:
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
                     raise TypeError(msg + str(ex))
-                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload)
+                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload).patch
                 last_payload = __copy(payload)
                 res_out = {
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
@@ -193,12 +193,12 @@ class Rule:
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD_DIFFS: payload_patches.patch,
+                    Const.PAYLOAD_DIFFS: payload_patches,
                     Const.ARGS: res_in[Const.ARGS],
                     Const.KWARGS: res_in[Const.KWARGS],
                     Const.RETURNS: res,
                 }
-                logger.debug("< processed: {0}".format({'payload': res_out[Const.PAYLOAD], 'returns': res_out[Const.RETURNS]}))
+                logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS], 'returns': res_out[Const.RETURNS]}))
                 res_full[Const.PROCESSING].append(__clean(res_out))
 
             results_rx.on_next(res_full)
@@ -206,8 +206,7 @@ class Rule:
         except Exception as e:
             logger.error("catched exception of type {0} ({1})".format(type(e), getattr(e, 'message', str(e))))
             if results_rx:
-                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload)
-
+                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload).patch
                 type_, value_, traceback_ = sys.exc_info()
                 res_out = {
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
@@ -216,7 +215,7 @@ class Rule:
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD_DIFFS: payload_patches.patch,
+                    Const.PAYLOAD_DIFFS: payload_patches,
                     Const.ARGS: res_in[Const.ARGS],
                     Const.KWARGS: res_in[Const.KWARGS],
                     Const.RETURNS: None,
