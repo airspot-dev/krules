@@ -106,7 +106,7 @@ class Rule:
             Const.EVENT_INFO: event_info,
         }
 
-        last_payload = payload_copy
+        last_payload = payload
 
         res_in = {}
         try:
