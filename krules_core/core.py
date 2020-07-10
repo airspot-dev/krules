@@ -145,9 +145,7 @@ class Rule:
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD: {
-                        Const.PAYLOAD_DIFFS: payload_patches.patch
-                    },
+                    Const.PAYLOAD_DIFFS: payload_patches.patch,
                     Const.ARGS: res_in[Const.ARGS],
                     Const.KWARGS: res_in[Const.KWARGS],
                     Const.RETURNS: res
@@ -195,9 +193,7 @@ class Rule:
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD: {
-                        Const.PAYLOAD_DIFFS: payload_patches.patch
-                    },
+                    Const.PAYLOAD_DIFFS: payload_patches.patch,
                     Const.ARGS: res_in[Const.ARGS],
                     Const.KWARGS: res_in[Const.KWARGS],
                     Const.RETURNS: res,
@@ -220,9 +216,7 @@ class Rule:
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD: {
-                        Const.PAYLOAD_DIFFS: payload_patches.patch
-                    },
+                    Const.PAYLOAD_DIFFS: payload_patches.patch,
                     Const.ARGS: res_in[Const.ARGS],
                     Const.KWARGS: res_in[Const.KWARGS],
                     Const.RETURNS: None,
