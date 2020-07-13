@@ -106,16 +106,16 @@ def test_pycall(subject, router, asserted):
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-pycall-no-error" and _assert(
             x[rule_name],
-            get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload"], default_value=None) == [2, 1]
-            and not get_value_from_payload_diffs("got_errors", x[processing][0]["payload"], default_value=False)
+            get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) == [2, 1]
+            and not get_value_from_payload_diffs("got_errors", x[processing][0]["payload_diffs"], default_value=False)
         )
     )
 
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-pycall-with-error" and _assert(
             x[rule_name],
-            not get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload"], default_value=None) and
-            get_value_from_payload_diffs("got_errors", x[processing][0]["payload"], default_value=False)
+            not get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) and
+            get_value_from_payload_diffs("got_errors", x[processing][0]["payload_diffs"], default_value=False)
         )
     )
 

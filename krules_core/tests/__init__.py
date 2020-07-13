@@ -1,9 +1,8 @@
 from .. import RuleConst
 
 
-def get_value_from_payload_diffs(key, payload, default_value=None):
-    print("@@@@@@@@@@@@@@@", payload)
-    for patch in payload[RuleConst.PAYLOAD_DIFFS]:
+def get_value_from_payload_diffs(key, payload_diffs, default_value=None):
+    for patch in payload_diffs:
         if patch["path"] == "/%s" % key and patch["op"] in ("add", "replace"):
             return patch["value"]
     return default_value

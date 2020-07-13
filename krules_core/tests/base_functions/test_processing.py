@@ -93,26 +93,26 @@ def test_payload_functions(subject, router, asserted):
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-alter-payload" and _assert(
             "test-update-1",
-            get_value_from_payload_diffs("k3", x[processing][0]["payload"]) == 3 and
+            get_value_from_payload_diffs("k3", x[processing][0]["payload_diffs"]) == 3 and
             "a" in x["payload"]["k2"]["k2b"] and x["payload"]["k2"]["k2b"]["a"] == payload["k2"]["k2b"]["a"] and
-            not get_value_from_payload_diffs("k2/k2b/a", x[processing][0]["payload"]) and
-            get_value_from_payload_diffs("k2/k2b/b", x[processing][0]["payload"]) == 3 and
-            get_value_from_payload_diffs("k2/k2b/c", x[processing][0]["payload"]) == 4 and
-            not get_value_from_payload_diffs("k2", x[processing][0]["payload"], default_value=None)
+            not get_value_from_payload_diffs("k2/k2b/a", x[processing][0]["payload_diffs"]) and
+            get_value_from_payload_diffs("k2/k2b/b", x[processing][0]["payload_diffs"]) == 3 and
+            get_value_from_payload_diffs("k2/k2b/c", x[processing][0]["payload_diffs"]) == 4 and
+            not get_value_from_payload_diffs("k2", x[processing][0]["payload_diffs"], default_value=None)
         )
     )
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-alter-payload" and _assert(
             "test-update-2",
-            get_value_from_payload_diffs("k1", x[processing][1]["payload"]) == 0 and
-            get_value_from_payload_diffs("k3", x[processing][1]["payload"]) == 4 and
-            get_value_from_payload_diffs("k4", x[processing][1]["payload"]) == -1
+            get_value_from_payload_diffs("k1", x[processing][1]["payload_diffs"]) == 0 and
+            get_value_from_payload_diffs("k3", x[processing][1]["payload_diffs"]) == 4 and
+            get_value_from_payload_diffs("k4", x[processing][1]["payload_diffs"]) == -1
         )
     )
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-alter-payload" and _assert(
             "test-update-3",
-            get_value_from_payload_diffs("k4", x[processing][1]["payload"]) == 0
+            get_value_from_payload_diffs("k4", x[processing][1]["payload_diffs"]) == 0
         )
     )
 

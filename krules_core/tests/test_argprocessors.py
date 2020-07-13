@@ -9,17 +9,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
+import rx
+from dependency_injector import providers
 
 from krules_core import RuleConst
 from krules_core.base_functions import RuleFunctionBase, inspect
 from krules_core.core import RuleFactory
-from krules_core.providers import message_router_factory, subject_factory
+from krules_core.providers import message_router_factory, subject_factory, results_rx_factory
 
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
 rule_name = RuleConst.RULE_NAME
 processed = RuleConst.PROCESSED
 
+@pytest.fixture
+def router():
+    router = message_router_factory()
+    router.unregister_all()
+    results_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+
+    return message_router_factory()
+
+def _assert(expr):
+    assert expr
+    return True
 
 def test_simple_callable():
 
@@ -45,6 +58,14 @@ def test_simple_callable():
 
     payload = {}
     message_router_factory().route("test-argprocessors-callables", "test-0", payload)
+
+    results_rx_factory().subscribe(
+        lambda x: x[rule_name] == "test-simple-callable" and _assert(
+            x[processing][0]["args"][0] == 1
+            and x[processing][0]["kwargs"]["arg3"] == 3
+            and x[processing][0]["kwargs"]["arg4"] == 4
+            and hasattr(x[processing][0]["kwargs"]["arg5"], "__call__"))
+    )
 
     assert payload["arg1"] == 1
     assert payload["arg2"] == 2
@@ -82,6 +103,13 @@ def test_with_self():
 
     message_router_factory().route("test-argprocessors-self", subject, payload)
 
+    results_rx_factory().subscribe(
+        lambda x: x[rule_name] == "test-with-self" and _assert(
+            x[processing][0]["args"][0] == 1
+            and x[processing][0]["kwargs"]["arg2"] == 2
+            and hasattr(x[processing][0]["kwargs"]["arg3"], "__call__"))
+    )
+
     assert payload["arg1"] == 1
     assert payload["arg2"] == 2
     assert inspect.isfunction(payload["arg3"])
@@ -115,6 +143,12 @@ def test_with_payload_and_subject():
     _subject.set("value_from", 2)
 
     message_router_factory().route("test-argprocessors-payload-and-subject", _subject, _payload)
+
+    results_rx_factory().subscribe(
+        lambda x: x[rule_name] == "test-with-payload-and-subject" and _assert(
+            x[processing][0]["args"][0] == 1 and x[processing][0]["kwargs"]["arg2"] == 2
+            and hasattr(x[processing][0]["kwargs"]["arg3"], "__call__"))
+    )
 
     assert _payload["arg1"] == 1
     assert _payload["arg2"] == 2
@@ -181,6 +215,12 @@ def test_extend_jp_match():
     }
 
     message_router_factory().route("test-argprocessors-jp-match", "test-0", payload)
+
+    results_rx_factory().subscribe(
+        lambda x: x[rule_name] == "test-with-jp-expr" and _assert(
+            x[processing][0]["args"][0] == ['a', 'b']
+            and x[processing][0]["args"][1] == {"id": 2, "value": "b"})
+    )
 
     assert payload["values"] == ['a', 'b']
     assert payload["elem-2"]["id"] == 2 and payload["elem-2"]["value"] == "b"
