@@ -109,6 +109,8 @@ class Rule:
         last_payload = __copy(payload)
 
         res_in = {}
+        processed_args = {}
+        processed_kwargs = {}
         try:
             for _c in self._filters:
                 if inspect.isclass(_c):
@@ -131,7 +133,9 @@ class Rule:
                 }
                 logger.debug("> processing: {0}".format(res_in))
                 try:
-                    res = _cinst.execute(*_c._get_args(_cinst), **_c._get_kwargs(_cinst))
+                    processed_args = _c._get_args(_cinst)
+                    processed_kwargs = _c._get_kwargs(_cinst)
+                    res = _cinst.execute(*processed_args, **processed_kwargs)
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
                     raise TypeError(msg + str(ex))
@@ -146,8 +150,8 @@ class Rule:
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
                     Const.PAYLOAD_DIFFS: payload_patches,
-                    Const.ARGS: res_in[Const.ARGS],
-                    Const.KWARGS: res_in[Const.KWARGS],
+                    Const.ARGS: processed_args,
+                    Const.KWARGS: processed_kwargs,
                     Const.RETURNS: res
                 }
                 logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS], 'returns': res_out[Const.RETURNS]}))
@@ -180,7 +184,9 @@ class Rule:
                 }
                 logger.debug("> processing: {0}".format(res_in))
                 try:
-                    res = _cinst.execute(*_c._get_args(_cinst), **_c._get_kwargs(_cinst))
+                    processed_args = _c._get_args(_cinst)
+                    processed_kwargs = _c._get_kwargs(_cinst)
+                    res = _cinst.execute(*processed_args, **processed_kwargs)
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
                     raise TypeError(msg + str(ex))
@@ -194,8 +200,8 @@ class Rule:
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
                     Const.PAYLOAD_DIFFS: payload_patches,
-                    Const.ARGS: res_in[Const.ARGS],
-                    Const.KWARGS: res_in[Const.KWARGS],
+                    Const.ARGS: processed_args,
+                    Const.KWARGS: processed_kwargs,
                     Const.RETURNS: res,
                 }
                 logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS], 'returns': res_out[Const.RETURNS]}))
@@ -216,8 +222,8 @@ class Rule:
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
                     Const.PAYLOAD_DIFFS: payload_patches,
-                    Const.ARGS: res_in[Const.ARGS],
-                    Const.KWARGS: res_in[Const.KWARGS],
+                    Const.ARGS: processed_args,
+                    Const.KWARGS: processed_kwargs,
                     Const.RETURNS: None,
                     Const.EXCEPTION: ".".join([type(e).__module__, type(e).__name__]),
                     Const.EXC_INFO: traceback.format_exception(type_, value_, traceback_),
