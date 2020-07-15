@@ -15,7 +15,7 @@ import rx
 from dependency_injector import providers
 from krules_core import RuleConst
 from krules_core.base_functions import UpdatePayload, SetPayloadProperties, SetPayloadProperty, SetSubjectProperty, \
-    OnSubjectPropertyChanged, SetSubjectExtendedProperty, SetSubjectPropertySilently, StoreSubjectProperty, \
+    SubjectPropertyChanged, SetSubjectExtendedProperty, SetSubjectPropertySilently, StoreSubjectProperty, \
     RuleFunctionBase, StoreSubjectPropertySilently, SetSubjectProperties, IncrementSubjectProperty, \
     DecrementSubjectProperty, IncrementSubjectPropertySilently, DecrementSubjectPropertySilently
 
@@ -166,7 +166,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
-                OnSubjectPropertyChanged("my_prop", lambda value, old_value: value == 1 and old_value is None)
+                SubjectPropertyChanged("my_prop", lambda value, old_value: value == 1 and old_value is None)
             ]
         }
     )
@@ -175,7 +175,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
-                OnSubjectPropertyChanged("something_to_say")
+                SubjectPropertyChanged("something_to_say")
             ]
         }
     )
@@ -184,7 +184,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
-                OnSubjectPropertyChanged("my_prop_2", lambda value, old_value: value == 2 and old_value is None)
+                SubjectPropertyChanged("my_prop_2", lambda value, old_value: value == 2 and old_value is None)
             ]
         }
     )
@@ -193,7 +193,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
-                OnSubjectPropertyChanged("my_prop_3")
+                SubjectPropertyChanged("my_prop_3")
             ]
         }
     )
@@ -202,7 +202,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
-                OnSubjectPropertyChanged("my_prop_4")
+                SubjectPropertyChanged("my_prop_4")
             ]
         }
     )
@@ -211,7 +211,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
-                OnSubjectPropertyChanged(lambda p: p in ("my_silent_prop_5", "my_silent_prop_6"))
+                SubjectPropertyChanged(lambda p: p in ("my_silent_prop_5", "my_silent_prop_6"))
             ]
         }
     )

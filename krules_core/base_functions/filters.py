@@ -15,6 +15,7 @@ from krules_core.subject import PayloadConst
 from krules_core.base_functions import RuleFunctionBase
 import inspect
 
+
 class Returns(RuleFunctionBase):
     """
     Simply returns expression
@@ -56,7 +57,7 @@ class IsFalse(Returns):
         return not bool(super().execute(expression))
 
 
-class CheckSubjectMatch(RuleFunctionBase):
+class SubjectMatch(RuleFunctionBase):
     """
     Checks if the subject's name matches the **regular expression**
     """
@@ -75,7 +76,7 @@ class CheckSubjectMatch(RuleFunctionBase):
         return True
 
 
-class CheckSubjectDoesNotMatch(CheckSubjectMatch):
+class SubjectDoesNotMatch(SubjectMatch):
     """
     Opposite of CheckSubjectMatch
     """
@@ -118,37 +119,7 @@ class CheckSubjectProperty(RuleFunctionBase):
         return _get(property_name, cached=cached) == property_value
 
 
-class CheckStoredSubjectProperty(CheckSubjectProperty):
-    """
-    Same as CheckSubjectProperty but explicitily bypass cache
-    """
-
-    def execute(self, property_name, property_value=lambda _none_: None, extended=False, **kwargs):
-
-        return super().execute(property_name, property_value, cached=False, extended=extended)
-
-
-class CheckSubjectExtendedProperty(CheckSubjectProperty):
-    """
-    Same as CheckSubjectProperty but explicitly for extended properties
-    """
-
-    def execute(self, property_name, property_value=lambda _none_: None, cached=True, **kwargs):
-
-        return super().execute(property_name, property_value, extended=True, cached=cached)
-
-
-class CheckStoredSubjectExtendedProperty(CheckSubjectExtendedProperty):
-    """
-    Same as CheckSubjectExtendedProperty but explicitly bypass subject cache
-    """
-
-    def execute(self, property_name, property_value=lambda _none_: None, **kwargs):
-
-        return super().execute(property_name, property_value, cached=False)
-
-
-class CheckPayloadMatch(RuleFunctionBase):
+class PayloadJPMatch(RuleFunctionBase):
     """
     It allows to process the payload with a jsonpath expression to check its content and possibly isolate part of it
     in a target variable
@@ -194,7 +165,7 @@ class CheckPayloadMatch(RuleFunctionBase):
         return matched
 
 
-class CheckPayloadMatchOne(CheckPayloadMatch):
+class PayloadJPMatchOne(PayloadJPMatch):
     """
     Same as CheckPayloadJPMatch but expects just one element as result
     """
@@ -208,7 +179,7 @@ class CheckPayloadMatchOne(CheckPayloadMatch):
         return super().execute(jp_expr, match_value, payload_dest, True)
 
 
-class OnSubjectPropertyChanged(RuleFunctionBase):
+class SubjectPropertyChanged(RuleFunctionBase):
     """
     Catch the event subject property changed
     """
@@ -279,7 +250,3 @@ class OnSubjectPropertyChanged(RuleFunctionBase):
             return False
 
         return True
-
-
-
-

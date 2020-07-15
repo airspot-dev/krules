@@ -13,10 +13,6 @@ import pytest
 import rx
 from dependency_injector import providers
 from krules_core import RuleConst
-from krules_core.base_functions import UpdatePayload, SetPayloadProperties, SetPayloadProperty, SetSubjectProperty, \
-    OnSubjectPropertyChanged, SetSubjectExtendedProperty, SetSubjectPropertySilently, StoreSubjectProperty, \
-    RuleFunctionBase, StoreSubjectPropertySilently, SetSubjectProperties, IncrementSubjectProperty, \
-    DecrementSubjectProperty, IncrementSubjectPropertySilently, DecrementSubjectPropertySilently
 from krules_core.base_functions.misc import PyCall
 
 from krules_core.core import RuleFactory
