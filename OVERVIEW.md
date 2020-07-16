@@ -37,9 +37,9 @@ An extended property is more like a subject’s metadata. For example, if we are
 
 And now let's move on to some practical examples. 
 
-Each rulesset resides on a Pod where is deployed the KRules base environment. We can  open a python interactive shell on a Pod _rulesset_ container to show some concepts more practically:
+Each ruleset resides on a Pod where is deployed the KRules base environment. We can  open a python interactive shell on a Pod _ruleset_ container to show some concepts more practically:
 ```sh
-kubectl exec my-rulesset-pod -c rulesset -ti ipython  
+kubectl exec my-ruleset-pod -c ruleset -ti ipython  
 ```
 The first step is to create a new subject:
 ```python
@@ -64,7 +64,7 @@ Validation: valid
 Context Attributes,
   specversion: 1.0
   type: subject-property-changed
-  source: my-rulesset
+  source: my-ruleset
   subject: foo
   id: bd198e83-9d7e-4e93-a9ae-aa21a40383c6
   time: 2020-06-16T08:16:57.340692Z
@@ -93,7 +93,7 @@ First of all the event **type**. Each time a subject property is assigned or mod
 
 As you can see, the event also contains a extension called propertyname which indicates the name of the altered property. Through these attributes we are thus able to subscribe to all events relating to a variation of this property. As we will see later, it is possible to create additional attributes (as extensions) to give a more specific classification of the event, or more properly, of the related subject
 
-Note that the name of the altered property is repeated both in the payload and as an extended property. This happens because at the transport and addressing level of the event the content of the message is not taken into account, it is instead used by the service that consumes the event (in our case a rulesset).
+Note that the name of the altered property is repeated both in the payload and as an extended property. This happens because at the transport and addressing level of the event the content of the message is not taken into account, it is instead used by the service that consumes the event (in our case a ruleset).
 
 Looking at the content of the payload you can see how the event contains, in addition the name of the property and the new value of it, also the old property value. This is very useful when you want to implement a logic established not just on the new value of the property but also on its transitions. 
 
@@ -131,7 +131,7 @@ The temp_status property transition could therefore activate further rules by tr
 
 
 ### Rules
-**Rules** are grouped into **rulessets**. The rulessets are in fact the microservices that are deployed on the cluster and respond independently to specific events type and attributes thank to Knative's triggers. There are no particular constraints on the establishment of these triggers or on what events are to be received by a rulesset. The more granular the definition of the triggers and the corresponding rulessets will be, the more resilient the resulting system will be as each service, or better said, each rulesset, is scalable independently. Inside the rulesset we can have more rules each one subscribing to different event types (if captured by the triggers) and with different activation criteria based on the received payload. Each rule, is always contextualized to a subject.
+**Rules** are grouped into **rulesets**. The rulesets are in fact the microservices that are deployed on the cluster and respond independently to specific events type and attributes thank to Knative's triggers. There are no particular constraints on the establishment of these triggers or on what events are to be received by a ruleset. The more granular the definition of the triggers and the corresponding rulesets will be, the more resilient the resulting system will be as each service, or better said, each ruleset, is scalable independently. Inside the ruleset we can have more rules each one subscribing to different event types (if captured by the triggers) and with different activation criteria based on the received payload. Each rule, is always contextualized to a subject.
 
 Events can be produced outside or inside the cluster 
 
@@ -147,13 +147,13 @@ So, what is the **source**? Who is the **subject**? What type of event is **prod
 
 The source is the bucket on which the file is uploaded because the presence of a new file on the bucket can be intended as an event (the type of of the event is the _finalization_ of a write operation). The subject, however, is the file itself.
 
-In the specific case, we assumed to use a GCP bucket where an [already made source](https://github.com/google/knative-gcp/blob/master/docs/examples/cloudstoragesource/README.md) implementation allows us to have a complete abstraction on the bucket and all the stuffs needed to get the event into our rulesset.
+In the specific case, we assumed to use a GCP bucket where an [already made source](https://github.com/google/knative-gcp/blob/master/docs/examples/cloudstoragesource/README.md) implementation allows us to have a complete abstraction on the bucket and all the stuffs needed to get the event into our ruleset.
 
-Once the event has been produced we intercept it in a rule, where, after downloading the file, for each line it contains, a new event addressed to each device (the new **subject**) of **type** _onboard-device_ will be emitted. Some other one or more rule, in the same or another rulesset, will be able to catch that new event activating his own logic (maybe a notification to another system or the effective registration inside the IoT middleware's device manager)
+Once the event has been produced we intercept it in a rule, where, after downloading the file, for each line it contains, a new event addressed to each device (the new **subject**) of **type** _onboard-device_ will be emitted. Some other one or more rule, in the same or another ruleset, will be able to catch that new event activating his own logic (maybe a notification to another system or the effective registration inside the IoT middleware's device manager)
 
 Let’s see it
 
-The following is the data structure defining rules and it is loaded at the startup of the rulesset container. 
+The following is the data structure defining rules and it is loaded at the startup of the ruleset container. 
 
 ```python
 rulesdata = [
@@ -194,7 +194,7 @@ rulesdata = [
     # ... more rules
 ]
 ```
-So the rulesset data is loaded just one time and it is static (potentially it can be even injected from the outside). However, the blocks it contains need to access runtime information that are available when an event is processed. We will come back to this later, now let's see how a rule is composed in detail.
+So the ruleset data is loaded just one time and it is static (potentially it can be even injected from the outside). However, the blocks it contains need to access runtime information that are available when an event is processed. We will come back to this later, now let's see how a rule is composed in detail.
 
 The rule is up of 2 sections: **filters** and **processing**.
 
@@ -233,7 +233,7 @@ class ProcessCSV_AsDict(RuleFunctionBase):
                                  # to make the state of the object 
                                  # accessible at the execution time
 ```
-Classes derived from **RuleFunctionBase** are meta classes statically created together with the definition of the rulesset. The performing instance is created during each pipeline execution while the runtime information are injected into the object. In fact, as can be seen in the example, the payload properties are treated internally in the execute method. 
+Classes derived from **RuleFunctionBase** are meta classes statically created together with the definition of the ruleset. The performing instance is created during each pipeline execution while the runtime information are injected into the object. In fact, as can be seen in the example, the payload properties are treated internally in the execute method. 
 
 So, in the previous example, we produced an event _onboard-device_ type. Here the subject is the device and the payload contains all the initial data obtained from the csv. Somewhere in the cloud we can now intercept this event and finally setup the basic properties of each new onboarded device.
 
@@ -425,7 +425,7 @@ Everything is an event, also the very fact that a rule is processed is itself an
  'subject': 'onboarding/import/class-b/nonsense.csv'}
 ```
 
-As we can see in this trace event, referring to the rule of the csv loading in the previous example, the payload was altered during the blocks execution (acquiring information such as the file name and the device class). We focus on the **got_errors** entry, which indicates whether or not an exception was raised during the execution of the rule. In this case it is _True_ and that means that some problems was encountered during the rule execution (maybe for a badly formatted or even damaged file). Furthermore, while the metrics of the rules that have been executed correctly have remained unchanged, all the information useful for managing them has been added to the metrics of the rule that generated the exception: the exception type, the exception args and the stack trace. Now we can implemented a logic to handle rulessets exceptions in a general way. 
+As we can see in this trace event, referring to the rule of the csv loading in the previous example, the payload was altered during the blocks execution (acquiring information such as the file name and the device class). We focus on the **got_errors** entry, which indicates whether or not an exception was raised during the execution of the rule. In this case it is _True_ and that means that some problems was encountered during the rule execution (maybe for a badly formatted or even damaged file). Furthermore, while the metrics of the rules that have been executed correctly have remained unchanged, all the information useful for managing them has been added to the metrics of the rule that generated the exception: the exception type, the exception args and the stack trace. Now we can implemented a logic to handle rulesets exceptions in a general way. 
 
 ```python
 rulesdata = [
@@ -453,7 +453,7 @@ rulesdata = [
 ]
 ```
 
-In this case we decide to propagate the error message to the rulesset that generated it and delegate to original rulesset the exception handling.
+In this case we decide to propagate the error message to the ruleset that generated it and delegate to original ruleset the exception handling.
 ```python
 rulesdata = [
 
