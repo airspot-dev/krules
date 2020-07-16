@@ -367,10 +367,13 @@ def test_check_payload_match(router, subject, asserted):
     )
     results_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-check-payload-jpmatch-one" and _assert(
-           x[rule_name],
-           x[processed]
-       )
-   )
+            x[rule_name],
+            x[processed]
+            and x[filters][0]["returns"] is True
+            and x[filters][1]["returns"] is True
+            and x[filters][2]["returns"] is True
+        )
+    )
 
     router.route("test-check-payload-jpmatch", subject, payload)
 

@@ -130,10 +130,22 @@ class PayloadJPMatch(RuleFunctionBase):
         Args:
             jp_expr: Jsonpath expression
             payload_dest: If specified store the epression match result in that key in payload
-            match_value: If specified the return value of the jp expression is compared by
-                              determining the filter result. This can be a callable receiving (optionally)
-                              the jp expression value
+            match_value: It can be both the expected value of the jsonpath expression processing or a boolean function
+            that handles the expression result.
             single_match: if True produce a single value as result, a list of values otherwise
+
+        >>> payload = {
+        >>>             "user": "admin",
+        >>>             "data": [{"id": 1, "value": 200}, {"id": 2, "value": 90}, {"id": 3, "value": 250}]}
+        >>>         }
+        >>> PayloadJPMatch("$.user", "admin")
+        >>> False
+        >>> PayloadJPMatch("$.user", "admin", single_match=True)
+        >>> True
+        >>> PayloadJPMatch("$.data[?@.value>100]", [1, 3])
+        >>> False
+        >>> PayloadJPMatch("$.data[?@.value>100]", lambda x: len(x) == 2)
+        >>> True
         """
 
         import jsonpath_rw_ext as jp
@@ -143,7 +155,7 @@ class PayloadJPMatch(RuleFunctionBase):
         if single_match:
             fn = jp.match1
 
-        match =fn(jp_expr, self.payload)
+        match = fn(jp_expr, self.payload)
         if match is not None and len(match):
             matched = True
 
@@ -160,7 +172,7 @@ class PayloadJPMatch(RuleFunctionBase):
 
                 matched = match_value(*args)
         else:
-            matched = match_value
+            matched = match == match_value
 
         return matched
 
