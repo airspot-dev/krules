@@ -1,4 +1,4 @@
-FROM rulesset-image-base-setup
+FROM ruleset-image-base-setup
 
 ADD ./.krules-libs /krules-libs
 ADD ./requirements.txt /krules-libs

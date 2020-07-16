@@ -22,7 +22,7 @@ import io
 from cloudevents.sdk.event import v1
 from cloudevents.sdk import marshaller
 
-app = Flask("rulesset")
+app = Flask("ruleset")
 
 json_logging.ENABLE_JSON_LOGGING = True
 json_logging.init_flask()
@@ -57,6 +57,7 @@ app_env.init()
 m_rules = importlib.import_module("rules")
 
 load_rules_from_rulesdata(m_rules.rulesdata)
+
 
 @app.route('/', methods=['POST'])
 def main():

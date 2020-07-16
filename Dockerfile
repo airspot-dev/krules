@@ -1,5 +1,6 @@
 FROM alpine:3.11.6
 MAINTAINER Airspot <info@airspot.tech>
+
 RUN apk add --no-cache --virtual .build-deps g++ python3-dev && \
     apk add --no-cache build-base && \
     apk add --no-cache --update python3 && \
@@ -8,6 +9,9 @@ RUN apk add --no-cache --virtual .build-deps g++ python3-dev && \
 RUN pip3 install pyyaml anyjson \
     pytest jsonpath-rw jsonpath-rw-ext redis python-dateutil pytz requests gunicorn \
     flask json-logging bumpversion cloudevents==0.3.0
+
+# TODO REMOVE
+RUN pip install pykube-ng time-convert
 
 ADD ./app /app
 
