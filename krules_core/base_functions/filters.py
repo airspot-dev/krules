@@ -142,6 +142,8 @@ class PayloadJPMatch(RuleFunctionBase):
         >>> False
         >>> PayloadJPMatch("$.user", "admin", single_match=True)
         >>> True
+        >>> PayloadJPMatch("$.data[?@.value>100]")
+        >>> True
         >>> PayloadJPMatch("$.data[?@.value>100]", [1, 3])
         >>> False
         >>> PayloadJPMatch("$.data[?@.value>100]", lambda x: len(x) == 2)
