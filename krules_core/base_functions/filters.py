@@ -15,6 +15,7 @@ from krules_core.subject import PayloadConst
 from krules_core.base_functions import RuleFunctionBase
 import inspect
 
+
 class Returns(RuleFunctionBase):
     """
     Simply returns expression
@@ -56,7 +57,7 @@ class IsFalse(Returns):
         return not bool(super().execute(expression))
 
 
-class CheckSubjectMatch(RuleFunctionBase):
+class SubjectMatch(RuleFunctionBase):
     """
     Checks if the subject's name matches the **regular expression**
     """
@@ -75,7 +76,7 @@ class CheckSubjectMatch(RuleFunctionBase):
         return True
 
 
-class CheckSubjectDoesNotMatch(CheckSubjectMatch):
+class SubjectDoesNotMatch(SubjectMatch):
     """
     Opposite of CheckSubjectMatch
     """
@@ -118,37 +119,7 @@ class CheckSubjectProperty(RuleFunctionBase):
         return _get(property_name, cached=cached) == property_value
 
 
-class CheckStoredSubjectProperty(CheckSubjectProperty):
-    """
-    Same as CheckSubjectProperty but explicitily bypass cache
-    """
-
-    def execute(self, property_name, property_value=lambda _none_: None, extended=False, **kwargs):
-
-        return super().execute(property_name, property_value, cached=False, extended=extended)
-
-
-class CheckSubjectExtendedProperty(CheckSubjectProperty):
-    """
-    Same as CheckSubjectProperty but explicitly for extended properties
-    """
-
-    def execute(self, property_name, property_value=lambda _none_: None, cached=True, **kwargs):
-
-        return super().execute(property_name, property_value, extended=True, cached=cached)
-
-
-class CheckStoredSubjectExtendedProperty(CheckSubjectExtendedProperty):
-    """
-    Same as CheckSubjectExtendedProperty but explicitly bypass subject cache
-    """
-
-    def execute(self, property_name, property_value=lambda _none_: None, **kwargs):
-
-        return super().execute(property_name, property_value, cached=False)
-
-
-class CheckPayloadMatch(RuleFunctionBase):
+class PayloadJPMatch(RuleFunctionBase):
     """
     It allows to process the payload with a jsonpath expression to check its content and possibly isolate part of it
     in a target variable
@@ -159,10 +130,24 @@ class CheckPayloadMatch(RuleFunctionBase):
         Args:
             jp_expr: Jsonpath expression
             payload_dest: If specified store the epression match result in that key in payload
-            match_value: If specified the return value of the jp expression is compared by
-                              determining the filter result. This can be a callable receiving (optionally)
-                              the jp expression value
+            match_value: It can be both the expected value of the jsonpath expression processing or a boolean function
+            that handles the expression result.
             single_match: if True produce a single value as result, a list of values otherwise
+
+        >>> payload = {
+        >>>             "user": "admin",
+        >>>             "data": [{"id": 1, "value": 200}, {"id": 2, "value": 90}, {"id": 3, "value": 250}]}
+        >>>         }
+        >>> PayloadJPMatch("$.user", "admin")
+        >>> False
+        >>> PayloadJPMatch("$.user", "admin", single_match=True)
+        >>> True
+        >>> PayloadJPMatch("$.data[?@.value>100]")
+        >>> True
+        >>> PayloadJPMatch("$.data[?@.value>100]", [1, 3])
+        >>> False
+        >>> PayloadJPMatch("$.data[?@.value>100]", lambda x: len(x) == 2)
+        >>> True
         """
 
         import jsonpath_rw_ext as jp
@@ -172,7 +157,7 @@ class CheckPayloadMatch(RuleFunctionBase):
         if single_match:
             fn = jp.match1
 
-        match =fn(jp_expr, self.payload)
+        match = fn(jp_expr, self.payload)
         if match is not None and len(match):
             matched = True
 
@@ -189,12 +174,12 @@ class CheckPayloadMatch(RuleFunctionBase):
 
                 matched = match_value(*args)
         else:
-            matched = match_value
+            matched = match == match_value
 
         return matched
 
 
-class CheckPayloadMatchOne(CheckPayloadMatch):
+class PayloadJPMatchOne(PayloadJPMatch):
     """
     Same as CheckPayloadJPMatch but expects just one element as result
     """
@@ -208,7 +193,7 @@ class CheckPayloadMatchOne(CheckPayloadMatch):
         return super().execute(jp_expr, match_value, payload_dest, True)
 
 
-class OnSubjectPropertyChanged(RuleFunctionBase):
+class SubjectPropertyChanged(RuleFunctionBase):
     """
     Catch the event subject property changed
     """
@@ -279,7 +264,3 @@ class OnSubjectPropertyChanged(RuleFunctionBase):
             return False
 
         return True
-
-
-
-
