@@ -28,25 +28,25 @@ from krules_env.settings_loader import load_from_path
 krules_settings = load_from_path(config_base_path)
 
 
-class _JSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if inspect.isfunction(obj):
-            return obj.__name__
-        elif isinstance(obj, object):
-            return str(type(obj))
-        return json.JSONEncoder.default(self, obj)
+# class _JSONEncoder(json.JSONEncoder):
+#     def default(self, obj):
+#         if inspect.isfunction(obj):
+#             return obj.__name__
+#         elif isinstance(obj, object):
+#             return str(type(obj))
+#         return json.JSONEncoder.default(self, obj)
 
 
 def publish_results_all(result):
 
     from krules_core.types import format_event_type
 
-    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.RESULTS))
+    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.PROCESSING_EVENTS))
     if topic_name == "-":
         return
 
-    data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
-
+    # data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
+    data = result
     event_info = data.get("event_info", {})
     result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
 
@@ -59,14 +59,15 @@ def publish_results_errors(result):
 
     from krules_core.types import format_event_type
 
-    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.RESULTS))
+    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.PROCESSING_EVENTS))
     if topic_name == "-":
         return
 
     if not result.get("got_errors", False):
         return
 
-    data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
+    data = result
+    # data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
 
     event_info = data["event_info"]
     result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
@@ -81,7 +82,7 @@ def publish_results_filtered(result, jp_expr, expt_value):
 
     from krules_core.types import format_event_type
 
-    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.RESULTS))
+    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.PROCESSING_EVENTS))
 
     if callable(expt_value):
         _pass = expt_value(jp.match1(jp_expr, result))
@@ -90,7 +91,8 @@ def publish_results_filtered(result, jp_expr, expt_value):
     if not _pass:
         return
 
-    data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
+    data = result
+    # data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
 
     event_info = data["event_info"]
     result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
