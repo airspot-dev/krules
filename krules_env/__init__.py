@@ -39,9 +39,9 @@ class _JSONEncoder(json.JSONEncoder):
 
 def publish_results_all(result):
 
-    from krules_core.messages import format_message_name
+    from krules_core.types import format_event_type
 
-    topic_name = os.environ.get("RESULTS_TOPIC", format_message_name(TopicsDefault.RESULTS))
+    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.RESULTS))
     if topic_name == "-":
         return
 
@@ -57,9 +57,9 @@ def publish_results_all(result):
 # TODO: wrap filtered
 def publish_results_errors(result):
 
-    from krules_core.messages import format_message_name
+    from krules_core.types import format_event_type
 
-    topic_name = os.environ.get("RESULTS_TOPIC", format_message_name(TopicsDefault.RESULTS))
+    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.RESULTS))
     if topic_name == "-":
         return
 
@@ -79,9 +79,9 @@ def publish_results_errors(result):
 
 def publish_results_filtered(result, jp_expr, expt_value):
 
-    from krules_core.messages import format_message_name
+    from krules_core.types import format_event_type
 
-    topic_name = os.environ.get("RESULTS_TOPIC", format_message_name(TopicsDefault.RESULTS))
+    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.RESULTS))
 
     if callable(expt_value):
         _pass = expt_value(jp.match1(jp_expr, result))
