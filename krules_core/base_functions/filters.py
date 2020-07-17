@@ -57,7 +57,7 @@ class IsFalse(Returns):
         return not bool(super().execute(expression))
 
 
-class SubjectMatch(RuleFunctionBase):
+class SubjectNameMatch(RuleFunctionBase):
     """
     Checks if the subject's name matches the **regular expression**
     """
@@ -76,9 +76,9 @@ class SubjectMatch(RuleFunctionBase):
         return True
 
 
-class SubjectDoesNotMatch(SubjectMatch):
+class SubjectDoesNotNameMatch(SubjectNameMatch):
     """
-    Opposite of CheckSubjectMatch
+    Opposite of CheckSubjectNameMatch
     """
 
     def execute(self, regex, **kwargs):  # TODO: best inheritage support (**kwargs satisfy base class signature)

@@ -14,8 +14,8 @@ import re
 import pytest
 import rx
 from dependency_injector import providers
-from krules_core.base_functions.filters import Returns, CheckSubjectProperty, PayloadMatch, SubjectMatch, \
-    SubjectDoesNotMatch, IsTrue, IsFalse, PayloadMatchOne, SubjectPropertyChanged
+from krules_core.base_functions.filters import Returns, CheckSubjectProperty, PayloadMatch, SubjectNameMatch, \
+    SubjectDoesNotNameMatch, IsTrue, IsFalse, PayloadMatchOne, SubjectPropertyChanged
 
 from krules_core import RuleConst
 
@@ -138,7 +138,7 @@ def test_subject_match(router, asserted):
                        subscribe_to='event-user-action',
                        ruledata={
                            filters: [
-                               SubjectMatch(r"^user\|(?P<user_id>.+)", payload_dest="user_info"),
+                               SubjectNameMatch(r"^user\|(?P<user_id>.+)", payload_dest="user_info"),
                                IsTrue(
                                    lambda payload: "user_id" in payload.get("user_info", {})
                                )
@@ -149,7 +149,7 @@ def test_subject_match(router, asserted):
                        subscribe_to='event-user-action',
                        ruledata={
                            filters: [
-                               SubjectDoesNotMatch(r"^device\|(?P<device_id>.+)", payload_dest="device_info"),
+                               SubjectDoesNotNameMatch(r"^device\|(?P<device_id>.+)", payload_dest="device_info"),
                            ]
                        })
 
