@@ -11,9 +11,9 @@
 
 class TopicsDefault:
 
-    RESULTS = "RulesResults"
+    PROCESSING_EVENTS = "RulesProcessingEvents"
     #RESULTS_FULL = "RulesResultsFull"
-    ERRORS = "RulesErrors"
+    ERRORS = "RulesProcessingErrors"
 
 
 class RuleConst(object):
