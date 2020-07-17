@@ -37,9 +37,9 @@ class CloudEventsDispatcher(BaseDispatcher):
         self._source = source
         self._test = test
 
-    def dispatch(self, message, subject, payload):
+    def dispatch(self, type, subject, payload):
 
-        if type(subject) == str:
+        if isinstance(subject, str):
             subject = subject_factory(subject)
         _event_info = subject.event_info()
 
@@ -52,7 +52,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         event.SetSource(self._source)
         event.SetSubject(str(subject))
         event.SetEventTime(datetime.utcnow().replace(tzinfo=pytz.UTC).isoformat())
-        event.SetEventType(message)
+        event.SetEventType(type)
 
         # set extended properties
         ext_props = subject.get_ext_props()
