@@ -16,11 +16,11 @@ from . import ConfigKeyConst
 _settings = settings_factory()
 
 
-def format_message_name(message):
-    return "{}{}".format(_settings.get(ConfigKeyConst.MESSAGE_TOPICS_PREFIX, ""), message)
+def format_event_type(event_type):
+    return "{}{}".format(_settings.get(ConfigKeyConst.EVENT_TYPE_TOPICS_PREFIX, ""), event_type)
 
 
-_m = format_message_name
+_m = format_event_type
 
 
 SUBJECT_PROPERTY_CHANGED = _m("subject-property-changed")

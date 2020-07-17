@@ -160,10 +160,10 @@ def test_subject_functions(subject, router, asserted):
             ]
         }
     )
-    from krules_core import messages
+    from krules_core import types
     RuleFactory.create(
         "test-non-muted-property",
-        subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
                 SubjectPropertyChanged("my_prop", lambda value, old_value: value == 1 and old_value is None)
@@ -172,7 +172,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-muted-property",
-        subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
                 SubjectPropertyChanged("something_to_say")
@@ -181,7 +181,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-direct-property",
-        subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
                 SubjectPropertyChanged("my_prop_2", lambda value, old_value: value == 2 and old_value is None)
@@ -190,7 +190,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-muted-direct-property",
-        subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
                 SubjectPropertyChanged("my_prop_3")
@@ -199,7 +199,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-multi-set-properties-unmuted",
-        subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
                 SubjectPropertyChanged("my_prop_4")
@@ -208,7 +208,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-multi-set-properties-muted",   # never processed
-        subscribe_to=messages.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         ruledata={
             filters: [
                 SubjectPropertyChanged(lambda p: p in ("my_silent_prop_5", "my_silent_prop_6"))

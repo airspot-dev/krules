@@ -29,17 +29,17 @@ def test_router():
     router.unregister_all()
 
     RuleFactory.create('test-empty-rule',
-                       subscribe_to="some-message",
+                       subscribe_to="some-type",
                        ruledata={})
 
     results_rx.subscribe(
         lambda x: _assert(
-                    x[RuleConst.MESSAGE] == "some-message" and
+                    x[RuleConst.TYPE] == "some-type" and
                     "key1" in x[RuleConst.PAYLOAD] and
                     x[RuleConst.PAYLOAD]["key1"] == "val1",
         )
     )
-    router.route('some-message', subject, {"key1": "val1"})
+    router.route('some-type', subject, {"key1": "val1"})
 
     end_time = datetime.now()
     logging.getLogger().debug("######### {}".format(end_time-start_time))

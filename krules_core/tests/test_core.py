@@ -57,7 +57,7 @@ def router():
 def test_internal_routing(subject, router):
 
     RuleFactory.create('test-rule-filters-pass',
-                       subscribe_to="test-message",
+                       subscribe_to="test-type",
                        ruledata={
                            RuleConst.FILTERS: [
                                Callable(
@@ -73,7 +73,7 @@ def test_internal_routing(subject, router):
                        })
 
     RuleFactory.create('test-rule-filters-fails',
-                       subscribe_to="test-message",
+                       subscribe_to="test-type",
                        ruledata={
                            RuleConst.FILTERS: [
                                Callable(lambda self: False),
@@ -102,26 +102,26 @@ def test_internal_routing(subject, router):
                   ) and print(x)
     )
 
-    router.route("test-message", subject, {})
+    router.route("test-type", subject, {})
 
 
 def test_dispatch(subject, router):
-    _dispatched_messages = []
+    _dispatched_events = []
 
     class _TestDispatcher(BaseDispatcher):
 
-        def dispatch(self, message, subject, payload, **extra):
-            _dispatched_messages.append((message, subject, payload))
+        def dispatch(self, event_type, subject, payload, **extra):
+            _dispatched_events.append((event_type, subject, payload))
 
     message_dispatcher_factory.override(
         providers.Singleton(lambda: _TestDispatcher())
     )
 
-    router.route('test-unhandled-message', subject, {"data": 1})
+    router.route('test-unhandled-event', subject, {"data": 1})
 
-    message, subject, payload = _dispatched_messages.pop()
+    event_type, subject, payload = _dispatched_events.pop()
     _assert(
-        message == 'test-unhandled-message' and
+        event_type == 'test-unhandled-event' and
         subject.name == subject.name and
         payload.get("data") == 1
     )

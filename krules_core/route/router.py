@@ -27,29 +27,29 @@ class MessageRouter(object):
     def __init__(self):
         self._callables = {}
 
-    def register(self, rule, message):
-        logger.debug("register {0} for {1}".format(rule, message))
-        if message not in self._callables:
-            self._callables[message] = []
-        self._callables[message].append(rule._process)
+    def register(self, rule, event_type):
+        logger.debug("register {0} for {1}".format(rule, event_type))
+        if event_type not in self._callables:
+            self._callables[event_type] = []
+        self._callables[event_type].append(rule._process)
 
-    def unregister(self, message):
-        logger.debug("unregister message {}".format(message))
+    def unregister(self, event_type):
+        logger.debug("unregister event {}".format(event_type))
         count = 0
-        if message in self._callables:
-            for r in self._callables[message]:
+        if event_type in self._callables:
+            for r in self._callables[event_type]:
                 count += 1
-            del self._callables[message]
+            del self._callables[event_type]
         return count
 
     def unregister_all(self):
         count = 0
-        messages = tuple(self._callables.keys())
-        for message in messages:
-            count += self.unregister(message)
+        events = tuple(self._callables.keys())
+        for event in events:
+            count += self.unregister(event)
         return count
 
-    def route(self, message, subject, payload, dispatch_policy=DispatchPolicyConst.DEFAULT):
+    def route(self, event_type, subject, payload, dispatch_policy=DispatchPolicyConst.DEFAULT):
 
         if isinstance(subject, str):
             # NOTE: this should have already happened if we want to take care or event info
@@ -58,13 +58,13 @@ class MessageRouter(object):
 
         from ..providers import message_dispatcher_factory
 
-        _callables = self._callables.get(message, None)
+        _callables = self._callables.get(event_type, None)
 
         #        try:
         if not dispatch_policy == DispatchPolicyConst.DIRECT:
             if _callables is not None:
                 for _callable in _callables:
-                    _callable(message, subject, payload)
+                    _callable(event_type, subject, payload)
         #        finally:
         #            subject.store()
 
@@ -73,5 +73,5 @@ class MessageRouter(object):
                 and dispatch_policy == DispatchPolicyConst.DEFAULT \
                 or dispatch_policy == DispatchPolicyConst.ALWAYS \
                 or dispatch_policy == DispatchPolicyConst.DIRECT:
-            logger.debug("dispatch {} to {} with payload {}".format(message, subject, payload))
-            return message_dispatcher_factory().dispatch(message, subject, payload)
+            logger.debug("dispatch {} to {} with payload {}".format(event_type, subject, payload))
+            return message_dispatcher_factory().dispatch(event_type, subject, payload)
