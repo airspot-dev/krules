@@ -46,7 +46,7 @@ class Rule:
     def set_finally(self, finally_):
         self._finally.extend(finally_)
 
-    def _process(self, event_type, subject, payload):
+    def _process(self, type, subject, payload):
 
         def __clean(dd):
             del dd[Const.PROCESS_ID]
@@ -82,7 +82,7 @@ class Rule:
                     cp[k] = v
             return cp
 
-        logger.debug("process {0} for {1}".format(event_type, self.name))
+        logger.debug("process {0} for {1}".format(type, self.name))
 
         if type(subject) == str:
             subject = subject_factory(subject)
@@ -96,7 +96,7 @@ class Rule:
         event_info = payload_copy.pop("_event_info", {})
 
         res_full = {
-            Const.TYPE: event_type,
+            Const.TYPE: type,
             Const.SUBJECT: str(subject.name),
             Const.RULE_NAME: self.name,
             Const.PAYLOAD: payload_copy,
@@ -117,12 +117,12 @@ class Rule:
                     _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
-                _cinst.event_type = event_type
+                _cinst.type = type
                 _cinst.subject = subject
                 _cinst.payload = payload
                 res_in = {
                     Const.PROCESS_ID: process_id,
-                    Const.TYPE: event_type,
+                    Const.TYPE: type,
                     Const.SUBJECT: str(subject.name),
                     Const.RULE_NAME: self.name,
                     Const.SECTION: Const.FILTERS,
@@ -168,12 +168,12 @@ class Rule:
                     _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
-                _cinst.event_type = event_type
+                _cinst.type = type
                 _cinst.subject = subject
                 _cinst.payload = payload
                 res_in = {
                     Const.PROCESS_ID: process_id,
-                    Const.TYPE: event_type,
+                    Const.TYPE: type,
                     Const.SUBJECT: str(subject.name),
                     Const.RULE_NAME: self.name,
                     Const.SECTION: Const.PROCESSING,

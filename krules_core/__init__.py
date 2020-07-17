@@ -53,5 +53,5 @@ class RuleConst(object):
 
 class ConfigKeyConst(object):
 
-    EVENT_TYPE_TOPICS_PREFIX = "EVENT_TYPE_TOPICS_PREFIX"
+    TYPE_TOPICS_PREFIX = "TYPE_TOPICS_PREFIX"
 

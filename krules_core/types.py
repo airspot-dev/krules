@@ -16,8 +16,8 @@ from . import ConfigKeyConst
 _settings = settings_factory()
 
 
-def format_event_type(event_type):
-    return "{}{}".format(_settings.get(ConfigKeyConst.EVENT_TYPE_TOPICS_PREFIX, ""), event_type)
+def format_event_type(type):
+    return "{}{}".format(_settings.get(ConfigKeyConst.TYPE_TOPICS_PREFIX, ""), type)
 
 
 _m = format_event_type

@@ -216,10 +216,10 @@ class Route(RuleFunctionBase):
     For "sending outside" the event we mean to deliver it to the dispatcher component
     """
 
-    def execute(self, event_type=None, subject=None, payload=None, dispatch_policy=DispatchPolicyConst.DEFAULT):
+    def execute(self, type=None, subject=None, payload=None, dispatch_policy=DispatchPolicyConst.DEFAULT):
         """
         Args:
-            event_type: The event type. Default is current processing event type
+            type: The event type. Default is current processing event type
             subject: New subject or the current subject as default
             payload: The payload of the event or the current payload
             dispatch_policy: Router -> dispatcher policy. Available choices are defined in
@@ -232,14 +232,14 @@ class Route(RuleFunctionBase):
         """
 
         from krules_core.providers import message_router_factory
-        if event_type is None:
-            event_type = self.event_type
+        if type is None:
+            type = self.type
         if subject is None:
             subject = self.subject
         if payload is None:
             payload = self.payload
 
-        message_router_factory().route(event_type, subject, payload, dispatch_policy=dispatch_policy)
+        message_router_factory().route(type, subject, payload, dispatch_policy=dispatch_policy)
 
 
 
