@@ -81,7 +81,7 @@ class RuleFunctionBase:
     subject = object()  # just for the ide happiness
 
     payload = {}
-    message = ""
+    type = ""
 
     def __init__(self, *args, **kwargs):
         self._args = args

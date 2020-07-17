@@ -48,11 +48,11 @@ class Rule:
     def set_finally(self, finally_):
         self._finally.extend(finally_)
 
-    def _process(self, message, subject, payload):
+    def _process(self, event_type, subject, payload):
 
         def __clean(dd):
             del dd[Const.PROCESS_ID]
-            del dd[Const.MESSAGE]
+            del dd[Const.TYPE]
             del dd[Const.SUBJECT]
             del dd[Const.RULE_NAME]
             del dd[Const.SECTION]
@@ -90,9 +90,9 @@ class Rule:
                     cp[k] = str(v)
             return cp
 
-        logger.debug("process {0} for {1}".format(message, self.name))
+        logger.debug("process {0} for {1}".format(event_type, self.name))
 
-        if type(subject) == str:
+        if isinstance(subject, str):
             subject = subject_factory(subject)
 
         from .providers import results_rx_factory
@@ -104,7 +104,7 @@ class Rule:
         event_info = payload_copy.pop("_event_info", {})
 
         res_full = {
-            Const.MESSAGE: message,
+            Const.TYPE: event_type,
             Const.SUBJECT: str(subject.name),
             Const.RULE_NAME: self.name,
             Const.PAYLOAD: payload_copy,
@@ -125,12 +125,12 @@ class Rule:
                     _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
-                _cinst.message = message
+                _cinst.type = event_type
                 _cinst.subject = subject
                 _cinst.payload = payload
                 res_in = {
                     Const.PROCESS_ID: process_id,
-                    Const.MESSAGE: message,
+                    Const.TYPE: event_type,
                     Const.SUBJECT: str(subject.name),
                     Const.RULE_NAME: self.name,
                     Const.SECTION: Const.FILTERS,
@@ -153,7 +153,7 @@ class Rule:
                 last_payload = payload_copy
                 res_out = {
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
-                    Const.MESSAGE: res_in[Const.MESSAGE],
+                    Const.TYPE: res_in[Const.TYPE],
                     Const.SUBJECT: res_in[Const.SUBJECT],
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
@@ -177,12 +177,12 @@ class Rule:
                     _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
-                _cinst.message = message
+                _cinst.type = event_type
                 _cinst.subject = subject
                 _cinst.payload = payload
                 res_in = {
                     Const.PROCESS_ID: process_id,
-                    Const.MESSAGE: message,
+                    Const.TYPE: event_type,
                     Const.SUBJECT: str(subject.name),
                     Const.RULE_NAME: self.name,
                     Const.SECTION: Const.PROCESSING,
@@ -204,7 +204,7 @@ class Rule:
                 last_payload = payload_copy
                 res_out = {
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
-                    Const.MESSAGE: res_in[Const.MESSAGE],
+                    Const.TYPE: res_in[Const.TYPE],
                     Const.SUBJECT: res_in[Const.SUBJECT],
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],
@@ -227,7 +227,7 @@ class Rule:
                 type_, value_, traceback_ = sys.exc_info()
                 res_out = {
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
-                    Const.MESSAGE: res_in[Const.MESSAGE],
+                    Const.TYPE: res_in[Const.TYPE],
                     Const.SUBJECT: res_in[Const.SUBJECT],
                     Const.RULE_NAME: res_in[Const.RULE_NAME],
                     Const.SECTION: res_in[Const.SECTION],

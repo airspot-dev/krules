@@ -32,7 +32,7 @@ class RuleConst(object):
     PROCESSING = "processing"
     FINALLY = "finally"
 
-    MESSAGE = "message"
+    TYPE = "type"
     SUBJECT = "subject"
     RULE_NAME = "rule_name"
     SECTION = "section"
@@ -53,5 +53,5 @@ class RuleConst(object):
 
 class ConfigKeyConst(object):
 
-    MESSAGE_TOPICS_PREFIX = "MESSAGE_TOPICS_PREFIX"
+    TYPE_TOPICS_PREFIX = "TYPE_TOPICS_PREFIX"
 

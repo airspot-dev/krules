@@ -212,34 +212,34 @@ class FlushSubject(RuleFunctionBase):
 
 class Route(RuleFunctionBase):
     """
-    Send a message (produce an event) inside and/or outside the rulesset according to _dispatch_policy_
-    For "sending outside" the message we mean to deliver it to the dispatcher component
+    Produce an event inside and/or outside the ruleset according to _dispatch_policy_
+    For "sending outside" the event we mean to deliver it to the dispatcher component
     """
 
-    def execute(self, message=None, subject=None, payload=None, dispatch_policy=DispatchPolicyConst.DEFAULT):
+    def execute(self, type=None, subject=None, payload=None, dispatch_policy=DispatchPolicyConst.DEFAULT):
         """
         Args:
-            message: Name of the message (event _type_). Default is current processing message
+            type: The event type. Default is current processing event type
             subject: New subject or the current subject as default
-            payload: The payload of the message or the current payload
+            payload: The payload of the event or the current payload
             dispatch_policy: Router -> dispatcher policy. Available choices are defined in
                  krules_core.route.router.DispatchPolicyConst as:
 
-                    DEFAULT: Dispatched outside only when no handler is found in current rulesset
-                    ALWAYS: Always dispatched even if an handler is found and processed in the current rulesset
+                    DEFAULT: Dispatched outside only when no handler is found in current ruleset
+                    ALWAYS: Always dispatched even if an handler is found and processed in the current ruleset
                     NEVER: Never dispatched outside
                     DIRECT: Skip to search for a local handler and send outside directly
         """
 
         from krules_core.providers import message_router_factory
-        if message is None:
-            message = self.message
+        if type is None:
+            type = self.type
         if subject is None:
             subject = self.subject
         if payload is None:
             payload = self.payload
 
-        message_router_factory().route(message, subject, payload, dispatch_policy=dispatch_policy)
+        message_router_factory().route(type, subject, payload, dispatch_policy=dispatch_policy)
 
 
 
