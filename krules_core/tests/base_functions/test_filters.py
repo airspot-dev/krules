@@ -14,8 +14,8 @@ import re
 import pytest
 import rx
 from dependency_injector import providers
-from krules_core.base_functions.filters import Returns, CheckSubjectProperty, PayloadJPMatch, SubjectMatch, \
-    SubjectDoesNotMatch, IsTrue, IsFalse, PayloadJPMatchOne, SubjectPropertyChanged
+from krules_core.base_functions.filters import Returns, CheckSubjectProperty, PayloadMatch, SubjectMatch, \
+    SubjectDoesNotMatch, IsTrue, IsFalse, PayloadMatchOne, SubjectPropertyChanged
 
 from krules_core import RuleConst
 
@@ -319,7 +319,7 @@ def test_check_payload_match(router, subject, asserted):
         subscribe_to="test-check-payload-jpmatch",
         ruledata={
             filters: [
-                PayloadJPMatch("$..batch_data[?@.value>100]")  # returns two elements - pass
+                PayloadMatch("$..batch_data[?@.value>100]")  # returns two elements - pass
             ]
         }
     )
@@ -329,8 +329,8 @@ def test_check_payload_match(router, subject, asserted):
         subscribe_to="test-check-payload-jpmatch",
         ruledata={
             filters: [
-                PayloadJPMatch("$.batch_data[?@.value>100]", lambda m: len(m) == 2),
-                PayloadJPMatch("$.batch_data[?@.value>100]", payload_dest="jpexpr_match"),
+                PayloadMatch("$.batch_data[?@.value>100]", lambda m: len(m) == 2),
+                PayloadMatch("$.batch_data[?@.value>100]", payload_dest="jpexpr_match"),
                 IsTrue(
                     lambda payload: len(payload['jpexpr_match']) == 2
                 )
@@ -343,9 +343,9 @@ def test_check_payload_match(router, subject, asserted):
         subscribe_to="test-check-payload-jpmatch",
         ruledata={
             filters: [
-                PayloadJPMatchOne("$.device_info.id", "0AFB1110"),
-                PayloadJPMatchOne("$.device_info.id", payload_dest="device_id"),
-                PayloadJPMatchOne("$.device.info.disabled", lambda disabled: not disabled),
+                PayloadMatchOne("$.device_info.id", "0AFB1110"),
+                PayloadMatchOne("$.device_info.id", payload_dest="device_id"),
+                PayloadMatchOne("$.device.info.disabled", lambda disabled: not disabled),
                 IsTrue(
                     lambda payload: payload["device_id"] == "0AFB1110"
                 )
