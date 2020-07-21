@@ -88,14 +88,14 @@ def test_internal_routing(subject, router):
                        })
 
     proc_events_rx_factory().subscribe(
-        lambda x: x[RuleConst.RULE_NAME] == 'test-rule-filters-pass' and
+        lambda x: x[RuleConst.RULENAME] == 'test-rule-filters-pass' and
                   _assert(
                       x[RuleConst.PROCESSED] and
                       len(x[RuleConst.PROCESSING]) == 1
                   ) and print(x)
     )
     proc_events_rx_factory().subscribe(
-        lambda x: x[RuleConst.RULE_NAME] == 'test-rule-filters-fails' and
+        lambda x: x[RuleConst.RULENAME] == 'test-rule-filters-fails' and
                   _assert(
                       not x[RuleConst.PROCESSED] and
                       len(x[RuleConst.PROCESSING]) == 0

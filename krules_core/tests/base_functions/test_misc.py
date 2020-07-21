@@ -55,7 +55,7 @@ def asserted():
 
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
-rule_name = RuleConst.RULE_NAME
+rulename = RuleConst.RULENAME
 processed = RuleConst.PROCESSED
 
 
@@ -100,16 +100,16 @@ def test_pycall(subject, router, asserted):
     )
 
     proc_events_rx_factory().subscribe(
-        lambda x: x[rule_name] == "test-pycall-no-error" and _assert(
-            x[rule_name],
+        lambda x: x[rulename] == "test-pycall-no-error" and _assert(
+            x[rulename],
             get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) == [2, 1]
             and not get_value_from_payload_diffs("got_errors", x[processing][0]["payload_diffs"], default_value=False)
         )
     )
 
     proc_events_rx_factory().subscribe(
-        lambda x: x[rule_name] == "test-pycall-with-error" and _assert(
-            x[rule_name],
+        lambda x: x[rulename] == "test-pycall-with-error" and _assert(
+            x[rulename],
             not get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) and
             get_value_from_payload_diffs("got_errors", x[processing][0]["payload_diffs"], default_value=False)
         )
