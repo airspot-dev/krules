@@ -23,7 +23,7 @@ from krules_core import RuleConst
 
 from krules_core.providers import (
     message_router_factory,
-    results_rx_factory,
+    proc_events_rx_factory,
     subject_factory,
     message_dispatcher_factory
 )
@@ -49,7 +49,7 @@ def subject():
 def router():
     router = message_router_factory()
     router.unregister_all()
-    results_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
 
     return message_router_factory()
 
@@ -87,14 +87,14 @@ def test_internal_routing(subject, router):
                            ],
                        })
 
-    results_rx_factory().subscribe(
+    proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULE_NAME] == 'test-rule-filters-pass' and
                   _assert(
                       x[RuleConst.PROCESSED] and
                       len(x[RuleConst.PROCESSING]) == 1
                   ) and print(x)
     )
-    results_rx_factory().subscribe(
+    proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULE_NAME] == 'test-rule-filters-fails' and
                   _assert(
                       not x[RuleConst.PROCESSED] and

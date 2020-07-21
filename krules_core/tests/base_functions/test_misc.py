@@ -19,7 +19,7 @@ from krules_core.core import RuleFactory
 
 from krules_core.providers import (
     message_router_factory,
-    results_rx_factory,
+    proc_events_rx_factory,
     subject_factory,
     subject_storage_factory)
 
@@ -41,7 +41,7 @@ def subject():
 def router():
     router = message_router_factory()
     router.unregister_all()
-    results_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
 
     return message_router_factory()
 
@@ -99,7 +99,7 @@ def test_pycall(subject, router, asserted):
         }
     )
 
-    results_rx_factory().subscribe(
+    proc_events_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-pycall-no-error" and _assert(
             x[rule_name],
             get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) == [2, 1]
@@ -107,7 +107,7 @@ def test_pycall(subject, router, asserted):
         )
     )
 
-    results_rx_factory().subscribe(
+    proc_events_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-pycall-with-error" and _assert(
             x[rule_name],
             not get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) and

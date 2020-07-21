@@ -95,9 +95,9 @@ class Rule:
         if isinstance(subject, str):
             subject = subject_factory(subject)
 
-        from .providers import results_rx_factory
+        from .providers import proc_events_rx_factory
 
-        results_rx = results_rx_factory()  # one event for each processed rule
+        proc_events_rx = proc_events_rx_factory()  # one event for each processed rule
 
         process_id = str(uuid4())
         payload_copy = __copy(payload)
@@ -167,7 +167,7 @@ class Rule:
                 res_full[Const.FILTERS].append(__clean(res_out))
                 if not res:
                     res_full[Const.PROCESSED] = False
-                    results_rx.on_next(res_full)
+                    proc_events_rx.on_next(res_full)
                     return
 
             res_full[Const.PROCESSED] = True
@@ -217,11 +217,11 @@ class Rule:
                 logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS], 'returns': res_out[Const.RETURNS]}))
                 res_full[Const.PROCESSING].append(__clean(res_out))
 
-            results_rx.on_next(res_full)
+            proc_events_rx.on_next(res_full)
 
         except Exception as e:
             logger.error("catched exception of type {0} ({1})".format(type(e), getattr(e, 'message', str(e))))
-            if results_rx:
+            if proc_events_rx:
                 payload_copy = __copy(payload)
                 payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload_copy).patch
                 type_, value_, traceback_ = sys.exc_info()
@@ -244,7 +244,7 @@ class Rule:
                 logger.debug("# unprocessed: {0}".format(res_out))
                 res_full[Const.GOT_ERRORS] = True
                 res_full[res_out[Const.SECTION]].append(__clean(res_out))
-                results_rx.on_next(res_full)
+                proc_events_rx.on_next(res_full)
 
 
 class RuleFactory:
