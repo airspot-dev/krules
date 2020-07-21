@@ -76,7 +76,7 @@ class SubjectNameMatch(RuleFunctionBase):
         return True
 
 
-class SubjectDoesNotNameMatch(SubjectNameMatch):
+class SubjectNameDoesNotMatch(SubjectNameMatch):
     """
     Opposite of CheckSubjectNameMatch
     """

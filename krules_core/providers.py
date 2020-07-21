@@ -30,7 +30,7 @@ settings_factory = providers.Singleton(lambda: {})
 subject_storage_factory = providers.Factory(lambda x: SQLLiteSubjectStorage(x, ":memory:"))
 
 subject_factory = providers.Factory(Subject)
-results_rx_factory = providers.Singleton(rx.subjects.ReplaySubject)
+proc_events_rx_factory = providers.Singleton(rx.subjects.ReplaySubject)
 message_router_factory = providers.Singleton(MessageRouter)
 message_dispatcher_factory = providers.Singleton(BaseDispatcher)
 exceptions_dumpers_factory = providers.Singleton(ExceptionsDumpers)
