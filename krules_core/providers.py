@@ -24,7 +24,7 @@ from .exceptions_dumpers import ExceptionsDumpers
 import logging
 logger = logging.getLogger(__name__)
 
-settings_factory = providers.Singleton(lambda: {})
+configs_factory = providers.Singleton(lambda: {})
 
 # for testing/development only
 subject_storage_factory = providers.Factory(lambda x: SQLLiteSubjectStorage(x, ":memory:"))

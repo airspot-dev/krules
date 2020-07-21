@@ -9,11 +9,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .providers import settings_factory
+from .providers import configs_factory
 from . import ConfigKeyConst
 
 
-_settings = settings_factory()
+_settings = configs_factory()
 
 
 def format_event_type(type):
