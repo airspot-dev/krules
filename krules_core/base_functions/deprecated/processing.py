@@ -152,7 +152,7 @@ class Route(RuleFunctionBase):
         :param payload:
         :return:
         """
-        from krules_core.providers import message_router_factory
+        from krules_core.providers import event_router_factory
         if message is None:
             message = self.message
         if subject is None:
@@ -164,7 +164,7 @@ class Route(RuleFunctionBase):
             payload["_event_info"] = self.payload["_event_info"]
 
 
-        message_router_factory().route(message, subject, payload, dispatch_policy=dispatch_policy)
+        event_router_factory().route(message, subject, payload, dispatch_policy=dispatch_policy)
 
 
 

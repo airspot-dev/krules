@@ -15,7 +15,7 @@ from dependency_injector import providers
 from krules_core import RuleConst
 from krules_core.base_functions import RuleFunctionBase, inspect
 from krules_core.core import RuleFactory
-from krules_core.providers import message_router_factory, subject_factory, proc_events_rx_factory
+from krules_core.providers import event_router_factory, subject_factory, proc_events_rx_factory
 
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
@@ -24,11 +24,11 @@ processed = RuleConst.PROCESSED
 
 @pytest.fixture
 def router():
-    router = message_router_factory()
+    router = event_router_factory()
     router.unregister_all()
     proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
 
-    return message_router_factory()
+    return event_router_factory()
 
 def _assert(expr):
     assert expr
@@ -57,7 +57,7 @@ def test_simple_callable():
     )
 
     payload = {}
-    message_router_factory().route("test-argprocessors-callables", "test-0", payload)
+    event_router_factory().route("test-argprocessors-callables", "test-0", payload)
 
     proc_events_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-simple-callable" and _assert(
@@ -101,7 +101,7 @@ def test_with_self():
 
     subject.set("value_from", 2)
 
-    message_router_factory().route("test-argprocessors-self", subject, payload)
+    event_router_factory().route("test-argprocessors-self", subject, payload)
 
     proc_events_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-with-self" and _assert(
@@ -142,7 +142,7 @@ def test_with_payload_and_subject():
 
     _subject.set("value_from", 2)
 
-    message_router_factory().route("test-argprocessors-payload-and-subject", _subject, _payload)
+    event_router_factory().route("test-argprocessors-payload-and-subject", _subject, _payload)
 
     proc_events_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-with-payload-and-subject" and _assert(
@@ -214,7 +214,7 @@ def test_extend_jp_match():
         ]
     }
 
-    message_router_factory().route("test-argprocessors-jp-match", "test-0", payload)
+    event_router_factory().route("test-argprocessors-jp-match", "test-0", payload)
 
     proc_events_rx_factory().subscribe(
         lambda x: x[rule_name] == "test-with-jp-expr" and _assert(

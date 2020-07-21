@@ -13,7 +13,7 @@ import inspect
 from uuid import uuid4
 
 from . import RuleConst as Const
-from .providers import message_router_factory, subject_factory
+from .providers import event_router_factory, subject_factory
 
 import sys
 import traceback
@@ -261,5 +261,4 @@ class RuleFactory:
         if isinstance(subscribe_to, str):
             subscribe_to = (subscribe_to,)
         for el in subscribe_to:
-            message_router_factory().register(rule, el)
-        #return message_router_factory().register(rule, subscribe_to)
+            event_router_factory().register(rule, el)

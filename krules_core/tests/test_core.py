@@ -22,7 +22,7 @@ from krules_core.core import RuleFactory
 from krules_core import RuleConst
 
 from krules_core.providers import (
-    message_router_factory,
+    event_router_factory,
     proc_events_rx_factory,
     subject_factory,
     message_dispatcher_factory
@@ -47,11 +47,11 @@ def subject():
 
 @pytest.fixture
 def router():
-    router = message_router_factory()
+    router = event_router_factory()
     router.unregister_all()
     proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
 
-    return message_router_factory()
+    return event_router_factory()
 
 
 def test_internal_routing(subject, router):

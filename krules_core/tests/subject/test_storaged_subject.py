@@ -28,17 +28,17 @@ class Router(object):
 
 def setup_module(_):
     from dependency_injector import providers as providers
-    from krules_core.providers import message_router_factory
+    from krules_core.providers import event_router_factory
 
-    message_router_factory.override(
+    event_router_factory.override(
         providers.Singleton(Router)
     )
 
 
 def teardown_module(_):
-    from krules_core.providers import message_router_factory
+    from krules_core.providers import event_router_factory
 
-    message_router_factory.reset_last_overriding()
+    event_router_factory.reset_last_overriding()
 
 
 counter = 0

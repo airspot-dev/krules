@@ -231,7 +231,7 @@ class Route(RuleFunctionBase):
                     DIRECT: Skip to search for a local handler and send outside directly
         """
 
-        from krules_core.providers import message_router_factory
+        from krules_core.providers import event_router_factory
         if type is None:
             type = self.type
         if subject is None:
@@ -239,7 +239,7 @@ class Route(RuleFunctionBase):
         if payload is None:
             payload = self.payload
 
-        message_router_factory().route(type, subject, payload, dispatch_policy=dispatch_policy)
+        event_router_factory().route(type, subject, payload, dispatch_policy=dispatch_policy)
 
 
 

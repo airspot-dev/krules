@@ -18,7 +18,7 @@ from krules_core.base_functions.misc import PyCall
 from krules_core.core import RuleFactory
 
 from krules_core.providers import (
-    message_router_factory,
+    event_router_factory,
     proc_events_rx_factory,
     subject_factory,
     subject_storage_factory)
@@ -39,11 +39,11 @@ def subject():
 
 @pytest.fixture
 def router():
-    router = message_router_factory()
+    router = event_router_factory()
     router.unregister_all()
     proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
 
-    return message_router_factory()
+    return event_router_factory()
 
 
 @pytest.fixture

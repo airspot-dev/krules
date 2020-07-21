@@ -22,7 +22,7 @@ class DispatchPolicyConst:
     DIRECT = "direct"
 
 
-class MessageRouter(object):
+class EventRouter(object):
 
     def __init__(self):
         self._callables = {}

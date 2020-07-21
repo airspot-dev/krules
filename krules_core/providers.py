@@ -17,7 +17,7 @@ from dependency_injector import providers as providers
 from krules_core.tests.subject.sqlite_storage import SQLLiteSubjectStorage
 
 from .route.dispatcher import BaseDispatcher
-from .route.router import MessageRouter
+from .route.router import EventRouter
 from .subject.storaged_subject import Subject
 from .exceptions_dumpers import ExceptionsDumpers
 
@@ -31,7 +31,7 @@ subject_storage_factory = providers.Factory(lambda x: SQLLiteSubjectStorage(x, "
 
 subject_factory = providers.Factory(Subject)
 proc_events_rx_factory = providers.Singleton(rx.subjects.ReplaySubject)
-message_router_factory = providers.Singleton(MessageRouter)
+event_router_factory = providers.Singleton(EventRouter)
 message_dispatcher_factory = providers.Singleton(BaseDispatcher)
 exceptions_dumpers_factory = providers.Singleton(ExceptionsDumpers)
 

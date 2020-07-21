@@ -2,7 +2,7 @@
 import rx
 
 from dependency_injector import providers
-from krules_core.providers import message_router_factory, proc_events_rx_factory
+from krules_core.providers import event_router_factory, proc_events_rx_factory
 
 from krules_core.core import RuleFactory
 from krules_core import RuleConst
@@ -25,7 +25,7 @@ def test_router():
     proc_events_rx = proc_events_rx_factory()
 
     start_time = datetime.now()
-    router = message_router_factory()
+    router = event_router_factory()
     router.unregister_all()
 
     RuleFactory.create('test-empty-rule',
