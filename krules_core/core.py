@@ -54,7 +54,7 @@ class Rule:
             del dd[Const.PROCESS_ID]
             del dd[Const.TYPE]
             del dd[Const.SUBJECT]
-            del dd[Const.RULE_NAME]
+            del dd[Const.RULENAME]
             del dd[Const.SECTION]
             dd.get(Const.PAYLOAD, {}).pop("_event_info", None)
             return dd
@@ -106,7 +106,7 @@ class Rule:
         res_full = {
             Const.TYPE: event_type,
             Const.SUBJECT: str(subject.name),
-            Const.RULE_NAME: self.name,
+            Const.RULENAME: self.name,
             Const.PAYLOAD: payload_copy,
             Const.FILTERS: [],
             Const.PROCESSING: [],
@@ -132,7 +132,7 @@ class Rule:
                     Const.PROCESS_ID: process_id,
                     Const.TYPE: event_type,
                     Const.SUBJECT: str(subject.name),
-                    Const.RULE_NAME: self.name,
+                    Const.RULENAME: self.name,
                     Const.SECTION: Const.FILTERS,
                     Const.FUNC_NAME: _cinst_name,
                     Const.PAYLOAD: payload.copy(),
@@ -155,7 +155,7 @@ class Rule:
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
                     Const.TYPE: res_in[Const.TYPE],
                     Const.SUBJECT: res_in[Const.SUBJECT],
-                    Const.RULE_NAME: res_in[Const.RULE_NAME],
+                    Const.RULENAME: res_in[Const.RULENAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
                     Const.PAYLOAD_DIFFS: payload_patches,
@@ -184,7 +184,7 @@ class Rule:
                     Const.PROCESS_ID: process_id,
                     Const.TYPE: event_type,
                     Const.SUBJECT: str(subject.name),
-                    Const.RULE_NAME: self.name,
+                    Const.RULENAME: self.name,
                     Const.SECTION: Const.PROCESSING,
                     Const.FUNC_NAME: _cinst_name,
                     Const.PAYLOAD: payload.copy(),
@@ -206,7 +206,7 @@ class Rule:
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
                     Const.TYPE: res_in[Const.TYPE],
                     Const.SUBJECT: res_in[Const.SUBJECT],
-                    Const.RULE_NAME: res_in[Const.RULE_NAME],
+                    Const.RULENAME: res_in[Const.RULENAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
                     Const.PAYLOAD_DIFFS: payload_patches,
@@ -229,7 +229,7 @@ class Rule:
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
                     Const.TYPE: res_in[Const.TYPE],
                     Const.SUBJECT: res_in[Const.SUBJECT],
-                    Const.RULE_NAME: res_in[Const.RULE_NAME],
+                    Const.RULENAME: res_in[Const.RULENAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
                     Const.PAYLOAD_DIFFS: payload_patches,
