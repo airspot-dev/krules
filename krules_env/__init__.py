@@ -13,14 +13,14 @@ from krules_core import TopicsDefault, RuleConst
 from krules_core.exceptions_dumpers import ExceptionDumperBase, RequestsHTTPErrorDumper
 
 from krules_core.providers import (
-    settings_factory,
+    configs_factory,
     subject_factory,
-    results_rx_factory,
-    message_router_factory,
+    proc_events_rx_factory,
+    event_router_factory,
     message_dispatcher_factory,
     exceptions_dumpers_factory,
 )
-from krules_core.route.router import DispatchPolicyConst, MessageRouter
+from krules_core.route.router import DispatchPolicyConst, EventRouter
 
 config_base_path = os.environ.get("KRULES_CONFIG_BASE_PATH", "/krules/config")
 
@@ -41,7 +41,7 @@ def publish_results_all(result):
 
     from krules_core.types import format_event_type
 
-    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.PROCESSING_EVENTS))
+    topic_name = os.environ.get("RULES_PROCESSING_EVENTS", format_event_type(TopicsDefault.PROCESSING_EVENTS))
     if topic_name == "-":
         return
 
@@ -50,7 +50,7 @@ def publish_results_all(result):
     event_info = data.get("event_info", {})
     result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
 
-    message_router_factory().route(
+    event_router_factory().route(
         topic_name, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
     )
 
@@ -59,7 +59,7 @@ def publish_results_errors(result):
 
     from krules_core.types import format_event_type
 
-    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.PROCESSING_EVENTS))
+    topic_name = os.environ.get("RULES_PROCESSING_EVENTS", format_event_type(TopicsDefault.PROCESSING_EVENTS))
     if topic_name == "-":
         return
 
@@ -72,7 +72,7 @@ def publish_results_errors(result):
     event_info = data["event_info"]
     result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
 
-    message_router_factory().route(
+    event_router_factory().route(
         topic_name, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
     )
 
@@ -82,7 +82,7 @@ def publish_results_filtered(result, jp_expr, expt_value):
 
     from krules_core.types import format_event_type
 
-    topic_name = os.environ.get("RESULTS_TOPIC", format_event_type(TopicsDefault.PROCESSING_EVENTS))
+    topic_name = os.environ.get("RULES_PROCESSING_EVENTS", format_event_type(TopicsDefault.PROCESSING_EVENTS))
 
     if callable(expt_value):
         _pass = expt_value(jp.match1(jp_expr, result))
@@ -97,22 +97,22 @@ def publish_results_filtered(result, jp_expr, expt_value):
     event_info = data["event_info"]
     result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
 
-    message_router_factory().route(
+    event_router_factory().route(
         topic_name, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
     )
 
 
 def init():
-    settings_factory.override(
+    configs_factory.override(
         providers.Singleton(lambda: krules_settings)
     )
 
-    results_rx_factory.override(
+    proc_events_rx_factory.override(
         providers.Singleton(rx.subjects.ReplaySubject)
     )
 
-    message_router_factory.override(
-        providers.Singleton(lambda: MessageRouter())
+    event_router_factory.override(
+        providers.Singleton(lambda: EventRouter())
     )
 
     exceptions_dumpers = exceptions_dumpers_factory()
