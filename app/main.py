@@ -11,7 +11,7 @@ from flask import Response
 from flask import request
 
 from krules_core.route.router import DispatchPolicyConst
-from krules_core.providers import message_router_factory
+from krules_core.providers import event_router_factory
 from krules_core.utils import load_rules_from_rulesdata
 
 
@@ -72,7 +72,7 @@ def main():
         payload = event_info.pop("data")
 
         app.logger.debug("RCVR: {}".format(payload))
-        message = event_info.get("type")
+        type = event_info.get("type")
         subject = event_info.get("subject", "sys-0")
 
 
@@ -100,8 +100,8 @@ def main():
         payload["_event_info"] = event_info
 
         try:
-            message_router_factory().route(
-                message, subject, payload,
+            event_router_factory().route(
+                type, subject, payload,
                 dispatch_policy=dispatch_policy
             )
         finally:
@@ -111,7 +111,7 @@ def main():
         logger.info("Event",
                     extra={'props': {
                                 'event_info': event_info,
-                                'type': message,
+                                'type': type,
                                 'subject': subject.name,
                                 'exec_time': exec_time,
                                 #'headers': list(headers.keys())
