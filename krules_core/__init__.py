@@ -9,12 +9,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class TopicsDefault:
-
-    PROCESSING_EVENTS = "RulesProcessingEvents"
-    #RESULTS_FULL = "RulesResultsFull"
-    ERRORS = "RulesProcessingErrors"
-
 
 class RuleConst(object):
     """
@@ -51,7 +45,7 @@ class RuleConst(object):
 
     PAYLOAD_DIFFS = "payload_diffs"
 
+
 class ConfigKeyConst(object):
 
     TYPE_TOPICS_PREFIX = "TYPE_TOPICS_PREFIX"
-
