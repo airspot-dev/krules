@@ -23,10 +23,10 @@ class RuleConst(object):
 
     PROCESS_ID = "process_id"
     ORIGIN_ID = "origin_id"
-    RULENAME = "rulename" # TODO.. rule_name/rulename
+    RULENAME = "name"
     DESCRIPTION = "description"
     SUBSCRIBE_TO = "subscribe_to"
-    RULEDATA = "ruledata"
+    RULEDATA = "data"
 
     FILTERS = "filters"
     PROCESSING = "processing"
@@ -35,7 +35,7 @@ class RuleConst(object):
     TYPE = "type"
     SUBJECT = "subject"
     SECTION = "section"
-    FUNC_NAME = "func_name"
+    FUNC_NAME = "function"
     PAYLOAD = "payload"
     ARGS = "args"
     KWARGS = "kwargs"
