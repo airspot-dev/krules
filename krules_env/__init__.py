@@ -39,11 +39,11 @@ RULE_PROC_EVENT = format_event_type("rule-proc-event")
 #         return json.JSONEncoder.default(self, obj)
 
 
-def publish_results_all(result):
+def publish_proc_events_all(result):
 
     data = result
     event_info = data.get("event_info", {})
-    result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
+    result_subject = subject_factory(data[RuleConst.RULENAME], event_info=event_info)
 
     event_router_factory().route(
         RULE_PROC_EVENT, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
@@ -51,7 +51,7 @@ def publish_results_all(result):
 
 
 # TODO: wrap filtered
-def publish_results_errors(result):
+def publish_proc_events_errors(result):
 
     if not result.get("got_errors", False):
         return
@@ -60,14 +60,14 @@ def publish_results_errors(result):
     # data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
 
     event_info = data["event_info"]
-    result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
+    result_subject = subject_factory(data[RuleConst.RULENAME], event_info=event_info)
 
     event_router_factory().route(
         RULE_PROC_EVENT, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
     )
 
 
-def publish_results_filtered(result, jp_expr, expt_value):
+def publish_proc_events_filtered(result, jp_expr, expt_value):
 
     if callable(expt_value):
         _pass = expt_value(jp.match1(jp_expr, result))
@@ -80,7 +80,7 @@ def publish_results_filtered(result, jp_expr, expt_value):
     # data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
 
     event_info = data["event_info"]
-    result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
+    result_subject = subject_factory(data[RuleConst.RULENAME], event_info=event_info)
 
     event_router_factory().route(
         RULE_PROC_EVENT, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
