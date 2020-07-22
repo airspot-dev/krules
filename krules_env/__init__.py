@@ -9,7 +9,7 @@ import rx
 import yaml
 from dependency_injector import providers
 
-from krules_core import TopicsDefault, RuleConst
+from krules_core import RuleConst
 from krules_core.exceptions_dumpers import ExceptionDumperBase, RequestsHTTPErrorDumper
 
 from krules_core.providers import (
@@ -21,12 +21,14 @@ from krules_core.providers import (
     exceptions_dumpers_factory,
 )
 from krules_core.route.router import DispatchPolicyConst, EventRouter
+from krules_core.types import format_event_type
 
 config_base_path = os.environ.get("KRULES_CONFIG_BASE_PATH", "/krules/config")
 
 from krules_env.settings_loader import load_from_path
 krules_settings = load_from_path(config_base_path)
 
+RULE_PROC_EVENT = format_event_type("rule-proc-event")
 
 # class _JSONEncoder(json.JSONEncoder):
 #     def default(self, obj):
@@ -39,29 +41,17 @@ krules_settings = load_from_path(config_base_path)
 
 def publish_results_all(result):
 
-    from krules_core.types import format_event_type
-
-    topic_name = os.environ.get("RULES_PROCESSING_EVENTS", format_event_type(TopicsDefault.PROCESSING_EVENTS))
-    if topic_name == "-":
-        return
-
-    # data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
     data = result
     event_info = data.get("event_info", {})
     result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
 
     event_router_factory().route(
-        topic_name, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
+        RULE_PROC_EVENT, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
     )
+
 
 # TODO: wrap filtered
 def publish_results_errors(result):
-
-    from krules_core.types import format_event_type
-
-    topic_name = os.environ.get("RULES_PROCESSING_EVENTS", format_event_type(TopicsDefault.PROCESSING_EVENTS))
-    if topic_name == "-":
-        return
 
     if not result.get("got_errors", False):
         return
@@ -73,16 +63,11 @@ def publish_results_errors(result):
     result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
 
     event_router_factory().route(
-        topic_name, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
+        RULE_PROC_EVENT, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
     )
 
 
-
 def publish_results_filtered(result, jp_expr, expt_value):
-
-    from krules_core.types import format_event_type
-
-    topic_name = os.environ.get("RULES_PROCESSING_EVENTS", format_event_type(TopicsDefault.PROCESSING_EVENTS))
 
     if callable(expt_value):
         _pass = expt_value(jp.match1(jp_expr, result))
@@ -98,7 +83,7 @@ def publish_results_filtered(result, jp_expr, expt_value):
     result_subject = subject_factory(data[RuleConst.RULE_NAME], event_info=event_info)
 
     event_router_factory().route(
-        topic_name, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
+        RULE_PROC_EVENT, result_subject, data, dispatch_policy=DispatchPolicyConst.DIRECT
     )
 
 
@@ -132,5 +117,3 @@ def init():
     message_dispatcher_factory.override(
         providers.Singleton(lambda: CloudEventsDispatcher(krules_settings["CLOUDEVENTS"]["send_to"], source))
     )
-
-
