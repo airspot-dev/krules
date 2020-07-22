@@ -34,7 +34,6 @@ class RuleConst(object):
 
     TYPE = "type"
     SUBJECT = "subject"
-    RULE_NAME = "rule_name"
     SECTION = "section"
     FUNC_NAME = "func_name"
     PAYLOAD = "payload"
@@ -51,7 +50,7 @@ class RuleConst(object):
 
     PAYLOAD_DIFFS = "payload_diffs"
 
+
 class ConfigKeyConst(object):
 
     TYPE_TOPICS_PREFIX = "TYPE_TOPICS_PREFIX"
-
