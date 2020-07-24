@@ -25,7 +25,7 @@ from krules_core.providers import (
     event_router_factory,
     proc_events_rx_factory,
     subject_factory,
-    message_dispatcher_factory
+    event_dispatcher_factory
 )
 
 
@@ -58,7 +58,7 @@ def test_internal_routing(subject, router):
 
     RuleFactory.create('test-rule-filters-pass',
                        subscribe_to="test-type",
-                       ruledata={
+                       data={
                            RuleConst.FILTERS: [
                                Callable(
                                    lambda self: True
@@ -74,7 +74,7 @@ def test_internal_routing(subject, router):
 
     RuleFactory.create('test-rule-filters-fails',
                        subscribe_to="test-type",
-                       ruledata={
+                       data={
                            RuleConst.FILTERS: [
                                Callable(lambda self: False),
                                Callable(lambda self: True),
@@ -113,7 +113,7 @@ def test_dispatch(subject, router):
         def dispatch(self, type, subject, payload, **extra):
             _dispatched_events.append((type, subject, payload))
 
-    message_dispatcher_factory.override(
+    event_dispatcher_factory.override(
         providers.Singleton(lambda: _TestDispatcher())
     )
 

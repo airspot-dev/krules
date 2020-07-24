@@ -76,7 +76,7 @@ def test_pycall(subject, router, asserted):
     RuleFactory.create(
         "test-pycall-with-error",
         subscribe_to="test-pycall",
-        ruledata={
+        data={
             processing: [
                 PyCall(_func, ([1, 2], True),
                        on_success=lambda self, x: x.reverse(),
@@ -88,7 +88,7 @@ def test_pycall(subject, router, asserted):
     RuleFactory.create(
         "test-pycall-no-error",
         subscribe_to="test-pycall",
-        ruledata={
+        data={
             processing: [
                 PyCall(_func, ([1, 2],), kwargs={"raise_error": False},
                        on_success=lambda self, x: (

@@ -56,7 +56,7 @@ class EventRouter(object):
             from krules_core.providers import subject_factory
             subject = subject_factory(subject)
 
-        from ..providers import message_dispatcher_factory
+        from ..providers import event_dispatcher_factory
 
         _callables = self._callables.get(type, None)
 
@@ -74,4 +74,4 @@ class EventRouter(object):
                 or dispatch_policy == DispatchPolicyConst.ALWAYS \
                 or dispatch_policy == DispatchPolicyConst.DIRECT:
             logger.debug("dispatch {} to {} with payload {}".format(type, subject, payload))
-            return message_dispatcher_factory().dispatch(type, subject, payload)
+            return event_dispatcher_factory().dispatch(type, subject, payload)

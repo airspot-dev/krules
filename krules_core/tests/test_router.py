@@ -30,7 +30,7 @@ def test_router():
 
     RuleFactory.create('test-empty-rule',
                        subscribe_to="some-type",
-                       ruledata={})
+                       data={})
 
     proc_events_rx.subscribe(
         lambda x: _assert(

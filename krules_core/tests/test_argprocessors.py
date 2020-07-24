@@ -49,7 +49,7 @@ def test_simple_callable():
     RuleFactory.create(
         "test-simple-callable",
         subscribe_to="test-argprocessors-callables",
-        ruledata={
+        data={
             processing: [
                 SimpleSet(lambda: 1, 2, arg3=lambda: 3, arg4=4, arg5=lambda p: "I'll never be called")
             ]
@@ -87,7 +87,7 @@ def test_with_self():
     RuleFactory.create(
         "test-with-self",
         subscribe_to="test-argprocessors-self",
-        ruledata={
+        data={
             processing: [
                 WithSelfSet(lambda self: self.payload["value_from"],
                             arg2=lambda self: self.subject.get("value_from"),
@@ -128,7 +128,7 @@ def test_with_payload_and_subject():
     RuleFactory.create(
         "test-with-payload-and-subject",
         subscribe_to="test-argprocessors-payload-and-subject",
-        ruledata={
+        data={
             processing: [
                 WithPayloadSet(lambda payload: payload["value_from"],
                                arg2=lambda subject: subject.get("value_from"),
@@ -193,7 +193,7 @@ def test_extend_jp_match():
     RuleFactory.create(
         "test-with-jp-expr",
         subscribe_to="test-argprocessors-jp-match",
-        ruledata={
+        data={
             processing: [
                 JPMatchSet(jp_match("$.elems[*].value"),
                            jp_match1("$.elems[?id==2]"))

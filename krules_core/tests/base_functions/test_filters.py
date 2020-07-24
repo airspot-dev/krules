@@ -69,7 +69,7 @@ def test_return(subject, router, asserted):
 
     RuleFactory.create('test-returns',
                        subscribe_to="event-test-returns",
-                       ruledata={
+                       data={
                            filters: [
                                Returns("something"),
                            ],
@@ -92,7 +92,7 @@ def test_truth(subject, router, asserted):
 
     RuleFactory.create('test-is-true',
                        subscribe_to="event-test-truth",
-                       ruledata={
+                       data={
                            filters: [
                                IsTrue(
                                     lambda payload: payload["it-works"]
@@ -102,7 +102,7 @@ def test_truth(subject, router, asserted):
 
     RuleFactory.create('test-is-false',
                        subscribe_to="event-test-truth",
-                       ruledata={
+                       data={
                            filters: [
                                IsFalse(
                                    lambda payload: payload["it-works"] is False
@@ -136,7 +136,7 @@ def test_subject_match(router, asserted):
 
     RuleFactory.create('test-subject-match',
                        subscribe_to='event-user-action',
-                       ruledata={
+                       data={
                            filters: [
                                SubjectNameMatch(r"^user\|(?P<user_id>.+)", payload_dest="user_info"),
                                IsTrue(
@@ -147,7 +147,7 @@ def test_subject_match(router, asserted):
 
     RuleFactory.create('test-subject-does-not-match',
                        subscribe_to='event-user-action',
-                       ruledata={
+                       data={
                            filters: [
                                SubjectNameDoesNotMatch(r"^device\|(?P<device_id>.+)", payload_dest="device_info"),
                            ]
@@ -177,7 +177,7 @@ def test_check_subject_property(router, subject, asserted):
     RuleFactory.create(
         "test-simple-subject-property",
         subscribe_to="test-subject-property",
-        ruledata={
+        data={
             filters: [
                 CheckSubjectProperty("prop-1", "value-1"),
                 CheckSubjectProperty("prop-2", 2),
@@ -188,7 +188,7 @@ def test_check_subject_property(router, subject, asserted):
     RuleFactory.create(
         "test-simple-subject-property-fails",
         subscribe_to="test-subject-property",
-        ruledata={
+        data={
             filters: [
                 CheckSubjectProperty("prop-1", "value-1"),
                 CheckSubjectProperty("prop-2", "2"),
@@ -200,7 +200,7 @@ def test_check_subject_property(router, subject, asserted):
     RuleFactory.create(
         "test-expr-subject-property",
         subscribe_to="test-subject-property",
-        ruledata={
+        data={
             filters: [
                 # one argument (value)
                 CheckSubjectProperty("prop-1"),
@@ -245,7 +245,7 @@ def test_check_subject_property(router, subject, asserted):
     RuleFactory.create(
         "test-subject-property-direct",
         subscribe_to="test-subject-property-direct",
-        ruledata={
+        data={
             filters: [
                 CheckSubjectProperty("v-prop-1", "value-2", cached=False),  # prop-1 is still value-1
             ]
@@ -255,7 +255,7 @@ def test_check_subject_property(router, subject, asserted):
     RuleFactory.create(
         "test-subject-property-ext-direct",
         subscribe_to="test-subject-property-direct",
-        ruledata={
+        data={
             filters: [
                 CheckSubjectProperty("ext-prop-3", cached=False),  # ext-prop-3 does not exists yet
             ]
@@ -317,7 +317,7 @@ def test_check_payload_match(router, subject, asserted):
     RuleFactory.create(
         "test-check-payload-jpmatch-not-empty",
         subscribe_to="test-check-payload-jpmatch",
-        ruledata={
+        data={
             filters: [
                 PayloadMatch("$..batch_data[?@.value>100]")  # returns two elements - pass
             ]
@@ -327,7 +327,7 @@ def test_check_payload_match(router, subject, asserted):
     RuleFactory.create(
         "test-check-payload-jpmatch-store-result",
         subscribe_to="test-check-payload-jpmatch",
-        ruledata={
+        data={
             filters: [
                 PayloadMatch("$.batch_data[?@.value>100]", lambda m: len(m) == 2),
                 PayloadMatch("$.batch_data[?@.value>100]", payload_dest="jpexpr_match"),
@@ -341,7 +341,7 @@ def test_check_payload_match(router, subject, asserted):
     RuleFactory.create(
         "test-check-payload-jpmatch-one",
         subscribe_to="test-check-payload-jpmatch",
-        ruledata={
+        data={
             filters: [
                 PayloadMatchOne("$.device_info.id", "0AFB1110"),
                 PayloadMatchOne("$.device_info.id", payload_dest="device_id"),
@@ -388,7 +388,7 @@ def test_on_subject_property_changed(router, subject, asserted):
     RuleFactory.create(
         "test-prop-changed",
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
-        ruledata={
+        data={
             filters: [
                 SubjectPropertyChanged("prop_a"),
                 SubjectPropertyChanged(lambda: "prop_{}".format("a")),
@@ -404,7 +404,7 @@ def test_on_subject_property_changed(router, subject, asserted):
     RuleFactory.create(
         "test-prop-changed-fails-1",
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
-        ruledata={
+        data={
             filters: [
                 SubjectPropertyChanged("prop_b"),
            ]
@@ -413,7 +413,7 @@ def test_on_subject_property_changed(router, subject, asserted):
     RuleFactory.create(
         "test-prop-changed-fails-2",
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
-        ruledata={
+        data={
             filters: [
                 SubjectPropertyChanged("prop_a", lambda value: value > 1),
             ]
@@ -422,7 +422,7 @@ def test_on_subject_property_changed(router, subject, asserted):
     RuleFactory.create(
         "test-prop-changed-fails-3",
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
-        ruledata={
+        data={
             filters: [
                 SubjectPropertyChanged("prop_a", lambda value, old_value: value == 1 and old_value is not None),
             ]
@@ -431,7 +431,7 @@ def test_on_subject_property_changed(router, subject, asserted):
     RuleFactory.create(
         "test-prop-changed-fails-4",
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
-        ruledata={
+        data={
             filters: [
                 SubjectPropertyChanged("prop_a", lambda value, old_value: value == 1,
                                          lambda old_value: old_value is not None),

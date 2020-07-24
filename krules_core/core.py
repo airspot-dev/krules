@@ -135,7 +135,7 @@ class Rule:
                     Const.RULENAME: self.name,
                     Const.SECTION: Const.FILTERS,
                     Const.FUNC_NAME: _cinst_name,
-                    Const.PAYLOAD: payload.copy(),
+                    Const.PAYLOAD: __copy(payload),
                     Const.ARGS: _c._args,
                     Const.KWARGS: _c._kwargs,
                 }
@@ -187,7 +187,7 @@ class Rule:
                     Const.RULENAME: self.name,
                     Const.SECTION: Const.PROCESSING,
                     Const.FUNC_NAME: _cinst_name,
-                    Const.PAYLOAD: payload.copy(),
+                    Const.PAYLOAD: __copy(payload),
                     Const.ARGS: _c._args,
                     Const.KWARGS: _c._kwargs,
                 }
@@ -250,13 +250,13 @@ class Rule:
 class RuleFactory:
 
     @staticmethod
-    def create(rulename: object, description: object = "", subscribe_to: object = None, ruledata: object = {}) -> object:
+    def create(name: object, description: object = "", subscribe_to: object = None, data: object = {}) -> object:
 
-        rule = Rule(rulename, description)
+        rule = Rule(name, description)
 
-        rule.set_filters(ruledata.get(Const.FILTERS, []))
-        rule.set_processing(ruledata.get(Const.PROCESSING, []))
-        rule.set_finally(ruledata.get(Const.FINALLY, []))
+        rule.set_filters(data.get(Const.FILTERS, []))
+        rule.set_processing(data.get(Const.PROCESSING, []))
+        rule.set_finally(data.get(Const.FINALLY, []))
 
         if isinstance(subscribe_to, str):
             subscribe_to = (subscribe_to,)
