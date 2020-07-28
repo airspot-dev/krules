@@ -57,7 +57,7 @@ class IsFalse(Returns):
         return not bool(super().execute(expression))
 
 
-class SubjectMatch(RuleFunctionBase):
+class SubjectNameMatch(RuleFunctionBase):
     """
     Checks if the subject's name matches the **regular expression**
     """
@@ -76,9 +76,9 @@ class SubjectMatch(RuleFunctionBase):
         return True
 
 
-class SubjectDoesNotMatch(SubjectMatch):
+class SubjectNameDoesNotMatch(SubjectNameMatch):
     """
-    Opposite of CheckSubjectMatch
+    Opposite of CheckSubjectNameMatch
     """
 
     def execute(self, regex, **kwargs):  # TODO: best inheritage support (**kwargs satisfy base class signature)
@@ -119,7 +119,7 @@ class CheckSubjectProperty(RuleFunctionBase):
         return _get(property_name, cached=cached) == property_value
 
 
-class PayloadJPMatch(RuleFunctionBase):
+class PayloadMatch(RuleFunctionBase):
     """
     It allows to process the payload with a jsonpath expression to check its content and possibly isolate part of it
     in a target variable
@@ -138,15 +138,15 @@ class PayloadJPMatch(RuleFunctionBase):
         >>>             "user": "admin",
         >>>             "data": [{"id": 1, "value": 200}, {"id": 2, "value": 90}, {"id": 3, "value": 250}]}
         >>>         }
-        >>> PayloadJPMatch("$.user", "admin")
+        >>> PayloadMatch("$.user", "admin")
         >>> False
-        >>> PayloadJPMatch("$.user", "admin", single_match=True)
+        >>> PayloadMatch("$.user", "admin", single_match=True)
         >>> True
-        >>> PayloadJPMatch("$.data[?@.value>100]")
+        >>> PayloadMatch("$.data[?@.value>100]")
         >>> True
-        >>> PayloadJPMatch("$.data[?@.value>100]", [1, 3])
+        >>> PayloadMatch("$.data[?@.value>100]", [1, 3])
         >>> False
-        >>> PayloadJPMatch("$.data[?@.value>100]", lambda x: len(x) == 2)
+        >>> PayloadMatch("$.data[?@.value>100]", lambda x: len(x) == 2)
         >>> True
         """
 
@@ -179,7 +179,7 @@ class PayloadJPMatch(RuleFunctionBase):
         return matched
 
 
-class PayloadJPMatchOne(PayloadJPMatch):
+class PayloadMatchOne(PayloadMatch):
     """
     Same as CheckPayloadJPMatch but expects just one element as result
     """

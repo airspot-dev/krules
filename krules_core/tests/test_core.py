@@ -22,10 +22,10 @@ from krules_core.core import RuleFactory
 from krules_core import RuleConst
 
 from krules_core.providers import (
-    message_router_factory,
-    results_rx_factory,
+    event_router_factory,
+    proc_events_rx_factory,
     subject_factory,
-    message_dispatcher_factory
+    event_dispatcher_factory
 )
 
 
@@ -47,18 +47,18 @@ def subject():
 
 @pytest.fixture
 def router():
-    router = message_router_factory()
+    router = event_router_factory()
     router.unregister_all()
-    results_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
 
-    return message_router_factory()
+    return event_router_factory()
 
 
 def test_internal_routing(subject, router):
 
     RuleFactory.create('test-rule-filters-pass',
-                       subscribe_to="test-message",
-                       ruledata={
+                       subscribe_to="test-type",
+                       data={
                            RuleConst.FILTERS: [
                                Callable(
                                    lambda self: True
@@ -73,8 +73,8 @@ def test_internal_routing(subject, router):
                        })
 
     RuleFactory.create('test-rule-filters-fails',
-                       subscribe_to="test-message",
-                       ruledata={
+                       subscribe_to="test-type",
+                       data={
                            RuleConst.FILTERS: [
                                Callable(lambda self: False),
                                Callable(lambda self: True),
@@ -87,41 +87,41 @@ def test_internal_routing(subject, router):
                            ],
                        })
 
-    results_rx_factory().subscribe(
-        lambda x: x[RuleConst.RULE_NAME] == 'test-rule-filters-pass' and
+    proc_events_rx_factory().subscribe(
+        lambda x: x[RuleConst.RULENAME] == 'test-rule-filters-pass' and
                   _assert(
                       x[RuleConst.PROCESSED] and
                       len(x[RuleConst.PROCESSING]) == 1
                   ) and print(x)
     )
-    results_rx_factory().subscribe(
-        lambda x: x[RuleConst.RULE_NAME] == 'test-rule-filters-fails' and
+    proc_events_rx_factory().subscribe(
+        lambda x: x[RuleConst.RULENAME] == 'test-rule-filters-fails' and
                   _assert(
                       not x[RuleConst.PROCESSED] and
                       len(x[RuleConst.PROCESSING]) == 0
                   ) and print(x)
     )
 
-    router.route("test-message", subject, {})
+    router.route("test-type", subject, {})
 
 
 def test_dispatch(subject, router):
-    _dispatched_messages = []
+    _dispatched_events = []
 
     class _TestDispatcher(BaseDispatcher):
 
-        def dispatch(self, message, subject, payload, **extra):
-            _dispatched_messages.append((message, subject, payload))
+        def dispatch(self, type, subject, payload, **extra):
+            _dispatched_events.append((type, subject, payload))
 
-    message_dispatcher_factory.override(
+    event_dispatcher_factory.override(
         providers.Singleton(lambda: _TestDispatcher())
     )
 
-    router.route('test-unhandled-message', subject, {"data": 1})
+    router.route('test-unhandled-event', subject, {"data": 1})
 
-    message, subject, payload = _dispatched_messages.pop()
+    type, subject, payload = _dispatched_events.pop()
     _assert(
-        message == 'test-unhandled-message' and
+        type == 'test-unhandled-event' and
         subject.name == subject.name and
         payload.get("data") == 1
     )

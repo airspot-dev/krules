@@ -9,12 +9,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class TopicsDefault:
-
-    RESULTS = "RulesResults"
-    #RESULTS_FULL = "RulesResultsFull"
-    ERRORS = "RulesErrors"
-
 
 class RuleConst(object):
     """
@@ -23,20 +17,19 @@ class RuleConst(object):
 
     PROCESS_ID = "process_id"
     ORIGIN_ID = "origin_id"
-    RULENAME = "rulename" # TODO.. rule_name/rulename
+    RULENAME = "name"
     DESCRIPTION = "description"
     SUBSCRIBE_TO = "subscribe_to"
-    RULEDATA = "ruledata"
+    RULEDATA = "data"
 
     FILTERS = "filters"
     PROCESSING = "processing"
     FINALLY = "finally"
 
-    MESSAGE = "message"
+    TYPE = "type"
     SUBJECT = "subject"
-    RULE_NAME = "rule_name"
     SECTION = "section"
-    FUNC_NAME = "func_name"
+    FUNC_NAME = "function"
     PAYLOAD = "payload"
     ARGS = "args"
     KWARGS = "kwargs"
@@ -51,6 +44,7 @@ class RuleConst(object):
 
     PAYLOAD_DIFFS = "payload_diffs"
 
+
 class ConfigKeyConst(object):
 
-    MESSAGE_TOPICS_PREFIX = "MESSAGE_TOPICS_PREFIX"
+    TYPE_TOPICS_PREFIX = "TYPE_TOPICS_PREFIX"

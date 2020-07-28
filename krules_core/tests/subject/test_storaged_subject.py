@@ -28,17 +28,17 @@ class Router(object):
 
 def setup_module(_):
     from dependency_injector import providers as providers
-    from krules_core.providers import message_router_factory
+    from krules_core.providers import event_router_factory
 
-    message_router_factory.override(
+    event_router_factory.override(
         providers.Singleton(Router)
     )
 
 
 def teardown_module(_):
-    from krules_core.providers import message_router_factory
+    from krules_core.providers import event_router_factory
 
-    message_router_factory.reset_last_overriding()
+    event_router_factory.reset_last_overriding()
 
 
 counter = 0
@@ -106,9 +106,9 @@ def test_set_get_del(subject):
 
     # events
     assert len(_test_events) == 3
-    from krules_core import messages
+    from krules_core import types
     #   type
-    assert _test_events[0][0] == _test_events[1][0] == _test_events[2][0] == messages.SUBJECT_PROPERTY_CHANGED
+    assert _test_events[0][0] == _test_events[1][0] == _test_events[2][0] == types.SUBJECT_PROPERTY_CHANGED
     #   subject
     assert _test_events[0][1].name == _test_events[1][1].name == _test_events[2][1].name == subject.name
     #   payload
@@ -199,7 +199,7 @@ def test_set_get_del(subject):
     #   cache not loaded yet
     subject.delete("my-prop", cached=False)
     assert len(_test_events) == 1 and \
-        _test_events[0][0] == messages.SUBJECT_PROPERTY_DELETED and \
+        _test_events[0][0] == types.SUBJECT_PROPERTY_DELETED and \
         _test_events[0][1].name == subject.name and \
         _test_events[0][2][PayloadConst.PROPERTY_NAME] == "my-prop"
     with pytest.raises(AttributeError):

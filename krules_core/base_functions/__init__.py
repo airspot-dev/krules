@@ -81,7 +81,7 @@ class RuleFunctionBase:
     subject = object()  # just for the ide happiness
 
     payload = {}
-    message = ""
+    type = ""
 
     def __init__(self, *args, **kwargs):
         self._args = args
@@ -109,8 +109,10 @@ class RuleFunctionBase:
             for processor in processors:
                 if processor.interested_in(kwargs[key]):
                 #if processor.interested_in(self._kwargs[key]):
-                    kwargs[key] = processor.process(instance, self._kwargs[key])
+                    kwargs[key] = processor.process(instance, kwargs[key])
                     break
+                else:
+                    pass
         return kwargs
 
 

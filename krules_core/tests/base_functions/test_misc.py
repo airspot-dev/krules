@@ -18,8 +18,8 @@ from krules_core.base_functions.misc import PyCall
 from krules_core.core import RuleFactory
 
 from krules_core.providers import (
-    message_router_factory,
-    results_rx_factory,
+    event_router_factory,
+    proc_events_rx_factory,
     subject_factory,
     subject_storage_factory)
 
@@ -39,11 +39,11 @@ def subject():
 
 @pytest.fixture
 def router():
-    router = message_router_factory()
+    router = event_router_factory()
     router.unregister_all()
-    results_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
 
-    return message_router_factory()
+    return event_router_factory()
 
 
 @pytest.fixture
@@ -55,7 +55,7 @@ def asserted():
 
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
-rule_name = RuleConst.RULE_NAME
+rulename = RuleConst.RULENAME
 processed = RuleConst.PROCESSED
 
 
@@ -76,7 +76,7 @@ def test_pycall(subject, router, asserted):
     RuleFactory.create(
         "test-pycall-with-error",
         subscribe_to="test-pycall",
-        ruledata={
+        data={
             processing: [
                 PyCall(_func, ([1, 2], True),
                        on_success=lambda self, x: x.reverse(),
@@ -88,7 +88,7 @@ def test_pycall(subject, router, asserted):
     RuleFactory.create(
         "test-pycall-no-error",
         subscribe_to="test-pycall",
-        ruledata={
+        data={
             processing: [
                 PyCall(_func, ([1, 2],), kwargs={"raise_error": False},
                        on_success=lambda self, x: (
@@ -99,17 +99,17 @@ def test_pycall(subject, router, asserted):
         }
     )
 
-    results_rx_factory().subscribe(
-        lambda x: x[rule_name] == "test-pycall-no-error" and _assert(
-            x[rule_name],
+    proc_events_rx_factory().subscribe(
+        lambda x: x[rulename] == "test-pycall-no-error" and _assert(
+            x[rulename],
             get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) == [2, 1]
             and not get_value_from_payload_diffs("got_errors", x[processing][0]["payload_diffs"], default_value=False)
         )
     )
 
-    results_rx_factory().subscribe(
-        lambda x: x[rule_name] == "test-pycall-with-error" and _assert(
-            x[rule_name],
+    proc_events_rx_factory().subscribe(
+        lambda x: x[rulename] == "test-pycall-with-error" and _assert(
+            x[rulename],
             not get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) and
             get_value_from_payload_diffs("got_errors", x[processing][0]["payload_diffs"], default_value=False)
         )
