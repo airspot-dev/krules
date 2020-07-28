@@ -17,23 +17,23 @@ from pytest_localserver import plugin
 from dependency_injector import providers
 
 from krules_core.providers import (
-    settings_factory,
-    message_router_factory,
-    message_dispatcher_factory,
+    configs_factory,
+    event_router_factory,
+    event_dispatcher_factory,
     subject_storage_factory,
     subject_factory)
-from krules_core.route.router import MessageRouter
+from krules_core.route.router import EventRouter
 from .route.dispatcher import CloudEventsDispatcher
 from krules_core.tests.subject.sqlite_storage import SQLLiteSubjectStorage
 
 httpserver = plugin.httpserver
 
 
-settings_factory.override(
+configs_factory.override(
     providers.Singleton(lambda: {})
 )
-message_router_factory.override(
-    providers.Singleton(MessageRouter)
+event_router_factory.override(
+    providers.Singleton(EventRouter)
 )
 
 subject_storage_factory.override(
@@ -42,35 +42,35 @@ subject_storage_factory.override(
 
 
 def test_dispatched_event(httpserver):
-    from krules_core import messages
+    from krules_core import types
 
-    message_dispatcher_factory.override(
+    event_dispatcher_factory.override(
         providers.Singleton(lambda: CloudEventsDispatcher(httpserver.url, "pytest", test=True))
     )
-    router = message_router_factory()
+    router = event_router_factory()
     subject = subject_factory("test-subject")
     subject.set_ext("ext1", "val1")
     subject.set_ext("ext2", "2")
-    _id, code, sent_headers = router.route("test-message", subject, {"key1": "hello"})
+    _id, code, sent_headers = router.route("test-type", subject, {"key1": "hello"})
     print(sent_headers)
 
     assert(200 <= code < 300)
     assert (sent_headers.get("ce-id") == _id)
     assert(sent_headers.get("ce-source") == "pytest")
     assert(sent_headers.get("ce-subject") == "test-subject")
-    assert(sent_headers.get("ce-type") == "test-message")
+    assert(sent_headers.get("ce-type") == "test-type")
     assert(sent_headers.get("ce-Originid") == _id)
     assert(sent_headers.get("ce-ext1") == "val1")
     assert(sent_headers.get("ce-ext2") == "2")
 
     # with event info
     subject = subject_factory("test-subject", event_info={"Originid": 1234})
-    _, _, sent_headers = router.route("test-message", subject, {"key1": "hello"})
+    _, _, sent_headers = router.route("test-type", subject, {"key1": "hello"})
     assert(sent_headers.get("id") != sent_headers.get("ce-Originid"))
     assert(sent_headers.get("ce-Originid") == '1234')
 
     # property name
-    _, _, sent_headers = router.route(messages.SUBJECT_PROPERTY_CHANGED, subject, {PayloadConst.PROPERTY_NAME: "foo"})
+    _, _, sent_headers = router.route(types.SUBJECT_PROPERTY_CHANGED, subject, {PayloadConst.PROPERTY_NAME: "foo"})
     assert (sent_headers.get("ce-propertyname") == 'foo')
 
 
