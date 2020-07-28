@@ -136,8 +136,8 @@ class Rule:
                     Const.SECTION: Const.FILTERS,
                     Const.FUNC_NAME: _cinst_name,
                     Const.PAYLOAD: __copy(payload),
-                    Const.ARGS: _c._args,
-                    Const.KWARGS: _c._kwargs,
+                    Const.ARGS: __copy_list(_c._args),
+                    Const.KWARGS: __copy(_c._kwargs),
                 }
                 logger.debug("> processing: {0}".format(res_in))
                 try:
@@ -159,8 +159,8 @@ class Rule:
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
                     Const.PAYLOAD_DIFFS: payload_patches,
-                    Const.ARGS: processed_args,
-                    Const.KWARGS: processed_kwargs,
+                    Const.ARGS: __copy_list(processed_args),
+                    Const.KWARGS: __copy(processed_kwargs),
                     Const.RETURNS: res
                 }
                 logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS], 'returns': res_out[Const.RETURNS]}))
@@ -188,8 +188,8 @@ class Rule:
                     Const.SECTION: Const.PROCESSING,
                     Const.FUNC_NAME: _cinst_name,
                     Const.PAYLOAD: __copy(payload),
-                    Const.ARGS: _c._args,
-                    Const.KWARGS: _c._kwargs,
+                    Const.ARGS: __copy_list(_c._args),
+                    Const.KWARGS: __copy(_c._kwargs),
                 }
                 logger.debug("> processing: {0}".format(res_in))
                 try:
@@ -210,8 +210,8 @@ class Rule:
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
                     Const.PAYLOAD_DIFFS: payload_patches,
-                    Const.ARGS: processed_args,
-                    Const.KWARGS: processed_kwargs,
+                    Const.ARGS: __copy_list(processed_args),
+                    Const.KWARGS: __copy(processed_kwargs),
                     Const.RETURNS: res,
                 }
                 logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS], 'returns': res_out[Const.RETURNS]}))
@@ -233,8 +233,8 @@ class Rule:
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
                     Const.PAYLOAD_DIFFS: payload_patches,
-                    Const.ARGS: processed_args,
-                    Const.KWARGS: processed_kwargs,
+                    Const.ARGS: __copy_list(processed_args),
+                    Const.KWARGS: __copy(processed_kwargs),
                     Const.RETURNS: None,
                     Const.EXCEPTION: ".".join([type(e).__module__, type(e).__name__]),
                     Const.EXC_INFO: traceback.format_exception(type_, value_, traceback_),
