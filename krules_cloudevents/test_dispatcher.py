@@ -17,23 +17,23 @@ from pytest_localserver import plugin
 from dependency_injector import providers
 
 from krules_core.providers import (
-    settings_factory,
-    message_router_factory,
-    message_dispatcher_factory,
+    configs_factory,
+    event_router_factory,
+    event_dispatcher_factory,
     subject_storage_factory,
     subject_factory)
-from krules_core.route.router import MessageRouter
+from krules_core.route.router import EventRouter
 from .route.dispatcher import CloudEventsDispatcher
 from krules_core.tests.subject.sqlite_storage import SQLLiteSubjectStorage
 
 httpserver = plugin.httpserver
 
 
-settings_factory.override(
+configs_factory.override(
     providers.Singleton(lambda: {})
 )
-message_router_factory.override(
-    providers.Singleton(MessageRouter)
+event_router_factory.override(
+    providers.Singleton(EventRouter)
 )
 
 subject_storage_factory.override(
@@ -44,10 +44,10 @@ subject_storage_factory.override(
 def test_dispatched_event(httpserver):
     from krules_core import types
 
-    message_dispatcher_factory.override(
+    event_dispatcher_factory.override(
         providers.Singleton(lambda: CloudEventsDispatcher(httpserver.url, "pytest", test=True))
     )
-    router = message_router_factory()
+    router = event_router_factory()
     subject = subject_factory("test-subject")
     subject.set_ext("ext1", "val1")
     subject.set_ext("ext2", "2")
