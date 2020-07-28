@@ -17,7 +17,7 @@ from krules_core.providers import (
     subject_factory,
     proc_events_rx_factory,
     event_router_factory,
-    message_dispatcher_factory,
+    event_dispatcher_factory,
     exceptions_dumpers_factory,
 )
 from krules_core.route.router import DispatchPolicyConst, EventRouter
@@ -29,6 +29,7 @@ from krules_env.settings_loader import load_from_path
 krules_settings = load_from_path(config_base_path)
 
 RULE_PROC_EVENT = format_event_type("rule-proc-event")
+
 
 # class _JSONEncoder(json.JSONEncoder):
 #     def default(self, obj):
@@ -42,6 +43,7 @@ RULE_PROC_EVENT = format_event_type("rule-proc-event")
 def publish_proc_events_all(result):
 
     data = result
+    # data = json.loads(json.dumps(result, cls=_JSONEncoder).encode("utf-8"))
     event_info = data.get("event_info", {})
     result_subject = subject_factory(data[RuleConst.RULENAME], event_info=event_info)
 
@@ -114,6 +116,6 @@ def init():
         source = socket.gethostname()
 
     from krules_cloudevents.route.dispatcher import CloudEventsDispatcher
-    message_dispatcher_factory.override(
+    event_dispatcher_factory.override(
         providers.Singleton(lambda: CloudEventsDispatcher(krules_settings["CLOUDEVENTS"]["send_to"], source))
     )
