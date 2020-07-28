@@ -8,6 +8,6 @@ RUN cd /krules-libs/krules-core && python3 setup.py develop
 RUN cd /krules-libs/krules-dispatcher-cloudevents && python3 setup.py develop --no-deps
 RUN cd /krules-libs/krules-env && python3 setup.py develop --no-deps
 
-ENV PYTHONPATH /app:/krules-libs
+ENV PYTHONPATH /app:/krules-libs/krules-core:/krules-libs/krules-dispatcher-cloudevents:/krules-libs/krules-env
 
 CMD exec gunicorn --bind :8080 --workers 1 --threads 8 main:app
