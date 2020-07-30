@@ -6,9 +6,11 @@ from datetime import datetime
 import json_logging
 import importlib
 
+from dependency_injector import providers
 from flask import Flask
 from flask import Response
 from flask import request
+from flask import g
 
 from krules_core.route.router import DispatchPolicyConst
 from krules_core.providers import event_router_factory
@@ -21,6 +23,14 @@ import io
 
 from cloudevents.sdk.event import v1
 from cloudevents.sdk import marshaller
+
+from krules_core.subject.storaged_subject import Subject
+
+from krules_core.providers import (
+            subject_factory,
+        )
+
+from flask_g_wrap import g_wrap
 
 app = Flask("ruleset")
 
@@ -53,6 +63,7 @@ req_logger.propagate = False
 
 krules_env.init()
 app_env.init()
+subject_factory.override(providers.Factory(lambda *args, **kw: g_wrap(subject_factory.cls, *args, **kw)))
 
 m_rules = importlib.import_module("rules")
 
@@ -75,7 +86,7 @@ def main():
         type = event_info.get("type")
         subject = event_info.get("subject", "sys-0")
 
-
+        g.subjects = []
         # TODO: important!!
         # need to find a way to avoid a return of messages from the same service
         # (for example when resending it again after intercepted in the first time)
@@ -91,11 +102,8 @@ def main():
         logger.debug("payload: {}".format(payload))
 
         from dependency_injector import providers
-        from krules_core.providers import (
-            subject_factory,
-        )
 
-        subject = subject_factory(subject, event_info=event_info)
+        subject = subject_factory(name=subject, event_info=event_info)
 
         payload["_event_info"] = event_info
 
@@ -105,7 +113,8 @@ def main():
                 dispatch_policy=dispatch_policy
             )
         finally:
-            subject.store()
+            for sub in g.subjects:
+                sub.store()
 
         exec_time = (datetime.now() - start_time).total_seconds()
         logger.info("Event",

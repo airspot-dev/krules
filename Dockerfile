@@ -11,7 +11,7 @@ RUN pip3 install pyyaml anyjson \
     flask json-logging bumpversion cloudevents==0.3.0
 
 # TODO REMOVE
-RUN pip install pykube-ng time-convert
+RUN pip install pykube-ng
 
 ADD ./app /app
 
