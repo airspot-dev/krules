@@ -12,12 +12,12 @@ class Subject(object):
     Needs a storage strategy implementation
     """
 
-    def __init__(self, name, event_info={}, use_cache_dafault=True):
+    def __init__(self, name, event_info={}, payload={}, use_cache_dafault=True):
         from krules_core.providers import subject_storage_factory
 
         self.name = name
         self._use_cache = use_cache_dafault
-        self._storage = subject_storage_factory(name)
+        self._storage = subject_storage_factory(name, event_info=event_info, payload=payload)
         self._event_info = event_info
         self._cached = None
 
@@ -30,17 +30,20 @@ class Subject(object):
         props, ext_props = self._storage.load()
         #if self._cached is None:
         self._cached = \
-            { PropertyType.DEFAULT: {
-                "values": {},
-                "created": set(),
-                "updated": set(),
-                "deleted": set(),
-            }, PropertyType.EXTENDED: {
-                "values": {},
-                "created": set(),
-                "updated": set(),
-                "deleted": set(),
-            }}
+            {
+                PropertyType.DEFAULT: {
+                    "values": {},
+                    "created": set(),
+                    "updated": set(),
+                    "deleted": set(),
+                },
+                PropertyType.EXTENDED: {
+                    "values": {},
+                    "created": set(),
+                    "updated": set(),
+                    "deleted": set(),
+                }
+            }
         self._cached[PropertyType.DEFAULT]["values"] = props
         self._cached[PropertyType.EXTENDED]["values"] = ext_props
 
