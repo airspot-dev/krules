@@ -103,9 +103,9 @@ def main():
 
         from dependency_injector import providers
 
-        subject = subject_factory(name=subject, event_info=event_info)
+        subject = subject_factory(name=subject, event_info=event_info, payload=payload)
 
-        payload["_event_info"] = event_info
+        payload["_event_info"] = event_info  # TODO: KRUL-155
 
         try:
             event_router_factory().route(
