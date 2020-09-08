@@ -37,7 +37,7 @@ event_router_factory.override(
 )
 
 subject_storage_factory.override(
-    providers.Factory(lambda x: SQLLiteSubjectStorage(x, ":memory:"))
+    providers.Factory(lambda x, **kwargs: SQLLiteSubjectStorage(x, ":memory:"))
 )
 
 
