@@ -84,37 +84,31 @@ class RuleFunctionBase:
     type = ""
 
     def __init__(self, *args, **kwargs):
-        self._args = args
-        self._kwargs = kwargs
+        self._args = []
+        for a in args:
+            for processor in processors:
+                if processor.interested_in(a):
+                    self._args.append(processor(a))
+                    break
 
-    def _get_args(self, instance):
-
-        args = list(self._args)
-        for i in range(len(self._args)):
-            v = self._args[i]
+        self._kwargs = {}
+        for k, v in kwargs.items():
             for processor in processors:
                 if processor.interested_in(v):
-                #if processor.interested_in(self._args[i]):
-                    args[i] = processor.process(instance, v)
-                    #self._args[i] = processor.process(instance, v)
+                    self._kwargs[k] = processor(v)
                     break
-                else:
-                    pass
-        return args
+
+    def _get_args(self, instance):
+        args = []
+        for processor in self._args:
+            args.append(processor.process(instance))
+        return tuple(args)
 
     def _get_kwargs(self, instance):
-
-        kwargs = self._kwargs.copy()
-        for key in kwargs:
-            for processor in processors:
-                if processor.interested_in(kwargs[key]):
-                #if processor.interested_in(self._kwargs[key]):
-                    kwargs[key] = processor.process(instance, kwargs[key])
-                    break
-                else:
-                    pass
+        kwargs = {}
+        for key, processor in self._kwargs.items():
+            kwargs[key] = processor.process(instance)
         return kwargs
-
 
     @abstractmethod
     def execute(self, *args, **kwargs):

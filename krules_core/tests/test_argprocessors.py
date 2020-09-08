@@ -179,15 +179,13 @@ def test_extend_jp_match():
 
     class jp_match(JPPayloadMatchBase):
 
-        @staticmethod
-        def process(instance, arg):
-            return jp.match(arg._expr, instance.payload)
+        def process(self, instance):
+            return jp.match(self._expr, instance.payload)
 
     class jp_match1(JPPayloadMatchBase):
 
-        @staticmethod
-        def process(instance, arg):
-            return jp.match1(arg._expr, instance.payload)
+        def process(self, instance):
+            return jp.match1(self._expr, instance.payload)
 
     processors.extend((jp_match, jp_match1))
 
