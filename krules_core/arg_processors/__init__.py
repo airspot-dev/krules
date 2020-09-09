@@ -10,6 +10,7 @@
 # limitations under the License.
 
 import inspect
+from abc import abstractmethod
 
 processors = []
 
@@ -21,10 +22,17 @@ class BaseArgProcessor:
 
     @staticmethod
     def interested_in(arg):
-        return False
+        """
+        return: True if arg must be processed by this class False if not.
+        """
+        raise NotImplementedError()
 
+    @abstractmethod
     def process(self, instance):
-        return self._arg(instance)
+        """
+        return: Processed argument.
+        """
+        raise NotImplementedError()
 
 
 class DefaultArgProcessor(BaseArgProcessor):
