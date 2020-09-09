@@ -27,34 +27,14 @@ class BaseArgProcessor:
         return self._arg(instance)
 
 
-class NotCallableArgProcessor(BaseArgProcessor):
+class DefaultArgProcessor(BaseArgProcessor):
 
     @staticmethod
     def interested_in(arg):
-        return not hasattr(arg, '__call__')
+        return True
 
     def process(self, instance):
         return self._arg
-
-
-processors.append(NotCallableArgProcessor)
-
-
-class MultiParamsCallableArgProcessor(BaseArgProcessor):
-
-    @staticmethod
-    def interested_in(arg):
-        try:
-            sig = inspect.signature(arg)
-            return len(sig.parameters) > 1
-        except TypeError:
-            return False
-
-    def process(self, instance):
-        return self._arg
-
-
-processors.append(MultiParamsCallableArgProcessor)
 
 
 class SimpleCallableArgProcessor(BaseArgProcessor):

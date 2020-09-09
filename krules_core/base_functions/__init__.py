@@ -13,7 +13,7 @@
 
 from abc import ABCMeta, abstractmethod
 #import jsonpath_rw_ext as jp
-from krules_core.arg_processors import processors
+from krules_core.arg_processors import processors, DefaultArgProcessor
 
 
 # class with_payload(object):
@@ -86,17 +86,18 @@ class RuleFunctionBase:
     def __init__(self, *args, **kwargs):
         self._args = []
         for a in args:
-            for processor in processors:
-                if processor.interested_in(a):
-                    self._args.append(processor(a))
-                    break
+            self._args.append(self._get_arg_processor(a))
 
         self._kwargs = {}
         for k, v in kwargs.items():
-            for processor in processors:
-                if processor.interested_in(v):
-                    self._kwargs[k] = processor(v)
-                    break
+            self._kwargs[k] = self._get_arg_processor(v)
+
+    @staticmethod
+    def _get_arg_processor(arg):
+        for processor in processors:
+            if processor.interested_in(arg):
+                return processor(arg)
+        return DefaultArgProcessor(arg)
 
     def _get_args(self, instance):
         args = []
