@@ -1,16 +1,128 @@
+import copy
+
+import yaml
+
+from krules_core.subject import PropertyType
+
+import pykube
+import re
 
 class SubjectsK8sStorage(object):
 
-    def __init__(self, subject, resource):
-        self._subject = str(subject)
-        self._resource = resource
+    def __init__(self, resource_path, resource_body=None, override_api_url=False):
+        self._resource_path = resource_path
+        self._resource_body = resource_body
+        self._override_api_url = override_api_url
+        self._resource_properties = None
+        self._inferred_properties = None
 
     def __str__(self):
-        return "{} instance for {}".format(self.__class__, self._subject)
+        return "{} instance for {}".format(self.__class__, self._resource_path)
 
     def _get_resource(self):
-        if self._resource is None:
-            pass
+        if self._resource_body is None:
+            api = self._get_api_client()
+            #api_url = api.url
+            #if self._use_local_proxy:
+
+            resp = api.session.get(url=f"{api.url}{self._resource_path}")
+            resp.raise_for_status()
+            self._resource_body = resp.json()
+        return self._resource_body
+
+    def _get_api_client(self):
+        if self._override_api_url:
+            config = pykube.KubeConfig.from_url(self._override_api_url)
+        else:
+            config = pykube.KubeConfig.from_env()
+        api = pykube.HTTPClient(config)
+        return api
+
+    def _get_resource_properties(self):
+        if self._resource_properties is None:
+            props = {
+                PropertyType.DEFAULT: {},
+                PropertyType.EXTENDED: {}
+            }
+            props[PropertyType.DEFAULT].update(
+                yaml.load(
+                    self._get_resource().get("metadata", {}).get("annotations", {}).get("airspot.krules.dev/props", '{}'),
+                    Loader=yaml.SafeLoader
+                )
+            )
+            props[PropertyType.EXTENDED].update(
+                yaml.load(
+                    self._get_resource().get("metadata", {}).get("annotations", {}).get("airspot.krules.dev/ext_props", '{}'),
+                    Loader=yaml.SafeLoader
+                )
+            )
+            self._resource_properties = props
+        return self._resource_properties
+
+    def _get_inferred_properties(self):
+        """
+        properties inferred from the resource path
+        group, apiversion, namespace, resourcetype, subresource as extended properties
+        name as normal property
+        (https://kubernetes.io/docs/reference/using-api/api-concepts/)
+        """
+        if self._inferred_properties is None:
+            patterns = [
+                # namespaced
+                "^/apis/(?P<group>[^/]+)/(?P<apiversion>v[a-z0-9]+)/namespaces/(?P<namespace>[a-z0-9-]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
+                # cluster scoped
+                "^/apis/(?P<group>[^/]+)/(?P<apiversion>v[a-z0-9]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
+                # api core (namespaced)
+                "^/api/(?P<apiversion>v[a-z0-9]+)/namespaces/(?P<namespace>[a-z0-9-]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
+                # api core
+                "^/api/(?P<apiversion>v[a-z0-9]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
+            ]
+            match = None
+            for pattern in patterns:
+                match = re.match(pattern, self._resource_path)
+                if match is not None:
+                    break
+
+            if match is None:
+                raise ValueError(self._resource_path)
+            dd = match.groupdict()
+            name = dd.get("name")
+            group = dd.get("group", "core")
+            apiversion = dd.get("apiversion")
+            namespace = dd.get("namespace")
+            resourcetype = dd.get("resourcetype")
+            subresource = dd.get("subresource")
+
+            props = {
+                PropertyType.DEFAULT: {},
+                PropertyType.EXTENDED: {}
+            }
+            if group is not None:
+                props[PropertyType.EXTENDED]["group"] = group
+            props[PropertyType.EXTENDED]["apiversion"] = apiversion
+            if namespace is not None:
+                props[PropertyType.EXTENDED]["namespace"] = namespace
+            props[PropertyType.EXTENDED]["resourcetype"] = resourcetype
+            if subresource is not None:
+                props[PropertyType.EXTENDED]["subresource"] = subresource
+
+            props[PropertyType.DEFAULT]["name"] = name
+            self._inferred_properties = props
+
+        return self._inferred_properties
+
+    def _reset(self):
+        if self._resource_body != {}:  # forced to use only inferred properties (more efficient)
+            self._resource_body = None
+            self._resource_properties = None
+
+    def _get_all_properties(self):
+        props = {}
+        props.update(self._get_resource_properties())
+        props[PropertyType.DEFAULT].update(self._get_inferred_properties()[PropertyType.DEFAULT])
+        props[PropertyType.EXTENDED].update(self._get_inferred_properties()[PropertyType.EXTENDED])
+
+        return props
 
     def is_concurrency_safe(self):
         return False
@@ -19,97 +131,118 @@ class SubjectsK8sStorage(object):
         return True
 
     def load(self):
-        pass
-        # res = {
-        #     PropertyType.DEFAULT: {},
-        #     PropertyType.EXTENDED: {}
-        # }
-        # hset = self._conn.hgetall(f"s:{self._subject}")
-        # for k, v in hset.items():
-        #     k = k.decode("utf-8")
-        #     res[k[0]][k[1:]] = json.loads(v)
-        # return res[PropertyType.DEFAULT], res[PropertyType.EXTENDED]
+
+        props = self._get_all_properties()
+
+        return copy.deepcopy(props[PropertyType.DEFAULT]), copy.deepcopy(props[PropertyType.EXTENDED])
+
 
     def store(self, inserts=[], updates=[], deletes=[]):
-        pass
-        # if len(inserts)+len(updates)+len(deletes) == 0:
-        #     return
-        #
-        # skey = f"s:{self._subject}"
-        # hset = {}
-        # for prop in tuple(inserts)+tuple(updates):
-        #     hset[f"{prop.type}{prop.name}"] = prop.json_value()
-        # with self._conn.pipeline() as pipe:
-        #     pipe.hmset(skey, hset)
-        #     for pkey in [f"{el.type}{el.name}" for el in deletes]:
-        #         pipe.hdel(skey, pkey)
-        #     pipe.execute()
+        if len(inserts)+len(updates)+len(deletes) == 0:
+            return
 
+        props = self._get_resource_properties()
+        for prop in tuple(inserts) + tuple(updates):
+            props[prop.type][prop.name] = prop.value
+        for prop in deletes:
+            if prop.name in props[prop.type]:
+                del props[prop.type][prop.name]
+
+        api = self._get_api_client()
+
+        patch = {
+            "metadata": {
+                "annotations": {
+                    "airspot.krules.dev/props": yaml.dump(props[PropertyType.DEFAULT], Dumper=yaml.SafeDumper),
+                    "airspot.krules.dev/ext_props": yaml.dump(props[PropertyType.EXTENDED], Dumper=yaml.SafeDumper),
+                }
+            }
+        }
+        resp = api.session.patch(url=f"{api.url}{self._resource_path}",
+                                 headers={"Content-Type": "application/merge-patch+json"},
+                                 json=patch)
+        resp.raise_for_status()
 
     def set(self, prop, old_value_default=None):
         """
         Set value for property, works both in update and insert
-        Returns old value
+        This funtion requires updating the resource to prepare for the next patch
+        :return: value, old_value
         """
-        # skey = f"s:{self._subject}"
-        # pname = f"{prop.type}{prop.name}"
-        # if callable(prop.value):
-        #     while True:
-        #         try:
-        #             with self._conn.pipeline() as pipe:
-        #                 pipe.watch(skey)
-        #                 old_value = pipe.hget(skey, pname)
-        #                 pipe.multi()
-        #                 if old_value is None:
-        #                     old_value = old_value_default
-        #                 else:
-        #                     old_value = json.loads(old_value)
-        #                 new_value = prop.json_value(old_value)
-        #                 pipe.hset(skey, pname, new_value)
-        #                 pipe.execute()
-        #                 break
-        #         except redis.WatchError:
-        #             continue
-        #     new_value = json.loads(new_value)
-        # else:
-        #     with self._conn.pipeline() as pipe:
-        #         pipe.hget(skey, pname)
-        #         pipe.hset(skey, pname, prop.json_value())
-        #         old_value, _ = pipe.execute()
-        #         if old_value is None:
-        #             old_value = old_value_default
-        #         else:
-        #             old_value = json.loads(old_value)
-        #
-        #         new_value = prop.get_value()
-        #
-        # return new_value, old_value
+        self._reset()
+
+        props = self._get_resource_properties()
+        old_value = props[prop.type].get(prop.name, old_value_default)
+        new_value = prop.get_value(old_value)
+        props[prop.type][prop.name] = new_value
+        patch = {
+            "metadata": {
+                "annotations": {
+                    "airspot.krules.dev/props": yaml.dump(props[PropertyType.DEFAULT], Dumper=yaml.SafeDumper),
+                    "airspot.krules.dev/ext_props": yaml.dump(props[PropertyType.EXTENDED], Dumper=yaml.SafeDumper),
+                }
+            }
+        }
+
+        api = self._get_api_client()
+        resp = api.session.patch(url=f"{api.url}{self._resource_path}",
+                                 headers={"Content-Type": "application/merge-patch+json"},
+                                 json=patch)
+        resp.raise_for_status()
+
+        return new_value, old_value
 
     def get(self, prop):
         """
         Get a single property
+        Always returns the updated value, so it needs a call to update the resource
         Raises AttributeError if not found
         """
-        # skey = f"s:{self._subject}"
-        # pname = f"{prop.type}{prop.name}"
-        # with self._conn.pipeline() as pipe:
-        #     pipe.hexists(skey, pname)
-        #     pipe.hget(skey, pname)
-        #     exists, value = pipe.execute()
-        # if not exists:
-        #     raise AttributeError(prop.name)
-        # return json.loads(value)
+        self._reset()
+        props = self._get_resource_properties()
+        try:
+            value = props[prop.type][prop.name]
+        except KeyError:
+            raise AttributeError(prop.name)
+
+        return value
 
     def delete(self, prop):
         """
         Delete a single property
+        This funtion requires updating the resource to prepare for the next patch
         """
-        # skey = f"s:{self._subject}"
-        # pname = f"{prop.type}{prop.name}"
-        # self._conn.hdel(skey, pname)
+        self._reset()
+
+        props = self._get_resource_properties()
+        try:
+            del props[prop.type][prop.name]
+        except KeyError:
+            pass
+        patch = {
+            "metadata": {
+                "annotations": {
+                    "airspot.krules.dev/props": yaml.dump(props[PropertyType.DEFAULT], Dumper=yaml.SafeDumper),
+                    "airspot.krules.dev/ext_props": yaml.dump(props[PropertyType.EXTENDED], Dumper=yaml.SafeDumper),
+                }
+            }
+        }
+
+        api = self._get_api_client()
+        resp = api.session.patch(url=f"{api.url}{self._resource_path}",
+                                 headers={"Content-Type": "application/merge-patch+json"},
+                                 json=patch)
+        resp.raise_for_status()
 
     def get_ext_props(self):
-        pass
+        """
+        refresh resource and returns extended properties as a dictionary
+        :return: dict
+        """
+        self._resource_properties = None
+        self._resource_body = None
+        _, ext_props = self.load()
+        return ext_props
         # props = {}
         # skey = f"s:{self._subject}"
         # for pname, pval in self._conn.hscan_iter(skey, f"{PropertyType.EXTENDED}*"):
@@ -117,7 +250,25 @@ class SubjectsK8sStorage(object):
         # return props
 
     def flush(self):
-        pass
-        # skey = f"s:{self._subject}"
-        # self._conn.delete(skey)
-        # return self
+        """
+        Flush remove only user added properties. Does not delete the object
+        :return: Object reference
+        """
+        self._reset()
+
+        api = self._get_api_client()
+
+        patch = {
+            "metadata": {
+                "annotations": {
+                    "airspot.krules.dev/props": "{}",
+                    "airspot.krules.dev/ext_props": "{}",
+                }
+            }
+        }
+        resp = api.session.patch(url=f"{api.url}{self._resource_path}",
+                                 headers={"Content-Type": "application/merge-patch+json"},
+                                 json=patch)
+        resp.raise_for_status()
+
+
