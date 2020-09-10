@@ -10,7 +10,6 @@
 # limitations under the License.
 
 import inspect
-from abc import abstractmethod
 
 processors = []
 
@@ -27,7 +26,6 @@ class BaseArgProcessor:
         """
         raise NotImplementedError()
 
-    @abstractmethod
     def process(self, instance):
         """
         return: Processed argument.
@@ -62,7 +60,7 @@ class SimpleCallableArgProcessor(BaseArgProcessor):
 processors.append(SimpleCallableArgProcessor)
 
 
-class CallableWithSelf(BaseArgProcessor):
+class CallableWithSelfArgProcessor(BaseArgProcessor):
 
     @staticmethod
     def interested_in(arg):
@@ -76,10 +74,10 @@ class CallableWithSelf(BaseArgProcessor):
         return self._arg(instance)
 
 
-processors.append(CallableWithSelf)
+processors.append(CallableWithSelfArgProcessor)
 
 
-class CallableWithPayload(BaseArgProcessor):
+class CallableWithPayloadArgProcessor(BaseArgProcessor):
 
     @staticmethod
     def interested_in(arg):
@@ -93,10 +91,10 @@ class CallableWithPayload(BaseArgProcessor):
         return self._arg(instance.payload)
 
 
-processors.append(CallableWithPayload)
+processors.append(CallableWithPayloadArgProcessor)
 
 
-class CallableWithSubject(BaseArgProcessor):
+class CallableWithSubjectArgProcessor(BaseArgProcessor):
 
     @staticmethod
     def interested_in(arg):
@@ -110,6 +108,6 @@ class CallableWithSubject(BaseArgProcessor):
         return self._arg(instance.subject)
 
 
-processors.append(CallableWithSubject)
+processors.append(CallableWithSubjectArgProcessor)
 
 
