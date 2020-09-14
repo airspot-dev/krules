@@ -369,6 +369,7 @@ rulesdata = [
 ```
 The last rule needs some more explanation. Because when an event is emitted it is first managed inside the container and then propagated outside only if no subscriber is found, we need to create a rule to explicitly dispatch the **subject-property-changed** event outside, if we want to give the opportunity to other services to react to this change. 
 
+As can be seen, some RuleFunctions use lambda functions as parameters that have the payload or subject as arguments, this is possible thanks to the argument processor, go to [specific document](ArgumentProcessors.md) to learn more.
 
 ## Observability and errors management
 Everything is an event, also the very fact that a rule is processed is itself an event. This is because the rules, during their processing, produce a detail metric, in the form of an event, relative to each process step of the pipeline in which they are contained.
