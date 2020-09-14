@@ -1,4 +1,4 @@
-# Argument Processor #
+# How arguments are processed #
 
 A **Rule** is a static structure which is instantiated on the startup and it remains in the memory for the entire duration of the process that contains it.
 
@@ -6,6 +6,7 @@ Take for example the *Print* RuleFunction which can be used to print a text upon
 
 ```python
 class Print(RuleFunctionBase):
+
     def execute(self, text):
         print(text)
 # ...
@@ -23,6 +24,7 @@ The first option is to create a specific RuleFunction which reads the "message" 
 
 ```python
 class PrintMessageFromPayload(RuleFunctionBase):
+
     def execute(self):
         print(self.payload["message"])
 # ...
@@ -123,15 +125,29 @@ ruledata={
 ```
 
 Some RuleFunctions accept callables as parameters, it is important to note that this does not conflict at all with the argument processors, indeed, the two things can coexist in the same argument. 
+For example, SubjectPropertyChanged is a filter which, as its name suggests, check whether a given subject property has been changed. Also can be specified 2 kwargs: value and old_value. If these are assigned static values, the comparison will be simply be performed with the corresponding value in the payload (value and old_value are always present in subject-property-changed event). However, it is also possible to assign a boolean function to these parameters which takes value and old_value as arguments.
 
 ```python
 # ...
 ruledata={
         filters: [
-            OnSubjectPropertyChanged("my_property", old_value=lambda subject: lambda old_value, value: value == subject.name and old_value is None ),
+            SubjectPropertyChanged("temperature", old_value=lambda old_value, value: value > 25 and old_value is None ),
         ]
     }
 ```
+
+Suppose we want also to pass the subject information to the *old_value* function.
+ 
+```python
+# ...
+ruledata={
+        filters: [
+            SubjectPropertyChanged("temperature", old_value=lambda subject: lambda old_value, value: subject.status == "READY" and value > 25 and old_value is None ),
+        ]
+    }
+```
+
+In this case the first lambda function will be called by the argument processor and its result, which is itself a lambda function, will be passed to old_value.
 
 ## Custom argument processors
 
@@ -193,6 +209,15 @@ We will not dwell too much on the implementation of the *jp_match* and *jp_match
 
 Let's now move on to the actual argument processor, the **JPProcessor** class. In the *interested_in* method, it verifies that the argument is an instance of the *JPPayloadMatchBase* class. The *process* method instead invokes the match method by passing it the instance of the RuleFunctionBase that will use the wrapped argument.
 
-A fundamental step is the extension of the argument processor pool (line 31). To do this, you must first import the list of processors and add the new class (or new classes) of your new argument processor to it.
+A fundamental step is the extension of the argument processor pool.
+```python
+from krules_core.arg_processors import processors, BaseArgProcessor
+#...
+
+processors.append(JPProcessor)
+
+#...
+```
+Doing this you add the new class (or new classes) to the argument processors pool.
 
 At this point it is possible to use the 2 classes just implemented as arguments of the next RuleFunctions. 
