@@ -14,7 +14,36 @@ import inspect
 processors = []
 
 
-class SimpleCallableArgProcessor:
+class BaseArgProcessor:
+
+    def __init__(self, arg):
+        self._arg = arg
+
+    @staticmethod
+    def interested_in(arg):
+        """
+        return: True if arg must be processed by this class False if not.
+        """
+        raise NotImplementedError()
+
+    def process(self, instance):
+        """
+        return: Processed argument.
+        """
+        raise NotImplementedError()
+
+
+class DefaultArgProcessor(BaseArgProcessor):
+
+    @staticmethod
+    def interested_in(arg):
+        return True
+
+    def process(self, instance):
+        return self._arg
+
+
+class SimpleCallableArgProcessor(BaseArgProcessor):
 
     @staticmethod
     def interested_in(arg):
@@ -24,15 +53,14 @@ class SimpleCallableArgProcessor:
         except TypeError:
             return False
 
-    @staticmethod
-    def process(_, arg):
-        return arg()
+    def process(self, _):
+        return self._arg()
 
 
 processors.append(SimpleCallableArgProcessor)
 
 
-class CallableWithSelf:
+class CallableWithSelfArgProcessor(BaseArgProcessor):
 
     @staticmethod
     def interested_in(arg):
@@ -42,15 +70,14 @@ class CallableWithSelf:
         except TypeError:
             return False
 
-    @staticmethod
-    def process(instance, arg):
-        return arg(instance)
+    def process(self, instance):
+        return self._arg(instance)
 
 
-processors.append(CallableWithSelf)
+processors.append(CallableWithSelfArgProcessor)
 
 
-class CallableWithPayload:
+class CallableWithPayloadArgProcessor(BaseArgProcessor):
 
     @staticmethod
     def interested_in(arg):
@@ -60,15 +87,14 @@ class CallableWithPayload:
         except TypeError:
             return False
 
-    @staticmethod
-    def process(instance, arg):
-        return arg(instance.payload)
+    def process(self, instance):
+        return self._arg(instance.payload)
 
 
-processors.append(CallableWithPayload)
+processors.append(CallableWithPayloadArgProcessor)
 
 
-class CallableWithSubject:
+class CallableWithSubjectArgProcessor(BaseArgProcessor):
 
     @staticmethod
     def interested_in(arg):
@@ -78,11 +104,10 @@ class CallableWithSubject:
         except TypeError:
             return False
 
-    @staticmethod
-    def process(instance, arg):
-        return arg(instance.subject)
+    def process(self, instance):
+        return self._arg(instance.subject)
 
 
-processors.append(CallableWithSubject)
+processors.append(CallableWithSubjectArgProcessor)
 
 

@@ -12,6 +12,7 @@ import pytest
 import rx
 from dependency_injector import providers
 
+from krules_core.arg_processors import BaseArgProcessor
 from krules_core import RuleConst
 from krules_core.base_functions import RuleFunctionBase, inspect
 from krules_core.core import RuleFactory
@@ -173,23 +174,29 @@ def test_extend_jp_match():
         def __init__(self, expr):
             self._expr = expr
 
-        @classmethod
-        def interested_in(cls, arg):
-            return isinstance(arg, cls)
+        def match(self, instance):
+            raise NotImplementedError()
 
     class jp_match(JPPayloadMatchBase):
 
-        @staticmethod
-        def process(instance, arg):
-            return jp.match(arg._expr, instance.payload)
+        def match(self, instance):
+            return jp.match(self._expr, instance.payload)
 
     class jp_match1(JPPayloadMatchBase):
 
-        @staticmethod
-        def process(instance, arg):
-            return jp.match1(arg._expr, instance.payload)
+        def match(self, instance):
+            return jp.match1(self._expr, instance.payload)
 
-    processors.extend((jp_match, jp_match1))
+    class JPProcessor(BaseArgProcessor):
+
+        @staticmethod
+        def interested_in(arg):
+            return isinstance(arg, JPPayloadMatchBase)
+
+        def process(self, instance):
+            return self._arg.match(instance)
+
+    processors.append(JPProcessor)
 
     RuleFactory.create(
         "test-with-jp-expr",
