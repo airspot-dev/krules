@@ -8,7 +8,7 @@ from krules_core.subject import SubjectProperty, SubjectExtProperty, PayloadCons
 class Subject(object):
 
     """
-    Subject implemantation
+    Subject implementation
     Needs a storage strategy implementation
     """
 

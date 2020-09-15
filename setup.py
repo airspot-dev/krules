@@ -30,7 +30,6 @@ setup(
     ],
     setup_requires=[
         'pytest-runner',
-        'sphinx'
     ],
     tests_require=[
         'pytest',
