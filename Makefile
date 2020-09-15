@@ -4,8 +4,8 @@ DEV_VERSION=${VERSION}-${NOW}
 
 public: check_env setup app/*.py public/Dockerfile
 	bumpversion --current-version ${VERSION} patch VERSION --allow-dirty
-	docker build -t ruleset-image-base:${VERSION} -t ${DOCKER_REGISTRY}/ruleset-image-base:${VERSION} public
-	docker push ${DOCKER_REGISTRY}/ruleset-image-base:${VERSION}
+	docker build -t ruleset-image-base:${VERSION} -t ${DOCKER_REGISTRY}/ruleset-image-base:${VERSION} -t ${DOCKER_REGISTRY}/ruleset-image-base:latest public
+	docker push ${DOCKER_REGISTRY}/ruleset-image-base:${VERSION} && docker push ${DOCKER_REGISTRY}/ruleset-image-base:latest
 
 develop: check_env check_dev_env setup app/*.py develop/Dockerfile
 	cp -rf ${KRULES_DEV_PACKAGES_DIR} ./develop/.krules-libs/
