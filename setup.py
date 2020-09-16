@@ -32,8 +32,11 @@ setup(
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
-        'krules-core==0.4.2',
+        'krules-core==0.4.3-KRUL-153',
         'pykube-ng==20.7.2',
+    ],
+    dependency_links=[
+        '-e git+git@gitlab.com:krules/krules-core@e19478c6f9e8a3ac7bcaa14c032d629804e058cb#egg=krules_core-0.4.3-KRUL-153',
     ],
     setup_requires=[
         'pytest-runner',

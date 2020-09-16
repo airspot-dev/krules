@@ -1,3 +1,15 @@
+# Copyright 2019 The KRules Authors
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import copy
 
 import yaml
@@ -106,7 +118,7 @@ class SubjectsK8sStorage(object):
             if subresource is not None:
                 props[PropertyType.EXTENDED]["subresource"] = subresource
 
-            props[PropertyType.DEFAULT]["name"] = name
+            props[PropertyType.EXTENDED]["name"] = name
             self._inferred_properties = props
 
         return self._inferred_properties
@@ -199,7 +211,7 @@ class SubjectsK8sStorage(object):
         Raises AttributeError if not found
         """
         self._reset()
-        props = self._get_resource_properties()
+        props = self._get_all_properties()
         try:
             value = props[prop.type][prop.name]
         except KeyError:
