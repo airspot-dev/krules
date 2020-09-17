@@ -12,6 +12,10 @@ li {
     margin: 5px;
 }
 
+dd > p {
+    font-size: medium;
+}
+
 div.sphinxsidebar a {
     color: #036aff;
     border-bottom: 0;

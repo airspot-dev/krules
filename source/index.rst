@@ -14,7 +14,9 @@ If you are interested in getting an idea of the project you can meanwhile take a
 
 Contents:
 ---------
-- `Technical Documentation <OVERVIEW.html>`_ : An introductory guide to the framework basic concepts.
-- `How argument are processed <ArgumentProcessors>`_ : A brief explanation of how argument processing works and how it can help application development.
+- `Technical Overview <OVERVIEW.html>`_ :
+   An introductory guide to the framework basic concepts.
+- `How argument are processed <ArgumentProcessors>`_ :
+   A brief explanation of how argument processing works and how it can help application development.
 
 Do not hesitate to `contact us <mailto:info@airspot.tech>`_ if you are interested in further information.
