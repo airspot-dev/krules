@@ -71,6 +71,19 @@ def setup_module(_):
     pykube.Pod(api, obj).create()
 
 
+def teardown_module(_):
+    subject_storage_factory.reset_last_overriding()
+
+    global POD_NAME, NAMESPACE
+
+    if os.environ.get("API_URL", False):
+        config = pykube.KubeConfig.from_url(os.environ.get("API_URL"))
+    else:
+        config = pykube.KubeConfig.from_env()
+    api = pykube.HTTPClient(config)
+    pykube.Pod.objects(api).filter(namespace=NAMESPACE).get(name=POD_NAME).delete()
+
+
 def test_inferred_properties():
     global POD_NAME, NAMESPACE
 
