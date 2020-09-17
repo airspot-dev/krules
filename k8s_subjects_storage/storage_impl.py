@@ -85,9 +85,9 @@ class SubjectsK8sStorage(object):
                 # cluster scoped
                 "^/apis/(?P<group>[^/]+)/(?P<apiversion>v[a-z0-9]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
                 # api core (namespaced)
-                "^/api/(?P<apiversion>v[a-z0-9]+)/namespaces/(?P<namespace>[a-z0-9-]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
+                "^/api[s]?/(?P<apiversion>v[a-z0-9]+)/namespaces/(?P<namespace>[a-z0-9-]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
                 # api core
-                "^/api/(?P<apiversion>v[a-z0-9]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
+                "^/api[s]?/(?P<apiversion>v[a-z0-9]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
             ]
             match = None
             for pattern in patterns:
@@ -248,18 +248,10 @@ class SubjectsK8sStorage(object):
 
     def get_ext_props(self):
         """
-        refresh resource and returns extended properties as a dictionary
+        here we do not refresh resource because this is the only method we need if we just send the event outside
         :return: dict
         """
-        self._resource_properties = None
-        self._resource_body = None
-        _, ext_props = self.load()
-        return ext_props
-        # props = {}
-        # skey = f"s:{self._subject}"
-        # for pname, pval in self._conn.hscan_iter(skey, f"{PropertyType.EXTENDED}*"):
-        #     props[pname[1:].decode("utf-8")] = json.loads(pval)
-        # return props
+        return self._get_all_properties()[PropertyType.EXTENDED]
 
     def flush(self):
         """
