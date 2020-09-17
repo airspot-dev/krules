@@ -1,0 +1,26 @@
+/* This file intentionally left blank. */
+div.body h1, h2{
+    color: #036aff;
+}
+
+a {
+    color: #000
+}
+
+li {
+    display: flex;
+    margin: 5px;
+}
+
+div.sphinxsidebar a {
+    color: #036aff;
+    border-bottom: 0;
+}
+
+body {
+    font-family: "Open Sans",sans-serif;
+}
+
+div.body h1, div.body h2, div.body h3, div.body h4, div.body h5, div.body h6 {
+    font-family: "Open Sans",sans-serif;
+}
