@@ -12,12 +12,12 @@ class Subject(object):
     Needs a storage strategy implementation
     """
 
-    def __init__(self, name, event_info={}, payload={}, use_cache_dafault=True):
+    def __init__(self, name, event_info={}, event_data=None, use_cache_default=True):
         from krules_core.providers import subject_storage_factory
 
         self.name = name
-        self._use_cache = use_cache_dafault
-        self._storage = subject_storage_factory(name, event_info=event_info, payload=payload)
+        self._use_cache = use_cache_default
+        self._storage = subject_storage_factory(name, event_info=event_info, event_data=event_data)
         self._event_info = event_info
         self._cached = None
 
@@ -211,17 +211,17 @@ class Subject(object):
 
     def __len__(self):
 
-        if self._cached is None:
+        if self._cached is None or not self._use_cache:
             self._load()
         return len(self._cached[PropertyType.DEFAULT]["values"])
 
     def __iter__(self):
-        if self._cached is None:
+        if self._cached is None or not self._use_cache:
             self._load()
         return iter(self._cached[PropertyType.DEFAULT]["values"])
 
     def __contains__(self, item):
-        if self._cached is None:
+        if self._cached is None or not self._use_cache:
             self._load()
         return item in self._cached[PropertyType.DEFAULT]["values"]
 
@@ -240,10 +240,10 @@ class Subject(object):
                     propname = item[4:]
                     is_ext = True
 
-                value = self._get(propname, extended=is_ext, cached=False)
+                value = self._get(propname, extended=is_ext, cached=self._use_cache)
             except KeyError:
                 raise ex
-            return _SubjectPropertyProxy(self, propname, value, is_ext, is_mute)
+            return _SubjectPropertyProxy(self, propname, value, is_ext, is_mute, self._use_cache)
 
     def __setattr__(self, item, value):
 
@@ -260,7 +260,7 @@ class Subject(object):
             is_mute = True
             is_ext = True
             propname = item[4:]
-        return self._set(propname, value, is_ext, is_mute, cached=False)
+        return self._set(propname, value, is_ext, is_mute, self._use_cache)
 
     def __delattr__(self, item):
         if item in ('name',) or item.startswith("_"):
@@ -276,7 +276,7 @@ class Subject(object):
             is_mute = True
             is_ext = True
             propname = item[4:]
-        return self._delete(propname, is_ext, is_mute, False)
+        return self._delete(propname, is_ext, is_mute, self._use_cache)
 
 
 class _SubjectPropertyProxy(wrapt.ObjectProxy):
@@ -291,13 +291,15 @@ class _SubjectPropertyProxy(wrapt.ObjectProxy):
         _prop = None
         _extended = None
         _muted = None
+        _use_cache = None
 
-        def __init__(self, subject, prop, value, extended, muted):
+        def __init__(self, subject, prop, value, extended, muted, use_cache):
             super().__init__(value)
             self._subject = subject
             self._prop = prop
             self._extended = extended
             self._muted = muted
+            self._use_cache = use_cache
 
         def __repr__(self):
             return self.__class__.__repr__(self.__wrapped__)
@@ -305,12 +307,12 @@ class _SubjectPropertyProxy(wrapt.ObjectProxy):
         def incr(self, amount=1):
             if self._extended:
                 raise TypeError("not supported for extended properties")
-            return self._subject.set(self._prop, lambda v: v+amount, self._muted, False)
+            return self._subject.set(self._prop, lambda v: v+amount, self._muted, self._use_cache)
 
         def decr(self, amount=1):
             if self._extended:
                 raise TypeError("not supported for extended properties")
-            return self._subject.set(self._prop, lambda v: v-amount, self._muted, False)
+            return self._subject.set(self._prop, lambda v: v-amount, self._muted, self._use_cache)
 
 
 
