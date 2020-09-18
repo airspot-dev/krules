@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='krules-core',
-    version="0.4.3-KRUL-153",
+    version="0.4.4",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules Python core package",
