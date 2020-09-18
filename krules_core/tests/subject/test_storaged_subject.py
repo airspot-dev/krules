@@ -73,6 +73,14 @@ def subject():
     counter += 1
     return subject_factory('test-subject-{0}'.format(counter)).flush()
 
+@pytest.fixture
+def subject_no_cache():
+    from krules_core.providers import subject_factory
+
+    global counter
+    counter += 1
+    return subject_factory('test-subject-{0}'.format(counter), use_cache_default=False).flush()
+
 
 def test_set_get_del(subject):
     from krules_core.providers import subject_factory, subject_storage_factory
@@ -268,7 +276,7 @@ def test_cache_policy(subject):
     with pytest.raises(AttributeError):
         subject_fresh.get_ext("p2")
 
-    subject = subject_factory(subject.name, use_cache_dafault=False)
+    subject = subject_factory(subject.name, use_cache_default=False)
     subject.flush()
     subject.set("p1", None)
     subject.set_ext("p2", None)
@@ -353,66 +361,66 @@ def test_iter_contains(subject):
         assert p in subject
 
 
-def test_property_proxy(subject):
+def test_property_proxy(subject_no_cache):
 
     from krules_core.providers import subject_factory, subject_storage_factory
     global _test_events
     _test_events = []
 
-    subject.flush()
+    subject_no_cache.flush()
 
     with pytest.raises(AttributeError):
-        _ = subject.foo
+        _ = subject_no_cache.foo
 
-    subject.foo = 1
-    assert subject.foo == 1
+    subject_no_cache.foo = 1
+    assert subject_no_cache.foo == 1
     assert len(_test_events) == 1
 
-    if subject_storage_factory(subject.name).is_persistent():
-        assert subject_factory(subject.name).get("foo") == 1
+    if subject_storage_factory(subject_no_cache.name).is_persistent():
+        assert subject_factory(subject_no_cache.name).get("foo") == 1
 
-    assert subject.m_foo == 1
-    assert subject.foo == 1
-    subject.m_foo = 2
+    assert subject_no_cache.m_foo == 1
+    assert subject_no_cache.foo == 1
+    subject_no_cache.m_foo = 2
     assert len(_test_events) == 1
 
-    subject.ext_foo = 3
-    assert subject.ext_foo == 3
-    assert subject.foo == 2
+    subject_no_cache.ext_foo = 3
+    assert subject_no_cache.ext_foo == 3
+    assert subject_no_cache.foo == 2
     assert len(_test_events) == 1
-    if subject_storage_factory(subject.name).is_persistent():
-        assert subject_factory(subject.name).get_ext("foo") == 3
+    if subject_storage_factory(subject_no_cache.name).is_persistent():
+        assert subject_factory(subject_no_cache.name).get_ext("foo") == 3
 
-    subject.foo = lambda foo: foo*foo
+    subject_no_cache.foo = lambda foo: foo * foo
     assert len(_test_events) == 2
 
-    assert subject.foo == 4
+    assert subject_no_cache.foo == 4
 
-    subject.foo.incr()
+    subject_no_cache.foo.incr()
     assert len(_test_events) == 3
-    assert subject.foo == 5
-    subject.m_foo.incr(2)
+    assert subject_no_cache.foo == 5
+    subject_no_cache.m_foo.incr(2)
     assert len(_test_events) == 3
-    assert subject.foo == 7
-    subject.foo.decr()
-    assert subject.foo == 6
+    assert subject_no_cache.foo == 7
+    subject_no_cache.foo.decr()
+    assert subject_no_cache.foo == 6
     with pytest.raises(TypeError):
-        subject.ext_foo.incr()
+        subject_no_cache.ext_foo.incr()
     with pytest.raises(TypeError):
-        subject.ext_foo.decr()
+        subject_no_cache.ext_foo.decr()
 
-    del subject.foo
+    del subject_no_cache.foo
     assert len(_test_events) == 5
     with pytest.raises(AttributeError):
-        _ = subject.foo
-    subject.foo = 1
-    del subject.m_foo
+        _ = subject_no_cache.foo
+    subject_no_cache.foo = 1
+    del subject_no_cache.m_foo
     assert len(_test_events) == 6
     with pytest.raises(AttributeError):
-        _ = subject.foo
-    del subject.ext_foo
+        _ = subject_no_cache.foo
+    del subject_no_cache.ext_foo
     with pytest.raises(AttributeError):
-        _ = subject.ext_foo
+        _ = subject_no_cache.ext_foo
 
 
 def test_reading(subject):

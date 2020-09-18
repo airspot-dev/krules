@@ -54,7 +54,7 @@ class EventRouter(object):
         if isinstance(subject, str):
             # NOTE: this should have already happened if we want to take care or event info
             from krules_core.providers import subject_factory
-            subject = subject_factory(subject)
+            subject = subject_factory(subject, event_data=payload)
 
         from ..providers import event_dispatcher_factory
 
