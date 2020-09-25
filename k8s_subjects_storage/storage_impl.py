@@ -22,6 +22,9 @@ import re
 class SubjectsK8sStorage(object):
 
     def __init__(self, resource_path, resource_body=None, override_api_url=False):
+        # resurce body should be a valid k8s resource or an empty dict (force only inferred props)
+        if resource_body is not None and resource_body.get("metadata", {}).get("name", False):
+            resource_body = None
         self._resource_path = resource_path
         self._resource_body = resource_body
         self._override_api_url = override_api_url
