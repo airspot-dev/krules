@@ -18,7 +18,7 @@ def read(fname):
 
 setup(
     name='krules-subjects-storage-k8s',
-    version="0.4.2-dev",
+    version="0.4.43",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules k8s subjects storage implementation",
@@ -32,11 +32,8 @@ setup(
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
-        'krules-core==0.4.3-KRUL-153',
+        'krules-core==0.4.4',
         'pykube-ng==20.7.2',
-    ],
-    dependency_links=[
-        '-e git+git@gitlab.com:krules/krules-core@e19478c6f9e8a3ac7bcaa14c032d629804e058cb#egg=krules_core-0.4.3-KRUL-153',
     ],
     setup_requires=[
         'pytest-runner',
