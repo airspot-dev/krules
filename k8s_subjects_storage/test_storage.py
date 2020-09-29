@@ -178,7 +178,6 @@ def test_factory_base_properties():
 
     for ep, values in endpoints:
             props, ext_props = subject_storage_factory(ep, {}).load()
-            print("@@@@@@ %s" % ep)
 
             if "group" in values:
                 assert ext_props["group"] == values["group"]
