@@ -199,7 +199,7 @@ So the ruleset data is loaded just one time and it is static (potentially it can
 The rule is up of 2 sections: **filters** and **processing**.
 
 If the filter section passes the  whole processing section is executed (unless some exception is raised, we will talk about that).
-Both sections are a pipeline of small functions which represent the essential building blocks of the application logic. They can be very generalized or strictly specific to application domain. The framework encourages and promotes a high reusability of the code by providing the developer with the elements necessary to build you own blocks. We like to call them micro-assets.
+Both sections are a pipeline of small functions which represent the essential building blocks of the application logic. They can be very generalized or strictly specific to application domain, and they can be considered a sort of promise hooked to the event (or events) to which the containing Rules is subscribed to. The framework encourages and promotes a high reusability of the code by providing the developer with the elements necessary to build you own blocks. We like to call them micro-assets.
 At each step within the pipeline the payload can be altered enriching it with information available for subsequent blocks.
 
 
@@ -235,9 +235,10 @@ class ProcessCSV_AsDict(RuleFunctionBase):
 ```
 Classes derived from **RuleFunctionBase** are meta classes statically created together with the definition of the ruleset. The performing instance is created during each pipeline execution while the runtime information are injected into the object. In fact, as can be seen in the example, the payload properties are treated internally in the execute method. 
 
-So, in the previous example, we produced an event _onboard-device_ type. Here the subject is the device and the payload contains all the initial data obtained from the csv. Somewhere in the cloud we can now intercept this event and finally setup the basic properties of each new onboarded device.
+So, in the previous example, we produced an event _onboard-device_ type. Here the subject is the device and the payload contains all the initial data obtained from the csv. Somewhere in the cloud we can now intercept this event and finally setup the basic properties of each new onboarded device. To do this we define a specific Ruleset and the related Knative Trigger to intercept the *onboard-device* events.
 
-```python
+_rules.py_
+```python 
 rulesdata = [
 
     """
@@ -264,13 +265,66 @@ rulesdata = [
 
 ]
 ```
+_triggers.yaml_
+```yaml
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: on-onboard-device-type-onboard-device
+spec:
+  broker: default
+  filter:
+    attributes:
+      type: onboard-device
+  subscriber:
+    ref:
+      apiVersion: v1
+      kind: Service
+      name: on-onboard-device
+```
 In addition, to set the basic properties, we do more few interesting things. 
 
-We set deviceclass as an extended property. This means that from now on, this subject is tagged with that attribute and this information will be part of each event contextualized to this device. We can use Knative triggers for example to convey all these events to a dedicated broker, where a subset of rules will subscribe, activating logic specific only to that class of devices.
+We set deviceclass as an extended property. This means that from now on, this subject is tagged with that attribute and this information will be part of each event contextualized to this device. For example, we can define another Trigger for each device class to convey all these events to a dedicated broker, where a subset of rules will subscribe, activating logic specific only to that class of devices.
+
+```yaml
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: default-to-class-a-trigger
+spec:
+  broker: default
+  filter:
+    attributes:
+      deviceclass: class-a
+  subscriber:
+    ref:
+      apiVersion: eventing.knative.dev/v1
+      kind: Broker
+      name: class-a
+
+---
+
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: default-to-class-b-trigger
+spec:
+  broker: default
+  filter:
+    attributes:
+      deviceclass: class-b
+  subscriber:
+    ref:
+      apiVersion: eventing.knative.dev/v1
+      kind: Broker
+      name: class-b
+```
 
 We also set a status property to ‘READY’. As seen in the beginning, properties are reactive so that the system can be made aware of this new status. For example an independent service could take further steps to actually complete the onboarding procedure
 
 This is a very important feature and, to better explain it, we can take the example presented at the beginning where, in an interactive shell, we explicitly set the received value of a temperature sensor. Now we are supposing to receive that value as part of an ingestion event. This is happening in the first rule; the following ones instead react to that change setting the temp_status property. Please note that the minimum and maximum temperatures are read as property of the subject. This is because we set them during onboarding phase by acquiring them from the csv
+
+_rules.py_
 ```python
 rulesdata = [
 
@@ -367,10 +421,49 @@ rulesdata = [
     },
 ]
 ```
+_triggers.yaml_
+```yaml
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: on-data-received-set-temp-status-type-data-received
+spec:
+  broker: class-a
+  filter:
+    attributes:
+      type: data-received
+  subscriber:
+    ref:
+      apiVersion: v1
+      kind: Service
+      name: on-data-received-set-temp-status
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: on-propchange-tempc
+spec:
+  broker: class-a
+  filter:
+    attributes:
+      type: subject-property-changed
+      propertyname: tempc
+  subscriber:
+    ref:
+      apiVersion: v1
+      kind: Service
+      name: on-data-received-set-temp-status
+```
+
 The last rule needs some more explanation. Because when an event is emitted it is first managed inside the container and then propagated outside only if no subscriber is found, we need to create a rule to explicitly dispatch the **subject-property-changed** event outside, if we want to give the opportunity to other services to react to this change. 
 
 As can be seen, some RuleFunctions use lambda functions as parameters that have the payload or subject as arguments, this is possible thanks to the argument processor.
 Go to ArgumentProcessors section to learn more.
+
+As you can see, since we want to apply this logic only to a specific device class, we can take advantage of the event sorting mechanism through the extended properties illustrated above by associating both triggers with the **class-a** broker.
+
+
+Another interesting thing to note is that the **subject-property-changed** event contains the propertyname as an extended property.
 
 ## Observability and errors management
 Everything is an event, also the very fact that a rule is processed is itself an event. This is because the rules, during their processing, produce a detail metric, in the form of an event, relative to each process step of the pipeline in which they are contained.
