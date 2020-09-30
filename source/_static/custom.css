@@ -32,3 +32,8 @@ div.body h1, div.body h2, div.body h3, div.body h4, div.body h5, div.body h6 {
 span.underline {
     text-decoration: underline;
 }
+
+#license-img {
+    margin-right: 2px;
+    width: 1%;
+}
