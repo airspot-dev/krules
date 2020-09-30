@@ -176,12 +176,12 @@ rulesdata = [
                   driver=GoogleStorageDriver,
                   func=lambda device_data, self: (
                     # a new event is issued for each line of the csv
-                    message_router_factory().route(
+                    event_router_factory().route(
                         # new event type
                         "onboard-device",
                         # the device becomes the new subject
-                        subject_factory("device|%s" % device_data.pop("deviceid")),
-                        # device data and device class as payload
+                        subject_factory(device_data.pop("deviceid"), event_info=self.subject.event_info()),
+                         # device data and device class as payload
                         {
                             "data": device_data,
                             "class": self.payload["path_info"]["deviceclass"]
