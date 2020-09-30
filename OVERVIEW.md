@@ -457,10 +457,11 @@ spec:
 
 The last rule needs some more explanation. Because when an event is emitted it is first managed inside the container and then propagated outside only if no subscriber is found, we need to create a rule to explicitly dispatch the **subject-property-changed** event outside, if we want to give the opportunity to other services to react to this change. 
 
-As can be seen, some RuleFunctions use lambda functions as parameters that have the payload or subject as arguments, this is possible thanks to the argument processor.
-Go to ArgumentProcessors section to learn more.
+As can be seen, some RuleFunctions use lambda functions as parameters that have the payload or subject as arguments, this is possible thanks to argument processors.
 
-As you can see, since we want to apply this logic only to a specific device class, we can take advantage of the event sorting mechanism through the extended properties illustrated above by associating both triggers with the **class-a** broker.
+Go to [ArgumentProcessors](https://intro.krules.io/ArgumentProcessors.html) section to learn more.
+
+Since we want to apply this logic only to a specific device class, we can take advantage of the event sorting mechanism through the extended properties illustrated above by associating both triggers with the **class-a** broker.
 
 
 Another interesting thing to note is that the **subject-property-changed** event contains the propertyname as an extended property.
