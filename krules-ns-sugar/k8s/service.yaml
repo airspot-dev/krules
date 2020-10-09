@@ -9,6 +9,8 @@ spec:
     metadata:
       annotations:
         autoscaling.knative.dev/minScale: "1"
+#      labels:
+#        serving.knative.dev/visibility: cluster-local
     spec:
       containers:
           - name: ruleset
