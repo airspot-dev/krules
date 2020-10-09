@@ -1,0 +1,20 @@
+apiVersion: sources.knative.dev/v1alpha1
+kind: ApiServerSource
+metadata:
+  name: apiserversource
+spec:
+  serviceAccountName: krules-watcher-serviceaccount
+  mode: Resource
+  resources:
+    - apiVersion: v1
+      kind: Namespace
+      labelSelector:
+        matchLabels:
+          krules.airspot.dev/injection: enabled
+
+  sink:
+    ref:
+      apiVersion: eventing.knative.dev/v1
+      kind: Broker
+      name: k8s-events
+---
