@@ -14,7 +14,10 @@ spec:
 
   sink:
     ref:
-      apiVersion: eventing.knative.dev/v1
-      kind: Broker
-      name: k8s-events
+#      apiVersion: eventing.knative.dev/v1
+#      kind: Broker
+#      name: k8s-events
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: krules-ns-sugar
 ---
