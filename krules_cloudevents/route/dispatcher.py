@@ -14,6 +14,7 @@ import uuid
 from datetime import datetime
 import pytz
 import json
+import inspect
 
 
 from krules_core.subject import PayloadConst
@@ -68,7 +69,12 @@ class CloudEventsDispatcher(BaseDispatcher):
         headers, body = m.ToRequest(event, converters.TypeBinary, json.dumps)
         # headers['Ce-Originid'] = str(_event_info.get("Originid", _id))
 
-        response = requests.post(self._dispatch_url,
+        if hasattr(self._dispatch_url, '__call__'):
+            dispatch_url = self._dispatch_url(subject, type)
+        else:
+            dispatch_url = self._dispatch_url
+
+        response = requests.post(dispatch_url,
                                  headers=headers,
                                  data=body)
 
