@@ -69,7 +69,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         headers, body = m.ToRequest(event, converters.TypeBinary, json.dumps)
         # headers['Ce-Originid'] = str(_event_info.get("Originid", _id))
 
-        if hasattr(self._dispatch_url, '__call__'):
+        if callable(self._dispatch_url):
             dispatch_url = self._dispatch_url(subject, type)
         else:
             dispatch_url = self._dispatch_url
