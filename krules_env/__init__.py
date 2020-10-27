@@ -89,6 +89,15 @@ def publish_proc_events_filtered(result, jp_expr, expt_value):
     )
 
 
+def _get_dispatch_url(subject, type):
+    ksink = os.environ.get("K_SINK")
+    if type == RULE_PROC_EVENT and "K_PROCEVENTS_SINK" in os.environ:
+        return os.environ.get("K_PROCEVENTS_SINK")
+    if ksink is not None:
+        return ksink
+    return krules_settings["CLOUDEVENTS"]["send_to"]
+
+
 def init():
     configs_factory.override(
         providers.Singleton(lambda: krules_settings)
@@ -117,5 +126,10 @@ def init():
 
     from krules_cloudevents.route.dispatcher import CloudEventsDispatcher
     event_dispatcher_factory.override(
-        providers.Singleton(lambda: CloudEventsDispatcher(krules_settings["CLOUDEVENTS"]["send_to"], source))
+        providers.Singleton(lambda: CloudEventsDispatcher
+            (
+                _get_dispatch_url,
+                source
+            )
+        )
     )
