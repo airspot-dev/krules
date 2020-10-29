@@ -65,7 +65,11 @@ krules_env.init()
 app_env.init()
 subject_factory.override(providers.Factory(lambda *args, **kw: g_wrap(subject_factory.cls, *args, **kw)))
 
-m_rules = importlib.import_module("rules")
+try:
+    m_rules = importlib.import_module("ruleset")
+except ModuleNotFoundError:
+    m_rules = importlib.import_module("rules")
+
 
 load_rules_from_rulesdata(m_rules.rulesdata)
 
@@ -80,9 +84,9 @@ def main():
         event = m.FromRequest(v1.Event(), request.headers, io.BytesIO(request.data), lambda x: json.load(x))
         event_info = event.Properties()
         event_info.update(event_info.pop("extensions"))
-        payload = event_info.pop("data")
+        event_data = event_info.pop("data")
 
-        app.logger.debug("RCVR: {}".format(payload))
+        app.logger.debug("RCVR: {}".format(event_data))
         type = event_info.get("type")
         subject = event_info.get("subject", "sys-0")
 
@@ -99,17 +103,17 @@ def main():
         event_info["originid"] = event_info.get("originid", event_info.get("id"))
 
         logger.debug("subject: {}".format(subject))
-        logger.debug("payload: {}".format(payload))
+        logger.debug("event_data: {}".format(event_data))
 
         from dependency_injector import providers
 
-        subject = subject_factory(name=subject, event_info=event_info, payload=payload)
+        subject = subject_factory(name=subject, event_info=event_info, event_data=event_data)
 
-        payload["_event_info"] = event_info  # TODO: KRUL-155
+        event_data["_event_info"] = event_info  # TODO: KRUL-155
 
         try:
             event_router_factory().route(
-                type, subject, payload,
+                type, subject, event_data,
                 dispatch_policy=dispatch_policy
             )
         finally:
