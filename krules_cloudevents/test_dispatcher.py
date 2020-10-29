@@ -58,10 +58,11 @@ def fake_receiver_app(environ, start_response):
     event = m.FromRequest(v1.Event(), request.headers, io.BytesIO(request.data), lambda x: json.load(x))
     event_info = event.Properties()
     event_info.update(event_info.pop("extensions"))
-    event_data = event_info.pop("data")
     subject = subject_factory(event_info.get("subject", "sys-0"))
 
     assert "originid" in event_info
+    assert "subject" in event_info
+    assert "data" in event_info
 
     status = '200 OK'
     response_headers = [('Content-type', 'text/plain')]
