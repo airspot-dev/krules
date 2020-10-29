@@ -48,6 +48,8 @@ class Subject(object):
         self._cached[PropertyType.EXTENDED]["values"] = ext_props
 
     def _set(self, prop, value, extended, muted, cached):
+        if isinstance(value, tuple):
+            value = list(value)
 
         if cached is None:
             cached = self._use_cache
