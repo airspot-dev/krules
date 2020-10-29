@@ -61,7 +61,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         if property_name is not None:
             ext_props.update({"propertyname": property_name})
         event.SetExtensions(ext_props)
-        event.Set('Originid', str(_event_info.get("Originid", _id)))
+        event.Set('Originid', str(_event_info.get("originid", _id)))
         event.SetData(payload)
 
         m = marshaller.NewHTTPMarshaller([binary.NewBinaryHTTPCloudEventConverter()])
