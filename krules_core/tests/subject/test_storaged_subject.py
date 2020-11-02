@@ -436,11 +436,13 @@ def test_reading(subject):
     subject.dictvalue = dictvalue
     subject.tuplevalue = tuplevalue
     subject.listvalue = listvalue
+    subject.store()
+    subject._load()
 
     assert subject.stringvalue == stringvalue
     assert subject.intvalue == intvalue
     assert subject.dictvalue == dictvalue
-    assert list(subject.tuplevalue) == list(tuplevalue)  # tuples may be not supported
+    assert subject.tuplevalue == list(tuplevalue)
     assert subject.listvalue == listvalue
 
 

@@ -13,8 +13,7 @@
 import rx
 
 from dependency_injector import providers as providers
-
-from krules_core.tests.subject.sqlite_storage import SQLLiteSubjectStorage
+from krules_core.subject.empty_storage import EmptySubjectStorage
 
 from .route.dispatcher import BaseDispatcher
 from .route.router import EventRouter
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 configs_factory = providers.Singleton(lambda: {})
 
 # for testing/development only
-subject_storage_factory = providers.Factory(lambda *args, **kwargs: SQLLiteSubjectStorage(args[0], ":memory:"))
+subject_storage_factory = providers.Factory(lambda *args, **kwargs: EmptySubjectStorage())
 
 subject_factory = providers.Factory(Subject)
 proc_events_rx_factory = providers.Singleton(rx.subjects.ReplaySubject)

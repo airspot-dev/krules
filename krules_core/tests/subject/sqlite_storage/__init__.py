@@ -110,6 +110,8 @@ class SQLLiteSubjectStorage(object):
 
         # updates
         for prop in updates:
+            if prop.name == "tuplevalue":
+                import pdb; pdb.set_trace()
             sql_script += "UPDATE subjects SET propvalue='{}' WHERE "\
                           "subject = '{}' "\
                           "AND property = '{}' "\

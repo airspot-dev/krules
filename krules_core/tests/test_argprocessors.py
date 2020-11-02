@@ -104,7 +104,6 @@ def test_with_self():
     subject.set("value_from", 2)
 
     event_router_factory().route("test-argprocessors-self", subject, payload)
-
     proc_events_rx_factory().subscribe(
         lambda x: x[rulename] == "test-with-self" and _assert(
             x[processing][0]["args"][0] == 1

@@ -50,6 +50,10 @@ class Rule:
 
     def _process(self, event_type, subject, payload):
 
+        def __get_signature_info(func):
+            signature = inspect.signature(func)
+            return "%s(%s)" % (func.__name__, ", ".join(signature.parameters))
+
         def __clean(dd):
             del dd[Const.PROCESS_ID]
             del dd[Const.TYPE]
@@ -67,7 +71,7 @@ class Rule:
                 elif isinstance(el, (list, tuple)):
                     dst.append(__copy_list(el))
                 elif inspect.isfunction(el):
-                    dst.append(el.__name__)
+                    dst.append(__get_signature_info(el))
                 elif isinstance(el, (bool, int, float, str)) or el is None:
                     dst.append(el)
                 else:
@@ -83,7 +87,7 @@ class Rule:
                 elif isinstance(v, (list, tuple)):
                     cp[k] = __copy_list(v)
                 elif inspect.isfunction(v):
-                    cp[k] = v.__name__
+                    cp[k] = __get_signature_info(v)
                 elif isinstance(v, (bool, int, float, str)) or v is None:
                     cp[k] = v
                 else:
