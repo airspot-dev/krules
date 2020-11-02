@@ -19,6 +19,7 @@ from krules_core.subject import PropertyType
 import pykube
 import re
 
+
 class SubjectsK8sStorage(object):
 
     def __init__(self, resource_path, resource_body=None, override_api_url=False):
@@ -119,14 +120,18 @@ class SubjectsK8sStorage(object):
                 props[PropertyType.EXTENDED]["subresource"] = subresource
 
             props[PropertyType.EXTENDED]["name"] = name
+            props[PropertyType.EXTENDED]["kind"] = self._get_resource().get("kind")
+
             self._inferred_properties = props
 
         return self._inferred_properties
 
     def _reset(self):
-        if self._resource_body != {}:  # forced to use only inferred properties (more efficient)
+        # to avoid a call to the api server if we are sure we do not want to access properties
+        # of the object other than those inferred we can provide directly the minmal resource (es: {"kind": "Pod"})
+        if self._resource_body is not None and "uid" not in self._resource_body:
             self._resource_body = None
-            self._resource_properties = None
+        self._resource_properties = None
 
     def _get_all_properties(self):
         props = {}
