@@ -34,7 +34,7 @@ def setup_module(_):
     redis_url = os.environ.get("TEST_REDIS_SUBJECTS_STORAGE_URL", "redis://localhost/0")
 
     subject_storage_factory.override(
-        providers.Factory(lambda x: subject_storage(x, redis_url))
+        providers.Factory(lambda x: subject_storage(x, redis_url, "myapp"))
     )
 
 

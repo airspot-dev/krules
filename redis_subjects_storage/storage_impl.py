@@ -20,9 +20,10 @@ from krules_core.subject import PropertyType
 
 class SubjectsRedisStorage(object):
 
-    def __init__(self, subject, url):
+    def __init__(self, subject, url, key_prefix=""):
         self._subject = str(subject)
         self._conn = redis.Redis.from_url(url)
+        self._key_prefix = key_prefix
 
     def __str__(self):
         return "{} instance for {}".format(self.__class__, self._subject)
@@ -38,7 +39,7 @@ class SubjectsRedisStorage(object):
             PropertyType.DEFAULT: {},
             PropertyType.EXTENDED: {}
         }
-        hset = self._conn.hgetall(f"s:{self._subject}")
+        hset = self._conn.hgetall(f"s:{self._key_prefix}{self._subject}")
         for k, v in hset.items():
             k = k.decode("utf-8")
             res[k[0]][k[1:]] = json.loads(v)
@@ -49,7 +50,7 @@ class SubjectsRedisStorage(object):
         if len(inserts)+len(updates)+len(deletes) == 0:
             return
 
-        skey = f"s:{self._subject}"
+        skey = f"s:{self._key_prefix}{self._subject}"
         hset = {}
         for prop in tuple(inserts)+tuple(updates):
             hset[f"{prop.type}{prop.name}"] = prop.json_value()
@@ -65,7 +66,7 @@ class SubjectsRedisStorage(object):
         Set value for property, works both in update and insert
         Returns old value
         """
-        skey = f"s:{self._subject}"
+        skey = f"s:{self._key_prefix}{self._subject}"
         pname = f"{prop.type}{prop.name}"
         if callable(prop.value):
             while True:
@@ -104,7 +105,7 @@ class SubjectsRedisStorage(object):
         Get a single property
         Raises AttributeError if not found
         """
-        skey = f"s:{self._subject}"
+        skey = f"s:{self._key_prefix}{self._subject}"
         pname = f"{prop.type}{prop.name}"
         with self._conn.pipeline() as pipe:
             pipe.hexists(skey, pname)
@@ -118,20 +119,20 @@ class SubjectsRedisStorage(object):
         """
         Delete a single property
         """
-        skey = f"s:{self._subject}"
+        skey = f"s:{self._key_prefix}{self._subject}"
         pname = f"{prop.type}{prop.name}"
         self._conn.hdel(skey, pname)
 
     def get_ext_props(self):
 
         props = {}
-        skey = f"s:{self._subject}"
+        skey = f"s:{self._key_prefix}{self._subject}"
         for pname, pval in self._conn.hscan_iter(skey, f"{PropertyType.EXTENDED}*"):
             props[pname[1:].decode("utf-8")] = json.loads(pval)
         return props
 
     def flush(self):
-        skey = f"s:{self._subject}"
+        skey = f"s:{self._key_prefix}{self._subject}"
         self._conn.delete(skey)
         return self
 
