@@ -23,15 +23,6 @@ POD_NAME = ""
 NAMESPACE = ""
 
 
-# def set_namespace():
-#     import os
-#     global NAMESPACE
-#
-#     namespace = os.environ.get("NAMESPACE")
-#     if namespace is None:
-#         namespace = os.popen("kubectl config view --minify --output 'jsonpath={..namespace}'").read()
-#     NAMESPACE = namespace
-
 def setup_module(_):
     import random, string
 
