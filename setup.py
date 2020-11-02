@@ -24,7 +24,7 @@ setup(
     description="KRules redis subjects storage implementation",
     licence="Apache Licence 2.0",
     keywords="krules subject redis",
-    url="https://github.com/airspot-dev/krules-subjects-redis-storage.git",
+    url="https://github.com/airspot-dev/krules-subjects-storage-redis.git",
     packages=find_packages(),
     long_description=read('README.md'),
     classifiers=[
