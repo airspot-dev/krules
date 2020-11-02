@@ -50,6 +50,25 @@ class Rule:
 
     def _process(self, event_type, subject, payload):
 
+        def __get_signature_info(func):
+            info = {
+                "func_name": func.__name__,
+                "parameters": []
+            }
+            signature = inspect.signature(func)
+            for _, param in signature.parameters.items():
+                param_obj = {
+                    "name": param.name
+                }
+                if param.annotation != param.empty:
+                    param_obj["annotation"] = param.annotation
+                if param.default != param.empty:
+                    param_obj["default"] = param.default
+                info["parameters"].append(param_obj)
+            if signature.return_annotation != signature.empty:
+                info["return_annotation"] = signature.return_annotation
+            return info
+
         def __clean(dd):
             del dd[Const.PROCESS_ID]
             del dd[Const.TYPE]
@@ -67,7 +86,7 @@ class Rule:
                 elif isinstance(el, (list, tuple)):
                     dst.append(__copy_list(el))
                 elif inspect.isfunction(el):
-                    dst.append(el.__name__)
+                    dst.append(__get_signature_info(el))
                 elif isinstance(el, (bool, int, float, str)) or el is None:
                     dst.append(el)
                 else:
@@ -83,7 +102,7 @@ class Rule:
                 elif isinstance(v, (list, tuple)):
                     cp[k] = __copy_list(v)
                 elif inspect.isfunction(v):
-                    cp[k] = v.__name__
+                    cp[k] = __get_signature_info(v)
                 elif isinstance(v, (bool, int, float, str)) or v is None:
                     cp[k] = v
                 else:
