@@ -65,9 +65,7 @@ def test_simple_callable():
             x[processing][0]["args"][0] == 1
             and x[processing][0]["kwargs"]["arg3"] == 3
             and x[processing][0]["kwargs"]["arg4"] == 4
-            and x[processing][0]["kwargs"]["arg5"]["func_name"] == "<lambda>"
-            and len(x[processing][0]["kwargs"]["arg5"]["parameters"]) == 1
-            and x[processing][0]["kwargs"]["arg5"]["parameters"][0]["name"] == "p"
+            and isinstance(x[processing][0]["kwargs"]["arg5"], str)
         )
     )
 
@@ -110,9 +108,7 @@ def test_with_self():
         lambda x: x[rulename] == "test-with-self" and _assert(
             x[processing][0]["args"][0] == 1
             and x[processing][0]["kwargs"]["arg2"] == 2
-            and x[processing][0]["kwargs"]["arg3"]["func_name"] == "<lambda>"
-            and len(x[processing][0]["kwargs"]["arg3"]["parameters"]) == 1
-            and x[processing][0]["kwargs"]["arg3"]["parameters"][0]["name"] == "p")
+            and isinstance(x[processing][0]["kwargs"]["arg3"], str))
     )
 
     assert payload["arg1"] == 1
@@ -152,9 +148,7 @@ def test_with_payload_and_subject():
     proc_events_rx_factory().subscribe(
         lambda x: x[rulename] == "test-with-payload-and-subject" and _assert(
             x[processing][0]["args"][0] == 1 and x[processing][0]["kwargs"]["arg2"] == 2
-            and x[processing][0]["kwargs"]["arg3"]["func_name"] == "<lambda>"
-            and len(x[processing][0]["kwargs"]["arg3"]["parameters"]) == 1
-            and x[processing][0]["kwargs"]["arg3"]["parameters"][0]["name"] == "p")
+            and isinstance(x[processing][0]["kwargs"]["arg3"], str))
     )
 
     assert _payload["arg1"] == 1
