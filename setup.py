@@ -18,7 +18,7 @@ def read(fname):
 
 setup(
     name='krules-subjects-storage-mongodb',
-    version="0.5.0",
+    version="0.5",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules mongodb subjects storage implementation",
