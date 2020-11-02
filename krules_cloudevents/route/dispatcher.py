@@ -14,6 +14,7 @@ import uuid
 from datetime import datetime
 import pytz
 import json
+import inspect
 
 
 from krules_core.subject import PayloadConst
@@ -60,7 +61,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         if property_name is not None:
             ext_props.update({"propertyname": property_name})
         event.SetExtensions(ext_props)
-        event.Set('Originid', str(_event_info.get("Originid", _id)))
+        event.Set('Originid', str(_event_info.get("originid", _id)))
         event.SetData(payload)
 
         m = marshaller.NewHTTPMarshaller([binary.NewBinaryHTTPCloudEventConverter()])
@@ -68,7 +69,12 @@ class CloudEventsDispatcher(BaseDispatcher):
         headers, body = m.ToRequest(event, converters.TypeBinary, json.dumps)
         # headers['Ce-Originid'] = str(_event_info.get("Originid", _id))
 
-        response = requests.post(self._dispatch_url,
+        if callable(self._dispatch_url):
+            dispatch_url = self._dispatch_url(subject, type)
+        else:
+            dispatch_url = self._dispatch_url
+
+        response = requests.post(dispatch_url,
                                  headers=headers,
                                  data=body)
 
