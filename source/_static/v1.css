@@ -1,0 +1,47 @@
+div.body h1, h2{
+    color: #004d63;
+}
+
+div.document {
+    background-color: rgba(0, 77, 112, 0.3);
+}
+
+a {
+    color: #004d63;
+}
+
+div.sphinxsidebar a {
+    color: #004d63;
+}
+
+dl.py dt, code {
+    color: #004d63;
+}
+
+div.header-wrapper {
+    background-color: #ffb000;
+}
+
+div.header h1 {
+    color: #004d63;
+}
+
+p.payoff {
+    color: #004d63;
+}
+
+.searchformwrapper {
+    border: 1px solid #004d63;
+}
+
+.search button[type="submit" i] {
+    color: #004d63;
+}
+
+div.sphinxsidebar input, div.sphinxsidebar h3, div.sphinxsidebar h4  {
+    color: #004d63;
+}
+
+.logo img {
+    content: url("../_static/krules_ext_logo.png");
+}

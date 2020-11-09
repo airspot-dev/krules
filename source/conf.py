@@ -13,17 +13,23 @@
 import os
 import sys
 # os.environ.get()
-sys.path.insert(0, os.path.abspath('../../krules-libs/krules-core/krules_core'))
+sys.path.insert(0, os.path.abspath('../../krules-libs/krules-core'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'krules'
+project = 'KRules documentation'
 copyright = '2020, Airspot s.r.l.'
 author = 'Airspot s.r.l.'
+logo = 'krules_ext_logo.png'
+html_theme_options = {
+    # 'logo': 'krules_ext_logo.png',
+    'github_user': 'airspot-dev',
+    'github_repo': 'krules-doc',
+}
 
 # The full version, including alpha/beta/rc tags
-release = '0.4.3'
+release = '0.5'
 
 
 # -- General configuration ---------------------------------------------------
@@ -62,6 +68,6 @@ source_suffix = {
 
 autodoc_default_options = {
     'member-order': 'bysource',
-    'special-members': '__init__',
-    'undoc-members': True,
+    # 'special-members': '__init__',
+    # 'undoc-members': True,
 }
