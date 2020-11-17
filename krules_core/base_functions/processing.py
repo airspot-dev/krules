@@ -278,7 +278,7 @@ class SetSubjectProperties(RuleFunctionBase):
 
 class StoreSubject(RuleFunctionBase):
     """
-    *Flush the cache. Usually the cache is flushed at the end of the rules execution.*
+    *Flush the cache. Usually the cache is flushed at the end of the ruleset execution.*
     """
 
     def execute(self):
