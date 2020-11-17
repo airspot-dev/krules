@@ -38,7 +38,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         self._source = source
         self._test = test
 
-    def dispatch(self, type, subject, payload):
+    def dispatch(self, event_type, subject, payload):
 
         if isinstance(subject, str):
             subject = subject_factory(subject)
@@ -53,7 +53,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         event.SetSource(self._source)
         event.SetSubject(str(subject))
         event.SetEventTime(datetime.utcnow().replace(tzinfo=pytz.UTC).isoformat())
-        event.SetEventType(type)
+        event.SetEventType(event_type)
 
         # set extended properties
         ext_props = subject.get_ext_props()
@@ -70,7 +70,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         # headers['Ce-Originid'] = str(_event_info.get("Originid", _id))
 
         if callable(self._dispatch_url):
-            dispatch_url = self._dispatch_url(subject, type)
+            dispatch_url = self._dispatch_url(subject, event_type)
         else:
             dispatch_url = self._dispatch_url
 
