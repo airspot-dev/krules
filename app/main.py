@@ -87,7 +87,7 @@ def main():
         event_data = event_info.pop("data")
 
         app.logger.debug("RCVR: {}".format(event_data))
-        type = event_info.get("type")
+        event_type = event_info.get("type")
         subject = event_info.get("subject", "sys-0")
 
         g.subjects = []
@@ -113,7 +113,7 @@ def main():
 
         try:
             event_router_factory().route(
-                type, subject, event_data,
+                event_type, subject, event_data,
                 dispatch_policy=dispatch_policy
             )
         finally:
@@ -124,7 +124,7 @@ def main():
         logger.info("Event",
                     extra={'props': {
                                 'event_info': event_info,
-                                'type': type,
+                                'type': event_type,
                                 'subject': subject.name,
                                 'exec_time': exec_time,
                                 #'headers': list(headers.keys())
