@@ -22,8 +22,8 @@ div.document {
 
 div.body {
     height: 100%;
-    max-width: 63%;
-    padding: 2% 0 0 3%;
+    max-width: 70%;
+    padding: 2% 3% 0 3%;
 }
 
 /*a {
@@ -33,6 +33,11 @@ div.body {
 li {
     display: flex;
     margin: 5px;
+}
+
+pre {
+    line-height: 110%;
+    font-size: 13px;
 }
 
 div.body dd {
@@ -104,7 +109,7 @@ div.sphinxsidebar {
     height: 100%;
     position: absolute;
     right: 0;
-    width: 30%;
+    width: 20%;
 }
 
 p.logo {

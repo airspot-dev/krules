@@ -5,18 +5,23 @@ A set o basic functions designed to be used in the **filters** section for the p
 
 .. automodule:: krules_core.base_functions.filters
 
-.. autoclass:: Returns()
+Generic Functions
+-----------------
+.. autoclass:: Filter()
    :members:
-.. autoclass:: IsTrue()
-   :members:
-.. autoclass:: IsFalse()
-   :members:
+
+Acting on Subject
+-----------------
 .. autoclass:: SubjectNameMatch()
    :members:
 .. autoclass:: SubjectNameDoesNotMatch()
    :members:
 .. autoclass:: CheckSubjectProperty()
    :members:
+
+Acting on Payload
+-----------------
+
 .. autoclass:: PayloadMatch()
    :members:
 .. autoclass:: PayloadMatchOne()

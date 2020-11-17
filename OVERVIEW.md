@@ -169,7 +169,7 @@ rulesdata = [
                   "onboarding/import/(?P<deviceclass>.+)/(?P<filename>.+)", 
                   payload_dest="path_info"  # enrich payload with match
                 ),
-                IsTrue(lambda payload: payload.get("contentType") == "text/csv")
+                Filter(lambda payload: payload.get("contentType") == "text/csv")
             ],
             processing: [
                 ProcessCSV_AsDict(
@@ -211,7 +211,7 @@ The **filters** have 2 generic functions, already provided by the framework:
 
 The first is **SubjectMatch** which verifies that the subject name matches a given regular expression. Because we receive the path of the uploaded file as the subject we use it to check his location and to extract from it some useful information that we put in the payload for later use in the **processing** part. 
 
-The next function, **IsTrue**, is a very general purpose function. To make it possible to use the most generic functions, an extensible mechanism to process arguments before they are passed to the function is provided. In this case we simply use a lambda function receiving the payload and a preloaded argument processor class instance recognizes its interest in the argument processing it using the required runtime information.
+The next function, **Filter**, is a very general purpose function. To make it possible to use the most generic functions, an extensible mechanism to process arguments before they are passed to the function is provided. In this case we simply use a lambda function receiving the payload and a preloaded argument processor class instance recognizes its interest in the argument processing it using the required runtime information.
 In this case the lambda function, thanks to the argument processors, is able to access the payload (at the stage of the pipeline processing step) and check the contentType.
 
 After talking about generic functions, let's move on to the **processing** section where we use a more specialized function. To provide an understanding of how a function can be easily created within an application context, follow its implementation:
@@ -250,7 +250,7 @@ rulesdata = [
         subscribe_to: "onboard-device",
         ruledata: {
             filters: [
-                IsTrue(lambda payload: "data" in payload and "class" in payload),
+                Filter(lambda payload: "data" in payload and "class" in payload),
             ],
             processing: [
                 SetSubjectProperties(lambda payload: payload["data"]),
@@ -336,7 +336,7 @@ rulesdata = [
         subscribe_to: "data-received",
         ruledata: {
             filters: [
-                IsTrue(lambda payload: "tempc" in payload["data"])
+                Filter(lambda payload: "tempc" in payload["data"])
             ],
             processing: [
                 SetSubjectProperty("tempc", lambda payload: payload["data"]["tempc"])
@@ -353,7 +353,7 @@ rulesdata = [
         ruledata: {
             filters: [
                 OnSubjectPropertyChanged("tempc"),
-                IsTrue(lambda self:
+                Filter(lambda self:
                        float(self.payload.get("value")) < float(self.subject.get("temp_min"))
                        ),
             ],
@@ -372,7 +372,7 @@ rulesdata = [
         ruledata: {
             filters: [
                 OnSubjectPropertyChanged("tempc"),
-                IsTrue(lambda self:
+                Filter(lambda self:
                        float(self.subject.get("temp_min")) <= float(self.payload.get("value")) < float(self.subject.get("temp_max"))
                        ),
             ],
@@ -391,7 +391,7 @@ rulesdata = [
         ruledata: {
             filters: [
                 OnSubjectPropertyChanged("tempc"),
-                IsTrue(lambda self:
+                Filter(lambda self:
                        float(self.payload.get("value")) >= float(self.subject.get("temp_max"))
                        )
             ],
@@ -485,7 +485,7 @@ Everything is an event, also the very fact that a rule is processed is itself an
                'payload_diffs': [],
                'returns': True},
               {'args': ['True'],
-               'func_name': 'IsTrue',
+               'func_name': 'Filter',
                'kwargs': {},
                'payload_diffs': [],
               'returns': True}],
@@ -534,7 +534,7 @@ rulesdata = [
         subscribe_to: TopicsDefault.METRICS,
         ruledata: {
             filters: [
-                IsTrue(lambda payload: payload["got_errors"])
+                Filter(lambda payload: payload["got_errors"])
             ],
             processing: [
                 Route(
@@ -568,7 +568,7 @@ rulesdata = [
         subscribe_to: "on-gcs-csv-upload-errors",
         ruledata: {
             filters: [
-                IsTrue(lambda payload: payload["rulename"] == "on-csv-upload-import-devices")
+                Filter(lambda payload: payload["rulename"] == "on-csv-upload-import-devices")
             ],
             processing: [
                 # reject file
@@ -625,7 +625,7 @@ rulesdata = [
         subscribe_to: "{}-errors".format(os.environ["K_SERVICE"]),
         ruledata: {
             filters: [
-                IsTrue(lambda payload:
+                Filter(lambda payload:
                        payload.get("rulename") == "on-do-extapi-post" and
                        jp.match1("$.processing[*].exception", payload) == "requests.exceptions.HTTPError" and
                        jp.match1("$.processing[*].exc_extra_info.response_code", payload) == 503)
