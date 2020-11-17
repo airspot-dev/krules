@@ -14,10 +14,9 @@ import pytest
 import rx
 from dependency_injector import providers
 from krules_core import RuleConst
-from krules_core.base_functions import UpdatePayload, SetPayloadProperties, SetPayloadProperty, SetSubjectProperty, \
-    SubjectPropertyChanged, SetSubjectExtendedProperty, SetSubjectPropertySilently, StoreSubjectProperty, \
-    RuleFunctionBase, StoreSubjectPropertySilently, SetSubjectProperties, IncrementSubjectProperty, \
-    DecrementSubjectProperty, IncrementSubjectPropertySilently, DecrementSubjectPropertySilently
+from krules_core.base_functions import SetPayloadProperties, SetPayloadProperty, SetSubjectProperty, \
+    OnSubjectPropertyChanged, SetSubjectExtendedProperty, SetSubjectPropertyImmediately, \
+    RuleFunctionBase, SetSubjectProperties, Process
 
 from krules_core.core import RuleFactory
 from .. import get_value_from_payload_diffs
@@ -69,7 +68,7 @@ def _assert(name, expr, msg="test failed"):
 
 
 def test_payload_functions(subject, router, asserted):
-    payload = {
+    test_payload = {
         "k1": "val1",
         "k2": {"k2a": 1,
                "k2b": {"a": 1, "b": 2}}
@@ -80,12 +79,18 @@ def test_payload_functions(subject, router, asserted):
         subscribe_to="test-alter-payload",
         data={
             processing: [
-                UpdatePayload({
-                    "k2": {"k2b": {"b": 3, "c": 4}},
-                    "k3": 3,
-                }),
-                SetPayloadProperties(k1=0, k3=lambda v: v+1, k4=lambda *args: len(args) and args[0]+1 or -1),
-                SetPayloadProperty("k4", lambda *args: len(args) and args[0]+1 or -1)
+                Process(
+                    lambda payload:(
+                        payload["k2"]["k2b"].update({"b": 3, "c": 4}),
+                        payload.update({"k3": 3})
+                    )
+                ),
+                SetPayloadProperties(
+                    k1=0,
+                    k3=lambda payload: payload["k3"]+1,
+                    k4=lambda payload: "k4" in payload and payload["k4"] + 1 or -1
+                ),
+                SetPayloadProperty("k4", lambda payload: "k4" in payload and payload["k4"] + 1 or -1)
             ]
         }
     )
@@ -94,13 +99,14 @@ def test_payload_functions(subject, router, asserted):
         lambda x: x[rulename] == "test-alter-payload" and _assert(
             "test-update-1",
             get_value_from_payload_diffs("k3", x[processing][0]["payload_diffs"]) == 3 and
-            "a" in x["payload"]["k2"]["k2b"] and x["payload"]["k2"]["k2b"]["a"] == payload["k2"]["k2b"]["a"] and
+            "a" in x["payload"]["k2"]["k2b"] and x["payload"]["k2"]["k2b"]["a"] == test_payload["k2"]["k2b"]["a"] and
             not get_value_from_payload_diffs("k2/k2b/a", x[processing][0]["payload_diffs"]) and
             get_value_from_payload_diffs("k2/k2b/b", x[processing][0]["payload_diffs"]) == 3 and
             get_value_from_payload_diffs("k2/k2b/c", x[processing][0]["payload_diffs"]) == 4 and
             not get_value_from_payload_diffs("k2", x[processing][0]["payload_diffs"], default_value=None)
         )
     )
+
     proc_events_rx_factory().subscribe(
         lambda x: x[rulename] == "test-alter-payload" and _assert(
             "test-update-2",
@@ -116,7 +122,7 @@ def test_payload_functions(subject, router, asserted):
         )
     )
 
-    router.route("test-alter-payload", subject, payload)
+    router.route("test-alter-payload", subject, test_payload)
 
     assert "test-update-1" in asserted
     assert "test-update-2" in asserted
@@ -130,7 +136,7 @@ def test_subject_functions(subject, router, asserted):
             if not subject_storage_factory(self.subject.name).is_concurrency_safe():
                 return True   # skip test
             subject = subject_factory(self.subject.name)
-            return subject.get(prop, cached=False) == expected_value
+            return subject.get(prop, use_cache=False) == expected_value
 
 
     from datetime import datetime
@@ -142,21 +148,20 @@ def test_subject_functions(subject, router, asserted):
                 SetSubjectProperty("dt_prop", lambda: datetime.now().isoformat()),  # no args
                 SetSubjectProperty("my_prop", 1),
                 SetSubjectProperty("my_prop", lambda v: v+10),
-                SetSubjectPropertySilently("something_to_say", False),
-                StoreSubjectProperty("my_prop_2", 2),
+                SetSubjectProperty("something_to_say", False, muted=True),
+                SetSubjectPropertyImmediately("my_prop_2", 2),
                 _CheckStoredValue("my_prop_2", 2),
-                StoreSubjectPropertySilently("my_prop_3", 3),
+                SetSubjectPropertyImmediately("my_prop_3", 3, muted=True),
                 _CheckStoredValue("my_prop_3", 3),
                 SetSubjectExtendedProperty("my_ext_prop", "extpropvalue"),
                 SetSubjectProperties({
                     "my_prop_4": 4,
                     "my_silent_prop_5": 5
                 }, unmuted=["my_prop_4"]),
-                IncrementSubjectProperty("my_prop_4"),
+                SetSubjectProperty("my_prop_4", value=lambda x: x is None and 1 or x + 1, use_cache=False),
                 _CheckStoredValue("my_prop_4", 1),  # cached property in not considered
-                DecrementSubjectProperty("my_prop_4", amount=1.5),
-                IncrementSubjectPropertySilently("my_silent_prop_6"),
-                DecrementSubjectPropertySilently("my_silent_prop_6"),
+                SetSubjectProperty("my_prop_4", value=lambda x: x is None and -1.5 or x - 1.5, use_cache=False),
+                SetSubjectProperty("my_silent_prop_6", value=lambda x: x-1, muted=True),
             ]
         }
     )
@@ -166,7 +171,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged("my_prop", lambda value, old_value: value == 1 and old_value is None)
+                OnSubjectPropertyChanged("my_prop", lambda value, old_value: value == 1 and old_value is None)
             ]
         }
     )
@@ -175,7 +180,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged("something_to_say")
+                OnSubjectPropertyChanged("something_to_say")
             ]
         }
     )
@@ -184,7 +189,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged("my_prop_2", lambda value, old_value: value == 2 and old_value is None)
+                OnSubjectPropertyChanged("my_prop_2", lambda value, old_value: value == 2 and old_value is None)
             ]
         }
     )
@@ -193,7 +198,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged("my_prop_3")
+                OnSubjectPropertyChanged("my_prop_3")
             ]
         }
     )
@@ -202,7 +207,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged("my_prop_4")
+                OnSubjectPropertyChanged("my_prop_4")
             ]
         }
     )
@@ -211,7 +216,7 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged(lambda p: p in ("my_silent_prop_5", "my_silent_prop_6"))
+                OnSubjectPropertyChanged(lambda p: p in ("my_silent_prop_5", "my_silent_prop_6"))
             ]
         }
     )

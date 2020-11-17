@@ -158,26 +158,26 @@ def test_set_get_del(subject):
     assert val == "silent" and len(_test_events) == 0
 
     # NO CACHE
-    subject.set("my-prop", 0, cached=False)  # not calling store
+    subject.set("my-prop", 0, use_cache=False)  # not calling store
     if subject_storage_factory(subject.name).is_persistent():
         subject = subject_factory(subject.name)
-        val = subject.get("my-prop", cached=False)
+        val = subject.get("my-prop", use_cache=False)
         assert val == 0
     #  with callables
-    val, old_val = subject.set("my-prop", lambda x: x+5, cached=False)
+    val, old_val = subject.set("my-prop", lambda x: x+5, use_cache=False)
     assert old_val == 0 and val == 5
     #  events produced
     assert len(_test_events) == 2
 
     # same with exts
     _test_events = []
-    subject.set_ext("my-prop", 0, cached=False)  # not calling store
+    subject.set_ext("my-prop", 0, use_cache=False)  # not calling store
     if subject_storage_factory(subject.name).is_persistent():
         subject = subject_factory(subject.name)
-        val = subject.get_ext("my-prop", cached=False)
+        val = subject.get_ext("my-prop", use_cache=False)
         assert val == 0
     #  with callables
-    val, old_val = subject.set_ext("my-prop", lambda x: x+5, cached=False)
+    val, old_val = subject.set_ext("my-prop", lambda x: x+5, use_cache=False)
     assert old_val == 0 and val == 5
     #  events NOT produced
     assert len(_test_events) == 0
@@ -187,7 +187,7 @@ def test_set_get_del(subject):
         subject = subject_factory(subject.name)
         val = subject.get("my-prop")
         assert val == 5  # prop cached
-        subject.set("my-prop", 1, cached=False)
+        subject.set("my-prop", 1, use_cache=False)
         val = subject.get("my-prop")  # from cache
         assert val == 1
         subject.store()
@@ -195,17 +195,17 @@ def test_set_get_del(subject):
         subject = subject_factory(subject.name)
         val = subject.get("my-prop")
         assert val == 1  # prop cached
-        subject.set("my-prop", 8, cached=True)
-        val = subject.get("my-prop", cached=False)  # update cache
+        subject.set("my-prop", 8, use_cache=True)
+        val = subject.get("my-prop", use_cache=False)  # update cache
         assert val == 1
-        val = subject.get("my-prop", cached=True)
+        val = subject.get("my-prop", use_cache=True)
         assert val == 1
         subject.store()
 
     # deletes
     _test_events = []
     #   cache not loaded yet
-    subject.delete("my-prop", cached=False)
+    subject.delete("my-prop", use_cache=False)
     assert len(_test_events) == 1 and \
         _test_events[0][0] == types.SUBJECT_PROPERTY_DELETED and \
         _test_events[0][1].name == subject.name and \
@@ -215,26 +215,26 @@ def test_set_get_del(subject):
     with pytest.raises(AttributeError):
         subject.delete("my-prop")
     # add prop bypassing cache
-    subject.set("my-prop", 0, cached=False)
-    subject.delete("my-prop", cached=True)
+    subject.set("my-prop", 0, use_cache=False)
+    subject.delete("my-prop", use_cache=True)
     subject.store()
     with pytest.raises(AttributeError):
         subject.get("my-prop")
     # add prop in cache remove directly
-    subject.set("my-prop", 0, cached=True)
-    subject.delete("my-prop", cached=False)
+    subject.set("my-prop", 0, use_cache=True)
+    subject.delete("my-prop", use_cache=False)
     subject.store()
     with pytest.raises(AttributeError):
         subject.get("my-prop")
     # all in cache
-    subject.set("my-prop", 0, cached=True)
-    subject.delete("my-prop", cached=True)
+    subject.set("my-prop", 0, use_cache=True)
+    subject.delete("my-prop", use_cache=True)
     subject.store()
     with pytest.raises(AttributeError):
         subject.get("my-prop")
     # no cache
-    subject.set("my-prop", 0, cached=False)
-    subject.delete("my-prop", cached=False)
+    subject.set("my-prop", 0, use_cache=False)
+    subject.delete("my-prop", use_cache=False)
     subject.store()
     with pytest.raises(AttributeError):
         subject.get("my-prop")
@@ -243,9 +243,9 @@ def test_set_get_del(subject):
 def test_get_ext_props(subject):
 
     # no cache
-    subject.set("my-prop-1", 0, cached=False)
-    subject.set_ext("my-prop-2", 2, cached=False)
-    subject.set_ext("my-prop-3", 3, cached=False)
+    subject.set("my-prop-1", 0, use_cache=False)
+    subject.set_ext("my-prop-2", 2, use_cache=False)
+    subject.set_ext("my-prop-3", 3, use_cache=False)
 
     props = subject.get_ext_props()
     assert len(props) == 2
@@ -253,8 +253,8 @@ def test_get_ext_props(subject):
     assert "my-prop-3" in props and props["my-prop-3"] == 3
 
     # with cache
-    subject.set_ext("my-prop-4", 4, cached=True)
-    subject.set("my-prop-5", 5, cached=True)
+    subject.set_ext("my-prop-4", 4, use_cache=True)
+    subject.set("my-prop-5", 5, use_cache=True)
     props = subject.get_ext_props()
     assert len(props) == 3
     assert "my-prop-2" in props and props["my-prop-2"] == 2
