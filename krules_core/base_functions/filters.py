@@ -149,7 +149,6 @@ class PayloadMatch(RuleFunctionBase):
     """
     *Processes the payload with a given jsonpath expression to check its content.*
 
-
     ::
 
         # event payload = {
@@ -194,6 +193,39 @@ class PayloadMatch(RuleFunctionBase):
                 ]
             }
         },
+    """
+
+    def execute(self, jp_expr, match_value=lambda _none_: None, payload_dest=None, single_match=False):
+        """
+        Args:
+            jp_expr: Jsonpath expression which will be used to process the payload.
+            payload_dest: Payload key in which match result will be stored. If None, no result will be saved. [default None]
+            match_value: It can be both the expected value of the jsonpath expression processing or a boolean function that handles the expression result.
+            single_match: If True produces a single value as result, a list of values otherwise [default False]
+        """
+
+        import jsonpath_rw_ext as jp
+
+        matched = False
+        fn = jp.match
+        if single_match:
+            fn = jp.match1
+
+        match = fn(jp_expr, self.payload)
+        if match is not None and len(match):
+            matched = True
+
+        if payload_dest:
+            self.payload[payload_dest] = match
+
+        if inspect.isfunction(match_value):
+            sign = inspect.signature(match_value)
+            if str(sign) != '(_none_)':
+                matched = match_value(match)
+        else:
+            matched = match == match_value
+
+        return matched
 
 
 class PayloadMatchOne(PayloadMatch):
@@ -227,7 +259,6 @@ class PayloadMatchOne(PayloadMatch):
 
 class OnSubjectPropertyChanged(RuleFunctionBase):
     """
-
     *Specific function to filter* **subject-property-changed** *event.
     This event is produced whenever a subject property changes and its data contains the property name, the new property value and the old one.*
 
