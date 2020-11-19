@@ -131,7 +131,7 @@ For example, SubjectPropertyChanged is a filter which, as its name suggests, che
 # ...
 ruledata={
         filters: [
-            SubjectPropertyChanged("temperature", old_value=lambda old_value, value: value > 25 and old_value is None ),
+            OnSubjectPropertyChanged("temperature", old_value=lambda old_value, value: value > 25 and old_value is None ),
         ]
     }
 ```
@@ -142,7 +142,7 @@ Suppose we want also to pass the subject information to the *old_value* function
 # ...
 ruledata={
         filters: [
-            SubjectPropertyChanged("temperature", old_value=lambda subject: lambda old_value, value: subject.status == "READY" and value > 25 and old_value is None ),
+            OnSubjectPropertyChanged("temperature", old_value=lambda subject: lambda old_value, value: subject.status == "READY" and value > 25 and old_value is None ),
         ]
     }
 ```

@@ -18,6 +18,8 @@ Acting on Subject
    :members:
 .. autoclass:: CheckSubjectProperty()
    :members:
+.. autoclass:: OnSubjectPropertyChanged()
+   :members:
 
 Acting on Payload
 -----------------
@@ -25,6 +27,4 @@ Acting on Payload
 .. autoclass:: PayloadMatch()
    :members:
 .. autoclass:: PayloadMatchOne()
-   :members:
-.. autoclass:: SubjectPropertyChanged()
    :members:
