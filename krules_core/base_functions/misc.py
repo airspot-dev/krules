@@ -14,11 +14,12 @@ from krules_core.base_functions import RuleFunctionBase
 class PyCall(RuleFunctionBase):
     """
     *Execute a generic python function.
-    Differently from* * **Process** *function, which returns nothing,
-    it allows to handle execution results whether it succeeds, using a functions which takes func result as unique argument,
-    or throws an exception, passing it to a chosen callable, developing a different logic for the two different cases.
-    By default an exception during func execution does not stop ruleset execution, by the way it is possible to
-    propagate any raised exception, setting **raise_on_error** *to True.*
+    Differently from* `Process <https://intro.krules.io/Processing.html#krules_core.base_functions.processing.Process>`_
+    *, which does not allow you to interact with function result, with this function is possible to handle execution
+    results whether it succeeds, using a functions which takes execution returned value as unique argument, or throws
+    an exception, passing it to a chosen callable, developing a different logic for the two different cases.
+    By default an exception during execution does not stop ruleset execution, by the way it is possible to
+    propagate any raised exception, setting* **raise_on_error** *to True.*
 
     ::
 
@@ -29,44 +30,48 @@ class PyCall(RuleFunctionBase):
 
         # ...
 
-        {
-            rulename: "on-device-onboarding-post-to-api",
-            subscibre_to: "device-onboarded",
-            ruledata: {
-                filters: [
-                    ...
-                ]
-                processing: [
-                    PyCall(
-                        post_to_api,
-                        kwargs={
-                            "url": "https://my_awesome_api/devices",
-                            "data": lambda payload: payload["device_info"],
-                        },
-                        on_success=lambda self:
-                            lambda ret:
-                                self.router.send(
-                                    subject="device-{}".format(ret.pop("uid"))
-                                    type="device-posted",
-                                    payload=ret
-                                )
-                        on_error=lambda self:
-                            lambda exc:
-                                self.router.send(
-                                    type="device-onboarded"
-                                    payload={
-                                        "device_info": self.payload["device_info"],
-                                        "retry_count": self.payload.get("retry_count", 0) + 1
-                                    }
-                                )
-                        payload_dest="api_response",
-                        raise_on_error=lambda payload: payload.get("retry_count", 0) > 2,
-                    )
-                ]
-            }
+        rulesdata = [
+            {
+                # We register a device with a post request to an API service and we expect to receive all registration
+                # info and the generated device uid.
+                # If call failed we dispatch the event again, after 3 fails we raise the call exception blocking ruleset execution.
+                rulename: "on-device-onboarding-post-to-api",
+                subscibre_to: "device-onboarded",
+                ruledata: {
+                    processing: [
+                        PyCall(
+                            post_to_api,
+                            kwargs={
+                                "url": "https://my_awesome_api/devices",
+                                "data": lambda payload: payload["device_info"],
+                            },
+                            on_success=lambda self:
+                                lambda ret:
+                                    self.router.route(
+                                        subject="device-{}".format(ret.pop("uid"))
+                                        event_type="device-posted",
+                                        payload=ret
+                                    ) # on success we dispatch device-posted event passing API returned data in payload
+                            on_error=lambda self:
+                                lambda exc:
+                                    self.router.route(
+                                        event_type="device-onboarded"
+                                        payload={
+                                            "device_info": self.payload["device_info"],
+                                            "retry_count": self.payload.get("retry_count", 0) + 1 # on error we update retry_count in payload before to resend the event
+                                        }
+                                    )
+                            payload_dest="api_response",
+                            raise_on_error=lambda payload: payload.get("retry_count", 0) > 2, # if retry count is greater than 2 we block ruleset execution
+                        )
+                    ]
+                }
+            },
 
             # ...
-        }
+            # Here we handle payload["api_response"] content whether it was successful or not
+
+        ]
 
     """
 

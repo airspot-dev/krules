@@ -129,7 +129,7 @@ class Rule:
                     _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
-                _cinst.type = event_type
+                _cinst.event_type = event_type
                 _cinst.subject = subject
                 _cinst.payload = payload
                 res_in = {
@@ -181,7 +181,7 @@ class Rule:
                     _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
-                _cinst.type = event_type
+                _cinst.event_type = event_type
                 _cinst.subject = subject
                 _cinst.payload = payload
                 res_in = {

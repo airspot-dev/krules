@@ -14,14 +14,9 @@ import re
 import pytest
 import rx
 from dependency_injector import providers
-<<<<<<< Updated upstream
 from krules_core.base_functions.filters import Filter, CheckSubjectProperty, PayloadMatch, SubjectNameMatch, \
     SubjectNameDoesNotMatch, PayloadMatchOne, OnSubjectPropertyChanged
-=======
-from krules_core.base_functions.filters import Returns, CheckSubjectProperty, CheckSubjectExtendedProperty, \
-    CheckStoredSubjectProperty, CheckPayloadMatch, SubjectMatch, SubjectDoesNotMatch, IsTrue, IsFalse, \
-    CheckPayloadMatchOne, OnSubjectPropertyChanged
->>>>>>> Stashed changes
+
 
 from krules_core import RuleConst
 
@@ -144,13 +139,9 @@ def test_subject_match(router, asserted):
                        subscribe_to='event-user-action',
                        data={
                            filters: [
-<<<<<<< Updated upstream
                                SubjectNameMatch(r"^user\|(?P<user_id>.+)", payload_dest="user_info"),
                                Filter(
-=======
-                               SubjectMatch(r"^user\|(?P<user_id>.+)", payload_dest="user_info"),
-                               IsTrue(
->>>>>>> Stashed changes
+
                                    lambda payload: "user_id" in payload.get("user_info", {})
                                )
                            ]
@@ -160,11 +151,7 @@ def test_subject_match(router, asserted):
                        subscribe_to='event-user-action',
                        data={
                            filters: [
-<<<<<<< Updated upstream
                                SubjectNameDoesNotMatch(r"^device\|(?P<device_id>.+)", payload_dest="device_info"),
-=======
-                               SubjectDoesNotMatch(r"^device\|(?P<device_id>.+)", payload_dest="device_info"),
->>>>>>> Stashed changes
                            ]
                        })
 

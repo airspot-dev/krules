@@ -12,6 +12,6 @@
 
 class BaseDispatcher(object):
 
-    def dispatch(self, type, subject, payload, **extra):
+    def dispatch(self, event_type, subject, payload, **extra):
         from .router import logger
-        logger.debug("dispatch: {} {} {} | extra: {}".format(type, subject, payload, extra))
+        logger.debug("dispatch: {} {} {} | extra: {}".format(event_type, subject, payload, extra))

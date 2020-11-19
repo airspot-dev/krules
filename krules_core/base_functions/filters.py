@@ -23,23 +23,24 @@ class Filter(RuleFunctionBase):
 
     ::
 
-        {
-            rulename: "filtered-rules",
-            subscibre_to: "...",
-            ruledata: {
-                filters: [
-                    Filter(
-                        lambda payload:(
-                            "my-label" in payload["object"]["metadata"].get("labels", {})
-                        )
-                    ),
-                ]
-                processing: [
-                    ...
-                ]
+        rulesdata = [
+            {
+                rulename: "filtered-rules",
+                subscibre_to: "k8s.resource.add",
+                ruledata: {
+                    filters: [
+                        Filter(
+                            lambda payload:(
+                                "my-label" in payload["object"]["metadata"].get("labels", {})
+                            )
+                        ),
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
             }
-        }
-
+        ]
     """
 
     def execute(self, value):
@@ -56,18 +57,20 @@ class SubjectNameMatch(RuleFunctionBase):
 
     ::
 
-        {
-            rulename: "...",
-            subscibre_to: "...",
-            ruledata: {
-                filters: [
-                    SubjectNameMatch(r"^user\|(?P<user_id>.+)", payload_dest="user_id"),
-                ]
-                processing: [
-                    ...
-                ]
+        rulesdata = [
+            {
+                rulename: "on-user-login-do-something",
+                subscibre_to: "user-login",
+                ruledata: {
+                    filters: [
+                        SubjectNameMatch(r"^user\|(?P<user_id>.+)", payload_dest="user_id"),
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
             }
-        }
+        ]
     """
 
     def execute(self, regex, payload_dest="subject_match"):
@@ -104,23 +107,25 @@ class CheckSubjectProperty(RuleFunctionBase):
 
     ::
 
-        {
-            rulename: "...",
-            subscibre_to: "...",
-            ruledata: {
-                filters: [
-                    CheckSubjectProperty(
-                        "last_update",
-                        property_value=lambda payload:(
-                            lambda value: value < payload.get("update_time")
-                        )
-                    ),
-                ]
-                processing: [
-                    ...
-                ]
+        rulesdata = [
+            {
+                rulename: "on-device-status-new-update-do-something",
+                subscibre_to: "device-status-updated",
+                ruledata: {
+                    filters: [
+                        CheckSubjectProperty(
+                            "last_update",
+                            property_value=lambda payload:(
+                                lambda value: value > payload.get("update_time")
+                            )
+                        ),
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
             }
-        }
+        ]
     """
 
     def execute(self, property_name, property_value=lambda _none_: None, extended=False, use_cache=True):
@@ -156,43 +161,44 @@ class PayloadMatch(RuleFunctionBase):
         #     "skills": [{"id": 1, "rating": 85}, {"id": 2, "value": 53}, {"id": 3, "value": 98}]}
         # }
 
-
-        {
-            rulename: "...",
-            subscibre_to: "...",
-            ruledata: {
-                filters: [
-                    PayloadMatch("$.user", "admin"), # return False because with single_match = False match result is always a list
-                ]
-                processing: [
-                    ...
-                ]
-            }
-        },
-        {
-            rulename: "...",
-            subscibre_to: "...",
-            ruledata: {
-                filters: [
-                    PayloadMatch("$.user", "admin", single_match=True), # return True
-                ]
-                processing: [
-                    ...
-                ]
-            }
-        },
-        {
-            rulename: "...",
-            subscibre_to: "...",
-            ruledata: {
-                filters: [
-                    PayloadMatch("$.data[?@.rating>80]", lambda x: len(x) == 2, payload_dest="qualified_skills")
-                ]
-                processing: [
-                    ...
-                ]
-            }
-        },
+        rulesdata = [
+            {
+                rulename: "on-admin-skills-updated-with-wrong-filter",
+                subscibre_to: "user-skills-updated",
+                ruledata: {
+                    filters: [
+                        PayloadMatch("$.user", "admin"), # return False because with single_match = False match result is always a list
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            },
+            {
+                rulename: "on-admin-skills-updated-with-correct-filter",
+                subscibre_to: "user-skills-updated",
+                ruledata: {
+                    filters: [
+                        PayloadMatch("$.user", "admin", single_match=True), # return True
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            },
+            {
+                rulename: "on-user-skills-updated-update-qualified-skills",
+                subscibre_to: "user-skills-updated",
+                ruledata: {
+                    filters: [
+                        PayloadMatch("$.data[?@.rating>80]", lambda x: len(x) == 2, payload_dest="qualified_skills")
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            },
+        ]
     """
 
     def execute(self, jp_expr, match_value=lambda _none_: None, payload_dest=None, single_match=False):
@@ -230,22 +236,29 @@ class PayloadMatch(RuleFunctionBase):
 
 class PayloadMatchOne(PayloadMatch):
     """
-    *Extends PayloadMatch defaulting single_match to True and so expects just one element as result*
+    *Extends* `PayloadMatch <https://intro.krules.io/Filters.html#krules_core.base_functions.filters.PayloadMatch>`_
 
     ::
 
-        {
-            rulename: "...",
-            subscibre_to: "...",
-            ruledata: {
-                filters: [
-                    PayloadMatchOne("$.user", "admin"), # return True, it is the same as PayloadMatch("$.user", "admin", single_match=True)
-                ]
-                processing: [
-                    ...
-                ]
+        # event payload = {
+        #     "user": "admin",
+        #     "skills": [{"id": 1, "rating": 85}, {"id": 2, "value": 53}, {"id": 3, "value": 98}]}
+        # }
+
+        rulesdata = [
+            {
+                rulename: "on-admin-skills-updated-do-something",
+                subscibre_to: "skills-updated",
+                ruledata: {
+                    filters: [
+                        PayloadMatchOne("$.user", "admin"), # return True, it is the same as PayloadMatch("$.user", "admin", single_match=True)
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
             }
-        }
+        ]
     """
 
     def execute(self, jp_expr, match_value=lambda _none_: None, payload_dest=None, **kwargs):
@@ -309,74 +322,76 @@ class OnSubjectPropertyChanged(RuleFunctionBase):
 
     ::
 
-        {
-            rulename: "...",
-            subscibre_to: "...",
-            ruledata: {
-                filters: [
-                    SetSubjectProperty("count", lambda x: x + 1), # Since in this case the event will be handled within the ruleset itself,
-                                                                  # it is not necessary to define any trigger to intercept it
-                ]
-                processing: [
-                    ...
-                ]
-            }
-        },
-        {
-            rulename: "...",
-            subscibre_to: "subject-property-changed",
-            ruledata: {
-                filters: [
-                    SubjectPropertyChanged("count"), # Exec processing section each time property count changes
-                ]
-                processing: [
-                    ...
-                ]
-            }
-        },
-        {
-            rulename: "...",
-            subscibre_to: "subject-property-changed",
-            ruledata: {
-                filters: [
-                    SubjectPropertyChanged(
-                        "count",
-                        value=lambda v: v%2 == 0
-                    ), # Exec processing section each time a new even value is assigned to property count
-                ]
-                processing: [
-                    ...
-                ]
-            }
-        },
-        {
-            rulename: "...",
-            subscibre_to: "subject-property-changed",
-            ruledata: {
-                filters: [
-                    SubjectPropertyChanged("count", old_value=0), # Exec processing section each time property count changes and
-                                                                  # its old value is equal to 0
-                ]
-                processing: [
-                    ...
-                ]
-            }
-        },
-        {
-            rulename: "...",
-            subscibre_to: "subject-property-changed",
-            ruledata: {
-                filters: [
-                    SubjectPropertyChanged(
-                        "count",
-                        value=lambda v, o: v > 10 && o%2 == 1
-                    ), # Exec processing section each time a new value greater than 10 is assigned to property count and its last value was odd
-                ]
-                processing: [
-                    ...
-                ]
-            }
-        },
+        rulesdata = [
+            {
+                rulename: "on-tick-update-count",
+                subscibre_to: "tick",
+                ruledata: {
+                    filters: [
+                        SetSubjectProperty("count", lambda x: x + 1), # Since in this case the event will be handled within the ruleset itself,
+                                                                      # it is not necessary to define any trigger to intercept it
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            },
+            {
+                rulename: "on-new-count-do-something",
+                subscibre_to: "subject-property-changed",
+                ruledata: {
+                    filters: [
+                        SubjectPropertyChanged("count"), # Exec processing section each time property count changes
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            },
+            {
+                rulename: "on-even-count-do-something",
+                subscibre_to: "subject-property-changed",
+                ruledata: {
+                    filters: [
+                        SubjectPropertyChanged(
+                            "count",
+                            value=lambda v: v%2 == 0
+                        ), # Exec processing section each time a new even value is assigned to property count
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            },
+            {
+                rulename: "on-count-passed-from-zero-to-new-value-do-something",
+                subscibre_to: "subject-property-changed",
+                ruledata: {
+                    filters: [
+                        SubjectPropertyChanged("count", old_value=0), # Exec processing section each time property count changes and
+                                                                      # its old value is equal to 0
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            },
+            {
+                rulename: "on-count-passed-from-even-value-to-new-value-greater-then-ten",
+                subscibre_to: "subject-property-changed",
+                ruledata: {
+                    filters: [
+                        SubjectPropertyChanged(
+                            "count",
+                            value=lambda v, o: v > 10 && o%2 == 1
+                        ), # Exec processing section each time a new value greater than 10 is assigned to property count and its last value was odd
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            },
+        ]
     """
 
     def execute(self, property_name, value=lambda _none_: None, old_value=lambda _none_: None):
