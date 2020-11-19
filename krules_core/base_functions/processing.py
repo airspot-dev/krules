@@ -436,7 +436,7 @@ class Route(RuleFunctionBase):
         if payload is None:
             payload = self.payload
 
-        event_router_factory().route(event_type, subject, payload, dispatch_policy=dispatch_policy)
+        self.router.route(event_type, subject, payload, dispatch_policy=dispatch_policy)
 
 
 class RaiseException(RuleFunctionBase):
