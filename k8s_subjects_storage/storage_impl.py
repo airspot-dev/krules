@@ -100,7 +100,7 @@ class SubjectsK8sStorage(object):
                 raise ValueError(self._resource_path)
             dd = match.groupdict()
             name = dd.get("name")
-            group = dd.get("group", "core")
+            group = dd.get("group", "")
             apiversion = dd.get("apiversion")
             namespace = dd.get("namespace")
             resourcetype = dd.get("resourcetype")
@@ -110,8 +110,10 @@ class SubjectsK8sStorage(object):
                 PropertyType.DEFAULT: {},
                 PropertyType.EXTENDED: {}
             }
-            if group is not None:
-                props[PropertyType.EXTENDED]["group"] = group
+            #if group is not None:
+            #    props[PropertyType.EXTENDED]["group"] = group
+            if len(group):
+                apiversion = "{}/{}".format(group, apiversion)
             props[PropertyType.EXTENDED]["apiversion"] = apiversion
             if namespace is not None:
                 props[PropertyType.EXTENDED]["namespace"] = namespace

@@ -16,6 +16,13 @@ from krules_core.providers import subject_factory
 
 
 def k8s_subject(obj=None, resource_path=None, prefix="k8s:"):
+    """
+    Returns a k8s subject instance providing a kubernetes resource
+    :param obj:
+    :param resource_path:
+    :param prefix:
+    :return:
+    """
     if hasattr(obj, 'obj'):
         obj = obj.obj
     if obj is None:
@@ -23,6 +30,18 @@ def k8s_subject(obj=None, resource_path=None, prefix="k8s:"):
     if resource_path is None:
         resource_path = obj["metadata"]["selfLink"]
     return subject_factory(f"{prefix}{resource_path}", event_data=obj)
+
+
+def k8s_object(subject):
+    """
+    Returns the k8s resource providing a subject instance
+    :param subject:
+    :return:
+    """
+    try:
+        return subject._storage._get_resource()
+    except AttributeError:
+        raise TypeError("not a k8s storaged subject")
 
 
 class K8sObjectsQuery(RuleFunctionBase):
