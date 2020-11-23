@@ -258,16 +258,18 @@ rulesdata = [
             processing: [
                 ProcessCSV_AsDict(
                   driver=GoogleStorageDriver,
-                  func=lambda self: lambda device_data: (
-                    # Here we interact with Rule's instance "self" using a nested lambda
-                    self.router.route(
-                        event_type="onboard-device",
-                        subject=subject_factory(device_data.pop("deviceid"), event_info=self.subject.event_info()),
-                        payload={
-                            "data": device_data,
-                            "class": self.payload["path_info"]["deviceclass"]
-                        }),
-                    )
+                  # Here we interact with RuleFunction's instance "self" using a nested lambda
+                  func=lambda self: # this will be transparently resolved by Argument Processors
+                            lambda device_data: ( # This is RuleFunction func callback parameter
+                                self.router.route(
+                                    event_type="onboard-device",
+                                    subject=subject_factory(device_data.pop("deviceid")),
+                                    payload={
+                                        "data": device_data,
+                                        "class": self.payload["path_info"]["deviceclass"]
+                                    }
+                                ),
+                            )
                 )
             ],
         },

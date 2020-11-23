@@ -74,4 +74,6 @@ autodoc_default_options = {
 
 smv_tag_whitelist = r'^.*$'
 # smv_remote_whitelist = r'^(origin|prod)$'
-smv_branch_whitelist = None # r'^(?!master).*$'
+smv_branch_whitelist = r'^(develop).*$'
+
+locale_dirs = ['locale/']
