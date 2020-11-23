@@ -158,6 +158,12 @@ def test_factory_base_properties():
             "resourcetype": "namespaces",
             "name": "my-namespace",
             "subresource": "status"
+        }),
+        ("/api/v1/namespaces/my-namespace/events/pytest-temp-wttkhgjj.1639366290a13313", {
+            "group": "core",
+            "apiversion": "v1",
+            "resourcetype": "events",
+            "name": "pytest-temp-wttkhgjj.1639366290a13313",
         })
     ]
 
