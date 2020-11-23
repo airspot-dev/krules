@@ -6,7 +6,7 @@ import pytest
 import rx
 from dependency_injector import providers
 from k8s_subjects_storage import storage_impl as k8s_storage_impl
-from krules_core.base_functions import IsTrue
+from krules_core.base_functions import Filter, Process
 
 from krules_core.core import RuleFactory
 from krules_core import RuleConst
@@ -20,7 +20,6 @@ from .functions import (
     K8sObjectDelete, k8s_subject
 )
 
-Filter = Process = IsTrue
 
 def setup_module(_):
 
