@@ -18,7 +18,7 @@ def read(fname):
 
 setup(
     name='krules-subjects-storage-redis',
-    version="0.5.0",
+    version="0.6",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules redis subjects storage implementation",
@@ -34,7 +34,7 @@ setup(
     install_requires=[
         'redis>=3.3.5',
         'anyjson>=0.3.3',
-        'krules-core==0.5.0',
+        'krules-core==0.6',
     ],
     setup_requires=[
         'pytest-runner',
