@@ -23,15 +23,6 @@ POD_NAME = ""
 NAMESPACE = ""
 
 
-# def set_namespace():
-#     import os
-#     global NAMESPACE
-#
-#     namespace = os.environ.get("NAMESPACE")
-#     if namespace is None:
-#         namespace = os.popen("kubectl config view --minify --output 'jsonpath={..namespace}'").read()
-#     NAMESPACE = namespace
-
 def setup_module(_):
     import random, string
 
@@ -101,29 +92,29 @@ def test_factory_base_properties():
 
     endpoints = [
         ("/apis/apps/v1beta2/namespaces/my-namespace/deployments/my-deployment", {
-            "group": "apps",
-            "apiversion": "v1beta2",
+            #"group": "apps",
+            "apiversion": "apps/v1beta2",
             "namespace": "my-namespace",
             "resourcetype": "deployments",
             "name": "my-deployment",
         }),
         ("/apis/apps/v1beta2/namespaces/my-namespace/deployments/my-deployment/status", {
-            "group": "apps",
-            "apiversion": "v1beta2",
+            #"group": "apps",
+            "apiversion": "apps/v1beta2",
             "namespace": "my-namespace",
             "resourcetype": "deployments",
             "name": "my-deployment",
             "subresource": "status"
         }),
         ("/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/my-webhook", {
-            "group": "admissionregistration.k8s.io",
-            "apiversion": "v1",
+            #"group": "admissionregistration.k8s.io",
+            "apiversion": "admissionregistration.k8s.io/v1",
             "resourcetype": "mutatingwebhookconfigurations",
             "name": "my-webhook"
         }),
         ("/apis/airspot.krules.dev/v1/mycrd/my-resource/status", {
-            "group": "airspot.krules.dev",
-            "apiversion": "v1",
+            #"group": "airspot.krules.dev",
+            "apiversion": "airspot.krules.dev/v1",
             "resourcetype": "mycrd",
             "name": "my-resource",
             "subresource": "status"
@@ -135,7 +126,7 @@ def test_factory_base_properties():
             "name": "my-pod"
         }),
         ("/api/v1/namespaces/my-namespace/pods/my-pod/status", {
-            "group": "core",
+            #"group": "core",
             "apiversion": "v1",
             "namespace": "my-namespace",
             "resourcetype": "pods",
@@ -143,26 +134,26 @@ def test_factory_base_properties():
             "subresource": "status"
         }),
         ("/api/v1/nodes/my-node-1234", {
-            "group": "core",
+            #"group": "core",
             "apiversion": "v1",
             "resourcetype": "nodes",
             "name": "my-node-1234"
         }),
         ("/api/v1/nodes/my-node-1234/status", {
-            "group": "core",
+            #"group": "core",
             "apiversion": "v1",
             "resourcetype": "nodes",
             "name": "my-node-1234",
             "subresource": "status"
         }),
         ("/api/v1/namespaces/my-namespace", {
-            "group": "core",
+            #"group": "core",
             "apiversion": "v1",
             "resourcetype": "namespaces",
             "name": "my-namespace",
         }),
         ("/api/v1/namespaces/my-namespace/status", {
-            "group": "core",
+            #"group": "core",
             "apiversion": "v1",
             "resourcetype": "namespaces",
             "name": "my-namespace",
@@ -179,8 +170,8 @@ def test_factory_base_properties():
     for ep, values in endpoints:
             props, ext_props = subject_storage_factory(ep, {}).load()
 
-            if "group" in values:
-                assert ext_props["group"] == values["group"]
+            #if "group" in values:
+            #    assert ext_props["group"] == values["group"]
             assert ext_props["apiversion"] == values["apiversion"]
             if "namespace" in values:
                 assert ext_props["namespace"] == values["namespace"]

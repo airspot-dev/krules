@@ -91,7 +91,7 @@ def test_inferred_properties():
 
     assert pod.ext_name == pod.get_ext("name") == POD_NAME
     assert pod.ext_namespace == pod.get_ext("namespace") == NAMESPACE
-    assert pod.ext_group == pod.get_ext("group") == "core"
+    #assert pod.ext_group == pod.get_ext("group") == ""
     assert pod.ext_apiversion == pod.get_ext("apiversion") == "v1"
     assert pod.ext_resourcetype == pod.get_ext("resourcetype") == "pods"
     assert pod.ext_subresource == pod.get_ext("subresource") == "status"

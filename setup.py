@@ -18,13 +18,13 @@ def read(fname):
 
 setup(
     name='krules-subjects-storage-k8s',
-    version="0.4.5",
+    version="0.6",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules k8s subjects storage implementation",
     licence="Apache Licence 2.0",
-    keywords="krules subjects kubernetes",
-    url="https://github.com/airspot-dev/krules-subjects-k8s-storage.git",
+    keywords="krules kubernetes k8s python python knative",
+    url="https://github.com/airspot-dev/krules-subjects-storage-k8s.git",
     packages=find_packages(),
     long_description=read('README.md'),
     classifiers=[
@@ -32,8 +32,8 @@ setup(
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
-        'krules-core==0.4.4',
-        'pykube-ng==20.7.2',
+        'krules-core==0.6',
+        'pykube-ng==20.10.0',
     ],
     setup_requires=[
         'pytest-runner',
