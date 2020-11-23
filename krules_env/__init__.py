@@ -89,9 +89,9 @@ def publish_proc_events_filtered(result, jp_expr, expt_value):
     )
 
 
-def _get_dispatch_url(subject, type):
+def _get_dispatch_url(subject, event_type):
     ksink = os.environ.get("K_SINK")
-    if type == RULE_PROC_EVENT and "K_PROCEVENTS_SINK" in os.environ:
+    if event_type == RULE_PROC_EVENT and "K_PROCEVENTS_SINK" in os.environ:
         return os.environ.get("K_PROCEVENTS_SINK")
     if ksink is not None:
         return ksink
