@@ -1,6 +1,71 @@
 <h3>Contents</h3>
 <ul>
-    <li class="toctree-l1"><a href="OVERVIEW.html">Technical Overview</a></li>
-    <li class="toctree-l1"><a href="ArgumentProcessors.html">Argument Processors</a></li>
+    <li class="toctree-l1">
+        <a href="OVERVIEW.html">
+            {%- if pagename == "OVERVIEW" %}
+            <strong>
+                Technical Overview
+            </strong>
+            {%- else %}
+                Technical Overview
+            {%- endif %}
+        </a>
+    </li>
+    <li class="toctree-l1">
+        <a href="ArgumentProcessors.html">
+            {%- if pagename == "ArgumentProcessors" %}
+            <strong>
+                Argument Processors
+            </strong>
+            {%- else %}
+                Argument Processors
+            {%- endif %}
+        </a>
+    </li>
+    <li class="toctree-l1">
+        <a href="BaseFunctions.html">
+            {%- if pagename == "BaseFunctions" %}
+            <strong>
+                Base functions library
+            </strong>
+            {%- else %}
+                Base functions library
+            {%- endif %}
+        </a>
+    </li>
+    {%- if pagename == "BaseFunctions" or pagename == "Filters" or pagename == "Processing" or pagename == "Miscellaneous" %}
+    <li class="toctree-sub-l1">
+        <a href="Filters.html">
+            {%- if pagename == "Filters" %}
+            <strong>
+                Filters
+            </strong>
+            {%- else %}
+                Filters
+            {%- endif %}
+        </a>
+    </li>
+    <li class="toctree-sub-l1">
+        <a href="Processing.html">
+            {%- if pagename == "Processing" %}
+            <strong>
+                Processing
+            </strong>
+            {%- else %}
+                Processing
+            {%- endif %}
+        </a>
+    </li>
+    <li class="toctree-sub-l1">
+        <a href="Miscellaneous.html">
+            {%- if pagename == "Miscellaneous" %}
+            <strong>
+                Miscellaneous
+            </strong>
+            {%- else %}
+                Miscellaneous
+            {%- endif %}
+        </a>
+    </li>
+    {%- endif %}
 </ul>
-

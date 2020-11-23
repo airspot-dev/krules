@@ -156,27 +156,33 @@ Let’s see it
 The following is the data structure defining rules and it is loaded at the startup of the ruleset container. 
 
 ```python
+from cloudstorage.drivers.google import GoogleStorageDriver
+from krules_core.providers import subject_factory
+
+# ...
+
 rulesdata = [
     {
         """
         Subscribe to bucket events (finalize), import csv
         """,
+
         rulename: "on-csv-upload-import-devices",
         subscribe_to: "com.google.cloud.storage.object.finalize",
         ruledata: {
             filters: [
-                SubjectMatch(  
+                SubjectNameMatch(  
                   "onboarding/import/(?P<deviceclass>.+)/(?P<filename>.+)", 
                   payload_dest="path_info"  # enrich payload with match
                 ),
-                IsTrue(lambda payload: payload.get("contentType") == "text/csv")
+                Filter(lambda payload: payload.get("contentType") == "text/csv")
             ],
             processing: [
                 ProcessCSV_AsDict(
                   driver=GoogleStorageDriver,
-                  func=lambda device_data, self: (
+                  func=lambda self: lambda device_data: (
                     # a new event is issued for each line of the csv
-                    event_router_factory().route(
+                    self.router.route(
                         # new event type
                         "onboard-device",
                         # the device becomes the new subject
@@ -209,14 +215,19 @@ Following, in **ruledata** we have the pipeline composed by the **filter** and *
 
 The **filters** have 2 generic functions, already provided by the framework:
 
-The first is **SubjectMatch** which verifies that the subject name matches a given regular expression. Because we receive the path of the uploaded file as the subject we use it to check his location and to extract from it some useful information that we put in the payload for later use in the **processing** part. 
+The first is [SubjectNameMatch](https://intro.krules.io/Filters.html#krules_core.base_functions.filters.SubjectNameMatch) which verifies that the subject name matches a given regular expression. Because we receive the path of the uploaded file as the subject we use it to check his location and to extract from it some useful information that we put in the payload for later use in the **processing** part. 
 
-The next function, **IsTrue**, is a very general purpose function. To make it possible to use the most generic functions, an extensible mechanism to process arguments before they are passed to the function is provided. In this case we simply use a lambda function receiving the payload and a preloaded argument processor class instance recognizes its interest in the argument processing it using the required runtime information.
+The next function, [Filter](https://intro.krules.io/Filters.html#krules_core.base_functions.filters.Filter), is a very general purpose function. To make it possible to use the most generic functions, an extensible mechanism to process arguments before they are passed to the function is provided. In this case we simply use a lambda function receiving the payload and a preloaded argument processor class instance recognizes its interest in the argument processing it using the required runtime information.
 In this case the lambda function, thanks to the argument processors, is able to access the payload (at the stage of the pipeline processing step) and check the contentType.
 
 After talking about generic functions, let's move on to the **processing** section where we use a more specialized function. To provide an understanding of how a function can be easily created within an application context, follow its implementation:
 
 ```python
+import io
+import csv
+from krules_core.base_functions import RuleFunctionBase
+
+
 class ProcessCSV_AsDict(RuleFunctionBase):
 
     def execute(self, driver, func, csvreader_kwargs={}):
@@ -229,15 +240,54 @@ class ProcessCSV_AsDict(RuleFunctionBase):
         with io.TextIOWrapper(csv_in, encoding="utf-8") as input_file:
             reader = csv.DictReader(input_file, **csvreader_kwargs)
             for row in reader:
-                func(row, self)  # we provide self to the callback 
-                                 # to make the state of the object 
-                                 # accessible at the execution time
+                func(row)  # we don't need to provide self to the callback 
+                           # to make the state of the object accessible at the execution time
+                           # because the ArgumentProcessors make it works.
 ```
 Classes derived from **RuleFunctionBase** are meta classes statically created together with the definition of the ruleset. The performing instance is created during each pipeline execution while the runtime information are injected into the object. In fact, as can be seen in the example, the payload properties are treated internally in the execute method. 
 
+Another important thing to notice is the func parameter,it should be a sort of callback to interact with each csv row and so it correctly pass as argument just the row itself. 
+By the way it is possible to use a callable capable of accessing the Rule's context without it being passed inside the definition of the RuleFunction using a nested lambda, making the code simpler, more readable and generalized.
+
+```python
+# ...
+
+rulesdata = [
+    {
+        rulename: "on-csv-upload-import-devices",
+        subscribe_to: "com.google.cloud.storage.object.finalize",
+        ruledata: {
+            filters: [
+                # ...
+            ],
+            processing: [
+                ProcessCSV_AsDict(
+                  driver=GoogleStorageDriver,
+                  func=lambda self: lambda device_data: (
+                    # Here we interact with Rule's instance "self" using a nested lambda
+                    self.router.route(
+                        "onboard-device",
+                        subject_factory(device_data.pop("deviceid"), event_info=self.subject.event_info()),
+                        {
+                            "data": device_data,
+                            "class": self.payload["path_info"]["deviceclass"]
+                        }),
+                    )
+                )
+            ],
+        },
+    },
+    # ... 
+]
+```
+
+This is possible thanks to argument processors that allow you to preprocess your arguments, whether they were callable or not, to give them the context awareness.
+
+Go to [ArgumentProcessors](https://intro.krules.io/ArgumentProcessors.html) section to learn more.
+
 So, in the previous example, we produced an event _onboard-device_ type. Here the subject is the device and the payload contains all the initial data obtained from the csv. Somewhere in the cloud we can now intercept this event and finally setup the basic properties of each new onboarded device. To do this we define a specific Ruleset and the related Knative Trigger to intercept the *onboard-device* events.
 
-_rules.py_
+_ruleset.py_
 ```python 
 rulesdata = [
 
@@ -250,7 +300,7 @@ rulesdata = [
         subscribe_to: "onboard-device",
         ruledata: {
             filters: [
-                IsTrue(lambda payload: "data" in payload and "class" in payload),
+                Filter(lambda payload: "data" in payload and "class" in payload),
             ],
             processing: [
                 SetSubjectProperties(lambda payload: payload["data"]),
@@ -324,8 +374,13 @@ We also set a status property to ‘READY’. As seen in the beginning, properti
 
 This is a very important feature and, to better explain it, we can take the example presented at the beginning where, in an interactive shell, we explicitly set the received value of a temperature sensor. Now we are supposing to receive that value as part of an ingestion event. This is happening in the first rule; the following ones instead react to that change setting the temp_status property. Please note that the minimum and maximum temperatures are read as property of the subject. This is because we set them during onboarding phase by acquiring them from the csv
 
-_rules.py_
+_ruleset.py_
 ```python
+from krules_core.types import SUBJECT_PROPERTY_CHANGED
+from krules_core.base_functions import DispatchPolicyConst
+
+# ...
+
 rulesdata = [
 
     """
@@ -336,7 +391,7 @@ rulesdata = [
         subscribe_to: "data-received",
         ruledata: {
             filters: [
-                IsTrue(lambda payload: "tempc" in payload["data"])
+                Filter(lambda payload: "tempc" in payload["data"])
             ],
             processing: [
                 SetSubjectProperty("tempc", lambda payload: payload["data"]["tempc"])
@@ -349,11 +404,11 @@ rulesdata = [
     """,
     {
         rulename: "on-tempc-changed-check-cold",
-        subscribe_to: types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to: SUBJECT_PROPERTY_CHANGED,
         ruledata: {
             filters: [
                 OnSubjectPropertyChanged("tempc"),
-                IsTrue(lambda self:
+                Filter(lambda self:
                        float(self.payload.get("value")) < float(self.subject.get("temp_min"))
                        ),
             ],
@@ -368,11 +423,11 @@ rulesdata = [
     """,
     {
         rulename: "on-tempc-changed-check-normal",
-        subscribe_to: types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to: SUBJECT_PROPERTY_CHANGED,
         ruledata: {
             filters: [
                 OnSubjectPropertyChanged("tempc"),
-                IsTrue(lambda self:
+                Filter(lambda self:
                        float(self.subject.get("temp_min")) <= float(self.payload.get("value")) < float(self.subject.get("temp_max"))
                        ),
             ],
@@ -387,11 +442,11 @@ rulesdata = [
     """,
     {
         rulename: "on-tempc-changed-check-warm",
-        subscribe_to: types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to: SUBJECT_PROPERTY_CHANGED,
         ruledata: {
             filters: [
                 OnSubjectPropertyChanged("tempc"),
-                IsTrue(lambda self:
+                Filter(lambda self:
                        float(self.payload.get("value")) >= float(self.subject.get("temp_max"))
                        )
             ],
@@ -412,7 +467,7 @@ rulesdata = [
             filters: [
                 OnSubjectPropertyChanged(
                   lambda prop: prop in ("temp_status", "tempc")
-                  ),
+                ),
             ],
             processing: [
                 Route(dispatch_policy=DispatchPolicyConst.DIRECT)
@@ -485,7 +540,7 @@ Everything is an event, also the very fact that a rule is processed is itself an
                'payload_diffs': [],
                'returns': True},
               {'args': ['True'],
-               'func_name': 'IsTrue',
+               'func_name': 'Filter',
                'kwargs': {},
                'payload_diffs': [],
               'returns': True}],
@@ -524,6 +579,10 @@ Everything is an event, also the very fact that a rule is processed is itself an
 As we can see in this trace event, referring to the rule of the csv loading in the previous example, the payload was altered during the blocks execution (acquiring information such as the file name and the device class). We focus on the **got_errors** entry, which indicates whether or not an exception was raised during the execution of the rule. In this case it is _True_ and that means that some problems was encountered during the rule execution (maybe for a badly formatted or even damaged file). Furthermore, while the metrics of the rules that have been executed correctly have remained unchanged, all the information useful for managing them has been added to the metrics of the rule that generated the exception: the exception type, the exception args and the stack trace. Now we can implemented a logic to handle rulesets exceptions in a general way. 
 
 ```python
+from krules_env import RULE_PROC_EVENT
+
+# ...
+
 rulesdata = [
 
     """
@@ -531,17 +590,17 @@ rulesdata = [
     """,
     {
         rulename: "on-errors-propagate",
-        subscribe_to: TopicsDefault.METRICS,
+        subscribe_to: RULE_PROC_EVENT,
         ruledata: {
             filters: [
-                IsTrue(lambda payload: payload["got_errors"])
+                Filter(lambda payload: payload["got_errors"])
             ],
             processing: [
                 Route(
-                    lambda payload: 
+                    event_type=lambda payload: 
                       "{}-errors".format(payload["_event_info"]["Source"]),
-                    lambda payload: payload["subject"],
-                    lambda payload: payload
+                    subject=lambda payload: payload["subject"],
+                    payload=lambda payload: payload
                 )
             ],
         },
@@ -551,6 +610,11 @@ rulesdata = [
 
 In this case we decide to propagate the error message to the ruleset that generated it and delegate to original ruleset the exception handling.
 ```python
+from cloudstorage.drivers.google import GoogleStorageDriver
+# other import
+
+# ...
+
 rulesdata = [
 
     """
@@ -562,13 +626,13 @@ rulesdata = [
 
     """
     Manage generic import errors (reject file)
-    """
+    """,
     {
         rulename: 'on-csv-upload-import-devices-error',
         subscribe_to: "on-gcs-csv-upload-errors",
         ruledata: {
             filters: [
-                IsTrue(lambda payload: payload["rulename"] == "on-csv-upload-import-devices")
+                Filter(lambda payload: payload["rulename"] == "on-csv-upload-import-devices")
             ],
             processing: [
                 # reject file
@@ -608,7 +672,7 @@ rulesdata = [
                 PostExtApi(
                     url=lambda payload: payload["url"],
                     data=lambda payload: payload["req_data"],
-                    on_response=lambda self, resp: (
+                    on_response=lambda resp: (
                         resp.raise_for_status(),
                         resp.status_code == 503 and resp.raise_for_status()
                     )
@@ -625,14 +689,14 @@ rulesdata = [
         subscribe_to: "{}-errors".format(os.environ["K_SERVICE"]),
         ruledata: {
             filters: [
-                IsTrue(lambda payload:
+                Filter(lambda payload:
                        payload.get("rulename") == "on-do-extapi-post" and
                        jp.match1("$.processing[*].exception", payload) == "requests.exceptions.HTTPError" and
                        jp.match1("$.processing[*].exc_extra_info.response_code", payload) == 503)
             ],
             processing: [
                 Schedule(
-                    type="do-extapi-post",
+                    event_type="do-extapi-post",
                     payload=lambda payload: payload["payload"],
                     when=lambda _: (datetime.now() + timedelta(seconds=10)).isoformat(), replace=True),
             ]

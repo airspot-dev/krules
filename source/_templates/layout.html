@@ -2,7 +2,10 @@
 
 {%- block extrahead %}
   {{ super() }}
+  <link rel="icon" href="{{ pathto('_static/logo_krules.png', 1)|e }}">
+  <link rel="stylesheet" href="{{ pathto('_static/fontawesome/css/all.min.css', 1) }}" type="text/css" />
   <link rel="stylesheet" href="{{ pathto('_static/custom.css', 1) }}" type="text/css" />
+  <link rel="stylesheet" href="{{ pathto('_static/v1.css', 1) }}" type="text/css" />
   {% if theme_touch_icon %}
     <link rel="apple-touch-icon" href="{{ pathto('_static/' ~ theme_touch_icon, 1) }}" />
   {% endif %}
@@ -39,6 +42,46 @@
 {%- block relbar1 %}{% endblock %}
 {%- block relbar2 %}{% endblock %}
 
+{% block header %}
+    <div class="logo-wrapper">
+        <p class="logo">
+          <a href="{{ pathto(master_doc)|e }}">
+               <!--img class="logo" src="{{ pathto('_static/krules_ext_logo.png', 1)|e }}" alt="Logo"/-->
+               <img class="logo" src="" alt="Logo"/>
+           </a>
+            <p class="payoff">
+                Kubernetes event-driven micro-services development framework
+            </p>
+        </p>
+    </div>
+    <div class="versions-wrapper">
+        {% if versions %}
+            <div class="dropdown">
+              <button class="dropbtn">Documentation {{ current_version.name }} <i class="fa fa-angle-down"></i></button>
+              <div class="dropdown-content">
+                {%- for item in versions.releases %}
+                    {% if item == current_version %}
+                        <a href="{{ item.url }}" class="selected">{{ item.name }}</a>
+                    {% else %}
+                        <a href="{{ item.url }}">{{ item.name }}</a>
+                    {% endif %}
+                {%- endfor %}
+              </div>
+            </div>
+          {% endif %}
+    </div>
+    <div class="header-wrapper" role="banner">
+      <div class="header">
+      </div>
+    </div>
+
+{% endblock %}
+
+
+{%- block sidebarsearch %}
+{%- include "searchbox.html" %}
+{%- endblock %}
+
 {# Nav should appear before content, not after #}
 {%- block content %}
 {%- if theme_fixed_sidebar|lower == 'true' %}
@@ -60,6 +103,19 @@
           {% endblock %}
 
           <div class="body" role="main">
+            {% if current_version and latest_version and current_version != latest_version %}
+                <p>
+                  <strong>
+                    {% if current_version.is_released %}
+                    You're reading an old version of this documentation.
+                    If you want up-to-date information, please have a look at <a href="{{ vpathto(latest_version.name) }}">{{latest_version.name}}</a>.
+                    {% else %}
+                    You're reading the documentation for a development version.
+                    For the latest released version, please have a look at <a href="{{ vpathto(latest_version.name) }}">{{latest_version.name}}</a>.
+                    {% endif %}
+                  </strong>
+                </p>
+            {% endif %}
             {% block body %} {% endblock %}
           </div>
 
@@ -97,6 +153,9 @@
       <a href="{{ pathto('_sources/' + sourcename, true)|e }}"
           rel="nofollow">{{ _('Page source') }}</a>
       {%- endif %}
+       <!--a id="airspot-link" href="https://airspot.tech/">
+           <img alt="airspot" src="{{ pathto('_static/logo-clame.svg', 1) }}"/>
+       </a-->
     </div>
 
     {% if theme_github_banner|lower != 'false' %}
