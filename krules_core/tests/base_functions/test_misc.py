@@ -79,8 +79,8 @@ def test_pycall(subject, router, asserted):
         data={
             processing: [
                 PyCall(_func, ([1, 2], True),
-                       on_success=lambda self, x: x.reverse(),
-                       on_error=lambda self, x: self.payload.update({"got_errors": True}))
+                       on_success=lambda self: lambda x: x.reverse(),
+                       on_error=lambda self: lambda x: self.payload.update({"got_errors": True}))
             ]
         }
     )
@@ -91,7 +91,7 @@ def test_pycall(subject, router, asserted):
         data={
             processing: [
                 PyCall(_func, ([1, 2],), kwargs={"raise_error": False},
-                       on_success=lambda self, x: (
+                       on_success=lambda self: lambda x: (
                            x.reverse(),
                            self.payload.update({"got_errors": False})
                        ))

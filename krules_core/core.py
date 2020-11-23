@@ -12,6 +12,7 @@
 import inspect
 from uuid import uuid4
 
+from .subject import storaged_subject
 from . import RuleConst as Const
 from .providers import event_router_factory, subject_factory
 
@@ -63,6 +64,18 @@ class Rule:
             dd.get(Const.PAYLOAD, {}).pop("_event_info", None)
             return dd
 
+        def __convert_simple_subject_property_proxy(v):
+            if v is None:
+                return v
+            elif isinstance(v, bool):
+                return bool(v)
+            elif isinstance(v, int):
+                return int(v)
+            elif isinstance(v, float):
+                return float(v)
+            else:
+                return str(v)
+
         def __copy_list(ll):
             dst = []
             for el in ll:
@@ -73,6 +86,8 @@ class Rule:
                 elif inspect.isfunction(el):
                     dst.append(__get_signature_info(el))
                 elif isinstance(el, (bool, int, float, str)) or el is None:
+                    if isinstance(el, storaged_subject._SubjectPropertyProxy):
+                        el = __convert_simple_subject_property_proxy(el)
                     dst.append(el)
                 else:
                     dst.append(str(el))
@@ -89,6 +104,8 @@ class Rule:
                 elif inspect.isfunction(v):
                     cp[k] = __get_signature_info(v)
                 elif isinstance(v, (bool, int, float, str)) or v is None:
+                    if isinstance(v, storaged_subject._SubjectPropertyProxy):
+                        v = __convert_simple_subject_property_proxy(v)
                     cp[k] = v
                 else:
                     cp[k] = str(v)
@@ -129,7 +146,7 @@ class Rule:
                     _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
-                _cinst.type = event_type
+                _cinst.event_type = event_type
                 _cinst.subject = subject
                 _cinst.payload = payload
                 res_in = {
@@ -181,7 +198,7 @@ class Rule:
                     _c = _c()
                 _cinst_name = _c.__class__.__name__
                 _cinst = type(_cinst_name, (_c.__class__,), {})()
-                _cinst.type = event_type
+                _cinst.event_type = event_type
                 _cinst.subject = subject
                 _cinst.payload = payload
                 res_in = {

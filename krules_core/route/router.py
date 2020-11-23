@@ -27,29 +27,29 @@ class EventRouter(object):
     def __init__(self):
         self._callables = {}
 
-    def register(self, rule, type):
-        logger.debug("register {0} for {1}".format(rule, type))
-        if type not in self._callables:
-            self._callables[type] = []
-        self._callables[type].append(rule._process)
+    def register(self, rule, event_type):
+        logger.debug("register {0} for {1}".format(rule, event_type))
+        if event_type not in self._callables:
+            self._callables[event_type] = []
+        self._callables[event_type].append(rule._process)
 
-    def unregister(self, type):
-        logger.debug("unregister event {}".format(type))
+    def unregister(self, event_type):
+        logger.debug("unregister event {}".format(event_type))
         count = 0
-        if type in self._callables:
-            for r in self._callables[type]:
+        if event_type in self._callables:
+            for r in self._callables[event_type]:
                 count += 1
-            del self._callables[type]
+            del self._callables[event_type]
         return count
 
     def unregister_all(self):
         count = 0
         types = tuple(self._callables.keys())
-        for type in types:
-            count += self.unregister(type)
+        for event_type in types:
+            count += self.unregister(event_type)
         return count
 
-    def route(self, type, subject, payload, dispatch_policy=DispatchPolicyConst.DEFAULT):
+    def route(self, event_type, subject, payload, dispatch_policy=DispatchPolicyConst.DEFAULT):
 
         if isinstance(subject, str):
             # NOTE: this should have already happened if we want to take care or event info
@@ -58,13 +58,13 @@ class EventRouter(object):
 
         from ..providers import event_dispatcher_factory
 
-        _callables = self._callables.get(type, None)
+        _callables = self._callables.get(event_type, None)
 
         #        try:
         if not dispatch_policy == DispatchPolicyConst.DIRECT:
             if _callables is not None:
                 for _callable in _callables:
-                    _callable(type, subject, payload)
+                    _callable(event_type, subject, payload)
         #        finally:
         #            subject.store()
 
@@ -73,5 +73,5 @@ class EventRouter(object):
                 and dispatch_policy == DispatchPolicyConst.DEFAULT \
                 or dispatch_policy == DispatchPolicyConst.ALWAYS \
                 or dispatch_policy == DispatchPolicyConst.DIRECT:
-            logger.debug("dispatch {} to {} with payload {}".format(type, subject, payload))
-            return event_dispatcher_factory().dispatch(type, subject, payload)
+            logger.debug("dispatch {} to {} with payload {}".format(event_type, subject, payload))
+            return event_dispatcher_factory().dispatch(event_type, subject, payload)

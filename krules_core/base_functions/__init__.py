@@ -14,6 +14,7 @@
 from abc import ABCMeta, abstractmethod
 #import jsonpath_rw_ext as jp
 from krules_core.arg_processors import processors, DefaultArgProcessor
+from krules_core.providers import event_router_factory, configs_factory
 
 
 # class with_payload(object):
@@ -81,7 +82,7 @@ class RuleFunctionBase:
     subject = object()  # just for the ide happiness
 
     payload = {}
-    type = ""
+    event_type = ""
 
     def __init__(self, *args, **kwargs):
         self._args = []
@@ -91,6 +92,9 @@ class RuleFunctionBase:
         self._kwargs = {}
         for k, v in kwargs.items():
             self._kwargs[k] = self._get_arg_processor(v)
+
+        self.router = event_router_factory()
+        self.configs = configs_factory()
 
     @staticmethod
     def _get_arg_processor(arg):

@@ -14,8 +14,9 @@ import re
 import pytest
 import rx
 from dependency_injector import providers
-from krules_core.base_functions.filters import Returns, CheckSubjectProperty, PayloadMatch, SubjectNameMatch, \
-    SubjectNameDoesNotMatch, IsTrue, IsFalse, PayloadMatchOne, SubjectPropertyChanged
+from krules_core.base_functions.filters import Filter, CheckSubjectProperty, PayloadMatch, SubjectNameMatch, \
+    SubjectNameDoesNotMatch, PayloadMatchOne, OnSubjectPropertyChanged
+
 
 from krules_core import RuleConst
 
@@ -71,7 +72,7 @@ def test_return(subject, router, asserted):
                        subscribe_to="event-test-returns",
                        data={
                            filters: [
-                               Returns("something"),
+                               Filter("something"),
                            ],
                        })
 
@@ -94,21 +95,21 @@ def test_truth(subject, router, asserted):
                        subscribe_to="event-test-truth",
                        data={
                            filters: [
-                               IsTrue(
+                               Filter(
                                     lambda payload: payload["it-works"]
                                ),
                            ],
                        })
 
-    RuleFactory.create('test-is-false',
-                       subscribe_to="event-test-truth",
-                       data={
-                           filters: [
-                               IsFalse(
-                                   lambda payload: payload["it-works"] is False
-                               ),
-                           ],
-                       })
+    # RuleFactory.create('test-is-false',
+    #                    subscribe_to="event-test-truth",
+    #                    data={
+    #                        filters: [
+    #                            Filter(
+    #                                lambda payload: payload["it-works"] is False
+    #                            ),
+    #                        ],
+    #                    })
 
     proc_events_rx_factory().subscribe(
         lambda x: x[rulename] == 'test-is-true' and _assert(
@@ -127,7 +128,7 @@ def test_truth(subject, router, asserted):
     router.route("event-test-truth", subject, {'it-works': True})
 
     assert 'test-is-true' in asserted
-    assert 'test-is-false' in asserted
+    # assert 'test-is-false' in asserted
 
 
 def test_subject_match(router, asserted):
@@ -139,7 +140,8 @@ def test_subject_match(router, asserted):
                        data={
                            filters: [
                                SubjectNameMatch(r"^user\|(?P<user_id>.+)", payload_dest="user_info"),
-                               IsTrue(
+                               Filter(
+
                                    lambda payload: "user_id" in payload.get("user_info", {})
                                )
                            ]
@@ -213,7 +215,7 @@ def test_check_subject_property(router, subject, asserted):
 
     subject.set("prop-1", "value-1")
     subject.set("prop-2", 2)
-    subject.set_ext("ext-prop-2", "extprop")
+    subject.set_ext("ext-prop", "extprop")
 
     proc_events_rx_factory().subscribe(
         lambda x: x[rulename] == "test-simple-subject-property" and _assert(
@@ -227,11 +229,18 @@ def test_check_subject_property(router, subject, asserted):
             x[processed] is False
         )
     )
+    proc_events_rx_factory().subscribe(
+        lambda x: x[rulename] == "test-expr-subject-property" and _assert(
+            x[rulename],
+            x[processed] is True
+        )
+    )
 
     router.route("test-subject-property", subject, {})
 
     assert "test-simple-subject-property" in asserted
     assert "test-simple-subject-property-fails" in asserted
+    assert "test-expr-subject-property" in asserted
 
     # clean up
     router.unregister_all()
@@ -247,7 +256,7 @@ def test_check_subject_property(router, subject, asserted):
         subscribe_to="test-subject-property-direct",
         data={
             filters: [
-                CheckSubjectProperty("v-prop-1", "value-2", cached=False),  # prop-1 is still value-1
+                CheckSubjectProperty("v-prop-1", "value-2", use_cache=False),  # prop-1 is still value-1
             ]
         }
     )
@@ -257,7 +266,7 @@ def test_check_subject_property(router, subject, asserted):
         subscribe_to="test-subject-property-direct",
         data={
             filters: [
-                CheckSubjectProperty("ext-prop-3", cached=False),  # ext-prop-3 does not exists yet
+                CheckSubjectProperty("ext-prop-3", use_cache=False),  # ext-prop-3 does not exists yet
             ]
         }
     )
@@ -331,7 +340,7 @@ def test_check_payload_match(router, subject, asserted):
             filters: [
                 PayloadMatch("$.batch_data[?@.value>100]", lambda m: len(m) == 2),
                 PayloadMatch("$.batch_data[?@.value>100]", payload_dest="jpexpr_match"),
-                IsTrue(
+                Filter(
                     lambda payload: len(payload['jpexpr_match']) == 2
                 )
             ]
@@ -346,7 +355,7 @@ def test_check_payload_match(router, subject, asserted):
                 PayloadMatchOne("$.device_info.id", "0AFB1110"),
                 PayloadMatchOne("$.device_info.id", payload_dest="device_id"),
                 PayloadMatchOne("$.device.info.disabled", lambda disabled: not disabled),
-                IsTrue(
+                Filter(
                     lambda payload: payload["device_id"] == "0AFB1110"
                 )
             ]
@@ -390,14 +399,14 @@ def test_on_subject_property_changed(router, subject, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged("prop_a"),
-                SubjectPropertyChanged(lambda: "prop_{}".format("a")),
-                SubjectPropertyChanged(lambda prop: re.match("prop_[a-z]", prop)),
-                SubjectPropertyChanged("prop_a", lambda: 1),
-                SubjectPropertyChanged("prop_a", value=lambda value: value > 0),
-                SubjectPropertyChanged("prop_a", value=lambda value, old_value: value == 1 and old_value is None),
-                SubjectPropertyChanged("prop_a", old_value=None),
-                SubjectPropertyChanged("prop_a", old_value=lambda old_value: old_value is None)
+                OnSubjectPropertyChanged("prop_a"),
+                OnSubjectPropertyChanged(lambda: "prop_{}".format("a")),
+                OnSubjectPropertyChanged(lambda prop: re.match("prop_[a-z]", prop)),
+                OnSubjectPropertyChanged("prop_a", lambda: 1),
+                OnSubjectPropertyChanged("prop_a", value=lambda value: value > 0),
+                OnSubjectPropertyChanged("prop_a", value=lambda value, old_value: value == 1 and old_value is None),
+                OnSubjectPropertyChanged("prop_a", old_value=None),
+                OnSubjectPropertyChanged("prop_a", old_value=lambda old_value: old_value is None)
            ]
         }
     )
@@ -406,7 +415,7 @@ def test_on_subject_property_changed(router, subject, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged("prop_b"),
+                OnSubjectPropertyChanged("prop_b"),
            ]
         }
     )
@@ -415,7 +424,7 @@ def test_on_subject_property_changed(router, subject, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged("prop_a", lambda value: value > 1),
+                OnSubjectPropertyChanged("prop_a", lambda value: value > 1),
             ]
         }
     )
@@ -424,7 +433,7 @@ def test_on_subject_property_changed(router, subject, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged("prop_a", lambda value, old_value: value == 1 and old_value is not None),
+                OnSubjectPropertyChanged("prop_a", lambda value, old_value: value == 1 and old_value is not None),
             ]
         }
     )
@@ -433,7 +442,7 @@ def test_on_subject_property_changed(router, subject, asserted):
         subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
-                SubjectPropertyChanged("prop_a", lambda value, old_value: value == 1,
+                OnSubjectPropertyChanged("prop_a", lambda value, old_value: value == 1,
                                          lambda old_value: old_value is not None),
             ]
         }

@@ -47,13 +47,13 @@ class Subject(object):
         self._cached[PropertyType.DEFAULT]["values"] = props
         self._cached[PropertyType.EXTENDED]["values"] = ext_props
 
-    def _set(self, prop, value, extended, muted, cached):
+    def _set(self, prop, value, extended, muted, use_cache):
         if isinstance(value, tuple):
             value = list(value)
 
-        if cached is None:
-            cached = self._use_cache
-        if cached:
+        if use_cache is None:
+            use_cache = self._use_cache
+        if use_cache:
             if self._cached is None:
                 self._load()
             kprops = extended and PropertyType.EXTENDED or PropertyType.DEFAULT
@@ -99,16 +99,16 @@ class Subject(object):
 
         return value, old_value
 
-    def set(self, prop, value, muted=False, cached=None):
-        return self._set(prop, value, False, muted, cached)
+    def set(self, prop, value, muted=False, use_cache=None):
+        return self._set(prop, value, False, muted, use_cache)
 
-    def set_ext(self, prop, value, cached=None):
-        return self._set(prop, value, True, True, cached)
+    def set_ext(self, prop, value, use_cache=None):
+        return self._set(prop, value, True, True, use_cache)
 
-    def _get(self, prop, extended, cached):
-        if cached is None:
-            cached = self._use_cache
-        if cached:
+    def _get(self, prop, extended, use_cache):
+        if use_cache is None:
+            use_cache = self._use_cache
+        if use_cache:
             if self._cached is None:
                 self._load()
             if extended:
@@ -130,16 +130,16 @@ class Subject(object):
                 self._cached[k]["updated"].add(prop)
             return val
 
-    def get(self, prop, cached=None):
-        return self._get(prop, False, cached)
+    def get(self, prop, use_cache=None):
+        return self._get(prop, False, use_cache)
 
-    def get_ext(self, prop, cached=None):
-        return self._get(prop, True, cached)
+    def get_ext(self, prop, use_cache=None):
+        return self._get(prop, True, use_cache)
 
-    def _delete(self, prop, extended, muted, cached):
-        if cached is None:
-            cached = self._use_cache
-        if cached:
+    def _delete(self, prop, extended, muted, use_cache):
+        if use_cache is None:
+            use_cache = self._use_cache
+        if use_cache:
             if self._cached is None:
                 self._load()
             k = extended and PropertyType.EXTENDED or PropertyType.DEFAULT
@@ -168,11 +168,11 @@ class Subject(object):
             from krules_core import types
             event_router_factory().route(types.SUBJECT_PROPERTY_DELETED, self, payload)
 
-    def delete(self, prop, muted=False, cached=None):
-        self._delete(prop, False, muted, cached)
+    def delete(self, prop, muted=False, use_cache=None):
+        self._delete(prop, False, muted, use_cache)
 
-    def delete_ext(self, prop, cached=None):
-        self._delete(prop, True, False, cached)
+    def delete_ext(self, prop, use_cache=None):
+        self._delete(prop, True, False, use_cache)
 
 
     def get_ext_props(self):
@@ -242,7 +242,7 @@ class Subject(object):
                     propname = item[4:]
                     is_ext = True
 
-                value = self._get(propname, extended=is_ext, cached=self._use_cache)
+                value = self._get(propname, extended=is_ext, use_cache=self._use_cache)
             except KeyError:
                 raise ex
             return _SubjectPropertyProxy(self, propname, value, is_ext, is_mute, self._use_cache)

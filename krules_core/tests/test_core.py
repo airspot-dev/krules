@@ -110,8 +110,8 @@ def test_dispatch(subject, router):
 
     class _TestDispatcher(BaseDispatcher):
 
-        def dispatch(self, type, subject, payload, **extra):
-            _dispatched_events.append((type, subject, payload))
+        def dispatch(self, event_type, subject, payload, **extra):
+            _dispatched_events.append((event_type, subject, payload))
 
     event_dispatcher_factory.override(
         providers.Singleton(lambda: _TestDispatcher())
@@ -119,9 +119,9 @@ def test_dispatch(subject, router):
 
     router.route('test-unhandled-event', subject, {"data": 1})
 
-    type, subject, payload = _dispatched_events.pop()
+    t, subject, payload = _dispatched_events.pop()
     _assert(
-        type == 'test-unhandled-event' and
+        t == 'test-unhandled-event' and
         subject.name == subject.name and
         payload.get("data") == 1
     )
