@@ -8,6 +8,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import inspect
 
 import pykube
 from krules_core.base_functions import RuleFunctionBase
@@ -95,7 +96,7 @@ class K8sObjectsQuery(RuleFunctionBase):
 
 class K8sObjectUpdate(RuleFunctionBase):
 
-    def execute(self, func, name=None, apiversion=None, kind=None, subresource=None, **filters):
+    def execute(self, patch, name=None, apiversion=None, kind=None, subresource=None, is_strategic=True, **filters):
 
         if name is None:
             name = self.subject.get_ext("name")
@@ -122,11 +123,14 @@ class K8sObjectUpdate(RuleFunctionBase):
 
         obj = obj.objects(api).filter(**filters).get(name=name)
 
-        func(obj.obj)
+        if inspect.isfunction(patch):
+            patch(obj.obj)
+        else:
+            obj.obj.update(patch)
 
         while True:
             try:
-                obj.update(subresource=subresource)
+                obj.update(subresource=subresource, is_strategic=is_strategic)
                 break
             except pykube.exceptions.HTTPError as ex:
                 if ex.code == 409:
