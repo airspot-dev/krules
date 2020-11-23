@@ -35,5 +35,3 @@ event_dispatcher_factory = providers.Singleton(BaseDispatcher)
 exceptions_dumpers_factory = providers.Singleton(ExceptionsDumpers)
 
 
-
-

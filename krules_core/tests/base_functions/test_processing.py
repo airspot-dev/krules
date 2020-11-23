@@ -277,4 +277,3 @@ def test_subject_functions(subject, router, asserted):
     assert "test-muted-property" not in asserted
     assert "test-direct-property" in asserted
     assert "test-multi-set-properties-unmuted" in asserted
-
