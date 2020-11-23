@@ -45,3 +45,21 @@ div.sphinxsidebar input, div.sphinxsidebar h3, div.sphinxsidebar h4  {
 .logo img {
     content: url("../_static/krules_light_logo.png");
 }
+
+.dropbtn {
+  background-color: transparent;
+  color: #036aff;
+}
+
+.dropdown-content a {
+  color: #036aff;
+}
+
+.dropdown-content a:hover {background-color: rgba(48, 107, 255, 0.3);}
+
+.dropdown-content a.selected, .dropdown-content a.selected:hover {
+    background: #036aff;
+    color: #fff;
+}
+
+.dropdown:hover .dropbtn {color: rgba(48, 107, 255, 0.3);}

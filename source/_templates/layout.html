@@ -54,6 +54,22 @@
             </p>
         </p>
     </div>
+    <div class="versions-wrapper">
+        {% if versions %}
+            <div class="dropdown">
+              <button class="dropbtn">Documentation {{ current_version.name }} <i class="fa fa-angle-down"></i></button>
+              <div class="dropdown-content">
+                {%- for item in versions.releases %}
+                    {% if item == current_version %}
+                        <a href="{{ item.url }}" class="selected">{{ item.name }}</a>
+                    {% else %}
+                        <a href="{{ item.url }}">{{ item.name }}</a>
+                    {% endif %}
+                {%- endfor %}
+              </div>
+            </div>
+          {% endif %}
+    </div>
     <div class="header-wrapper" role="banner">
       <div class="header">
       </div>
@@ -87,6 +103,19 @@
           {% endblock %}
 
           <div class="body" role="main">
+            {% if current_version and latest_version and current_version != latest_version %}
+                <p>
+                  <strong>
+                    {% if current_version.is_released %}
+                    You're reading an old version of this documentation.
+                    If you want up-to-date information, please have a look at <a href="{{ vpathto(latest_version.name) }}">{{latest_version.name}}</a>.
+                    {% else %}
+                    You're reading the documentation for a development version.
+                    For the latest released version, please have a look at <a href="{{ vpathto(latest_version.name) }}">{{latest_version.name}}</a>.
+                    {% endif %}
+                  </strong>
+                </p>
+            {% endif %}
             {% block body %} {% endblock %}
           </div>
 
