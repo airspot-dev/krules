@@ -3,7 +3,7 @@ NOW=$(shell date +%Y%m%d%H%M%S)
 DEV_VERSION=${VERSION}-${NOW}
 
 public: check_env setup app/*.py public/Dockerfile
-	bumpversion --current-version ${VERSION} patch VERSION --allow-dirty
+	# bumpversion --current-version ${VERSION} patch VERSION --allow-dirty
 	docker build -t ruleset-image-base:${VERSION} -t ${DOCKER_REGISTRY}/ruleset-image-base:${VERSION} -t ${DOCKER_REGISTRY}/ruleset-image-base:latest public
 	docker push ${DOCKER_REGISTRY}/ruleset-image-base:${VERSION} && docker push ${DOCKER_REGISTRY}/ruleset-image-base:latest
 
@@ -25,4 +25,3 @@ check_dev_env:
 ifndef KRULES_DEV_PACKAGES_DIR
 	$(error KRULES_DEV_PACKAGES_DIR is undefined)
 endif
-
