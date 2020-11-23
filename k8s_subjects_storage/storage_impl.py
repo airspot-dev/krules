@@ -23,6 +23,9 @@ import re
 class SubjectsK8sStorage(object):
 
     def __init__(self, resource_path, resource_body=None, override_api_url=False):
+        # resource body should be a valid k8s resource or an empty dict (force only inferred props)
+        if resource_body is not None and len(resource_body) and resource_body.get("metadata", {}).get("name") is None:
+            resource_body = None
         self._resource_path = resource_path
         self._resource_body = resource_body
         self._override_api_url = override_api_url
@@ -82,13 +85,13 @@ class SubjectsK8sStorage(object):
         if self._inferred_properties is None:
             patterns = [
                 # namespaced
-                "^/apis/(?P<group>[^/]+)/(?P<apiversion>v[a-z0-9]+)/namespaces/(?P<namespace>[a-z0-9-]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
+                "^/apis/(?P<group>[^/]+)/(?P<apiversion>v[a-z0-9]+)/namespaces/(?P<namespace>[a-z0-9-]+)/(?P<resourcetype>[a-z-]+)/(?P<name>[a-z0-9-.]+)[/]?(?P<subresource>[a-z]*)$",
                 # cluster scoped
-                "^/apis/(?P<group>[^/]+)/(?P<apiversion>v[a-z0-9]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
+                "^/apis/(?P<group>[^/]+)/(?P<apiversion>v[a-z0-9]+)/(?P<resourcetype>[a-z-]+)/(?P<name>[a-z0-9-.]+)[/]?(?P<subresource>[a-z]*)$",
                 # api core (namespaced)
-                "^/api[s]?/(?P<apiversion>v[a-z0-9]+)/namespaces/(?P<namespace>[a-z0-9-]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
+                "^/api[s]?/(?P<apiversion>v[a-z0-9]+)/namespaces/(?P<namespace>[a-z0-9-]+)/(?P<resourcetype>[a-z-]+)/(?P<name>[a-z0-9-.]+)[/]?(?P<subresource>[a-z]*)$",
                 # api core
-                "^/api[s]?/(?P<apiversion>v[a-z0-9]+)/(?P<resourcetype>[a-z]+)/(?P<name>[a-z0-9-]+)[/]?(?P<subresource>[a-z]*)$",
+                "^/api[s]?/(?P<apiversion>v[a-z0-9]+)/(?P<resourcetype>[a-z-]+)/(?P<name>[a-z0-9-.]+)[/]?(?P<subresource>[a-z]*)$",
             ]
             match = None
             for pattern in patterns:
