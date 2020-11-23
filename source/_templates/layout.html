@@ -59,7 +59,7 @@
             <div class="dropdown">
               <button class="dropbtn">Documentation {{ current_version.name }} <i class="fa fa-angle-down"></i></button>
               <div class="dropdown-content">
-                {%- for item in versions.releases %}
+                {%- for item in versions.tags %}
                     {% if item == current_version %}
                         <a href="{{ item.url }}" class="selected">{{ item.name }}</a>
                     {% else %}

@@ -184,11 +184,11 @@ rulesdata = [
                     # a new event is issued for each line of the csv
                     self.router.route(
                         # new event type
-                        "onboard-device",
+                        event_type="onboard-device",
                         # the device becomes the new subject
-                        subject_factory(device_data.pop("deviceid"), event_info=self.subject.event_info()),
+                        subject=subject_factory(device_data.pop("deviceid")),
                          # device data and device class as payload
-                        {
+                        payload={
                             "data": device_data,
                             "class": self.payload["path_info"]["deviceclass"]
                         }),
@@ -240,14 +240,9 @@ class ProcessCSV_AsDict(RuleFunctionBase):
         with io.TextIOWrapper(csv_in, encoding="utf-8") as input_file:
             reader = csv.DictReader(input_file, **csvreader_kwargs)
             for row in reader:
-                func(row)  # we don't need to provide self to the callback 
-                           # to make the state of the object accessible at the execution time
-                           # because the ArgumentProcessors make it works.
+                func(row)  
 ```
 Classes derived from **RuleFunctionBase** are meta classes statically created together with the definition of the ruleset. The performing instance is created during each pipeline execution while the runtime information are injected into the object. In fact, as can be seen in the example, the payload properties are treated internally in the execute method. 
-
-Another important thing to notice is the func parameter,it should be a sort of callback to interact with each csv row and so it correctly pass as argument just the row itself. 
-By the way it is possible to use a callable capable of accessing the Rule's context without it being passed inside the definition of the RuleFunction using a nested lambda, making the code simpler, more readable and generalized.
 
 ```python
 # ...
@@ -266,9 +261,9 @@ rulesdata = [
                   func=lambda self: lambda device_data: (
                     # Here we interact with Rule's instance "self" using a nested lambda
                     self.router.route(
-                        "onboard-device",
-                        subject_factory(device_data.pop("deviceid"), event_info=self.subject.event_info()),
-                        {
+                        event_type="onboard-device",
+                        subject=subject_factory(device_data.pop("deviceid"), event_info=self.subject.event_info()),
+                        payload={
                             "data": device_data,
                             "class": self.payload["path_info"]["deviceclass"]
                         }),
@@ -280,6 +275,8 @@ rulesdata = [
     # ... 
 ]
 ```
+Another important thing to notice is the func parameter,it should be a sort of callback to interact with each csv row and so it correctly pass as argument just the row itself. 
+By the way it is possible to use a callable capable of accessing the Rule's context without it being passed inside the definition of the RuleFunction using a nested lambda, making the code simpler, more readable and generalized.
 
 This is possible thanks to argument processors that allow you to preprocess your arguments, whether they were callable or not, to give them the context awareness.
 

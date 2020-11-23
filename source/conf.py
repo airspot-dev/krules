@@ -71,3 +71,7 @@ autodoc_default_options = {
     # 'special-members': '__init__',
     # 'undoc-members': True,
 }
+
+smv_tag_whitelist = r'^.*$'
+# smv_remote_whitelist = r'^(origin|prod)$'
+smv_branch_whitelist = None # r'^(?!master).*$'
