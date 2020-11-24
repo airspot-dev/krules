@@ -33,13 +33,15 @@ def k8s_subject(obj=None, resource_path=None, prefix="k8s:"):
     return subject_factory(f"{prefix}{resource_path}", event_data=obj)
 
 
-def k8s_object(subject):
+def k8s_object(subject, renew=False):
     """
     Returns the k8s resource providing a subject instance
     :param subject:
     :return:
     """
     try:
+        if renew:
+            subject._storage._reset()
         return subject._storage._get_resource()
     except AttributeError:
         raise TypeError("not a k8s storaged subject")
