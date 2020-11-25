@@ -122,7 +122,7 @@ class Rule:
 
         process_id = str(uuid4())
         payload_copy = __copy(payload)
-        event_info = payload_copy.pop("_event_info", {})
+        event_info = payload_copy.pop("_event_info", subject.event_info())
 
         res_full = {
             Const.TYPE: event_type,
