@@ -205,8 +205,8 @@ class PayloadMatch(RuleFunctionBase):
         """
         Args:
             jp_expr: Jsonpath expression which will be used to process the payload.
-            payload_dest: Payload key in which match result will be stored. If None, no result will be saved. [default None]
             match_value: It can be both the expected value of the jsonpath expression processing or a boolean function that handles the expression result.
+            payload_dest: Payload key in which match result will be stored. If None, no result will be saved. [default None]
             single_match: If True produces a single value as result, a list of values otherwise [default False]
         """
 
