@@ -238,6 +238,7 @@ class K8sObjectPatch(K8sRuleFunctionBase):
                 else:
                     raise ex
 
+
 class K8sObjectCreate(K8sRuleFunctionBase):
 
     def execute(self, obj):
@@ -246,7 +247,9 @@ class K8sObjectCreate(K8sRuleFunctionBase):
         kind = obj.get("kind")
         while True:
             try:
-                self._get_object(apiversion, kind)(self.payload.get("_k8s_api_client"), obj).create()
+                obj_kind = self._get_object(apiversion, kind)
+                api = self.payload.get("_k8s_api_client")
+                obj_kind(api, obj).create()
                 break
             except pykube.exceptions.HTTPError as ex:
                 if ex.code == 409:
