@@ -271,6 +271,8 @@ class Rule:
                 logger.error(res_out)
                 logger.debug("# unprocessed: {0}".format(res_out))
                 res_full[Const.GOT_ERRORS] = True
+                if Const.PROCESSED not in res_full:  # this happens when exception is in filters
+                    res_full[Const.PROCESSED] = False
                 res_full[res_out[Const.SECTION]].append(__clean(res_out))
                 proc_events_rx.on_next(res_full)
 
