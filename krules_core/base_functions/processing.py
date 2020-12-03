@@ -354,7 +354,7 @@ class Route(RuleFunctionBase):
     ::
 
         from krules_core.route.router.DispatchPolicyConst import DEFAULT, ALWAYS, NEVER, DIRECT
-        from krules_core.types import SUBJECT_PROPERTY_CHANGED
+        from krules_core.event_types import SUBJECT_PROPERTY_CHANGED
 
         # ...
 

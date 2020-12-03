@@ -393,10 +393,10 @@ def test_check_payload_match(router, subject, asserted):
 
 def test_on_subject_property_changed(router, subject, asserted):
 
-    from krules_core import types
+    from krules_core import event_types
     RuleFactory.create(
         "test-prop-changed",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("prop_a"),
@@ -412,7 +412,7 @@ def test_on_subject_property_changed(router, subject, asserted):
     )
     RuleFactory.create(
         "test-prop-changed-fails-1",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("prop_b"),
@@ -421,7 +421,7 @@ def test_on_subject_property_changed(router, subject, asserted):
     )
     RuleFactory.create(
         "test-prop-changed-fails-2",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("prop_a", lambda value: value > 1),
@@ -430,7 +430,7 @@ def test_on_subject_property_changed(router, subject, asserted):
     )
     RuleFactory.create(
         "test-prop-changed-fails-3",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("prop_a", lambda value, old_value: value == 1 and old_value is not None),
@@ -439,7 +439,7 @@ def test_on_subject_property_changed(router, subject, asserted):
     )
     RuleFactory.create(
         "test-prop-changed-fails-4",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("prop_a", lambda value, old_value: value == 1,

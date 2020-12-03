@@ -165,10 +165,10 @@ def test_subject_functions(subject, router, asserted):
             ]
         }
     )
-    from krules_core import types
+    from krules_core import event_types
     RuleFactory.create(
         "test-non-muted-property",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("my_prop", lambda value, old_value: value == 1 and old_value is None)
@@ -177,7 +177,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-muted-property",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("something_to_say")
@@ -186,7 +186,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-direct-property",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("my_prop_2", lambda value, old_value: value == 2 and old_value is None)
@@ -195,7 +195,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-muted-direct-property",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("my_prop_3")
@@ -204,7 +204,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-multi-set-properties-unmuted",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("my_prop_4")
@@ -213,7 +213,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-multi-set-properties-muted",   # never processed
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged(lambda p: p in ("my_silent_prop_5", "my_silent_prop_6"))
