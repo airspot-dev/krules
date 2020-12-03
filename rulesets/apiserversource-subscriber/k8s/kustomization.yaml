@@ -1,6 +1,4 @@
 namespace: krules-system
 resources:
-  - namespace.yaml
-  - serviceaccount.yaml
   - apiserversource.yaml
-  - broker.yaml
+  - service.yaml

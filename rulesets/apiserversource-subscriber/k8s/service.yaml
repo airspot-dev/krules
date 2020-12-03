@@ -1,0 +1,35 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: apiserversource-subscriber
+  labels:
+    serving.knative.dev/visibility: cluster-local
+    krules.airspot.dev/type: ruleset
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+    spec:
+      containers:
+      - name: ruleset
+        image: ade8850/apiserversource-subscriber@sha256:6e21ecb55b8d8063c77d85cd350f821a57c73f070f695733ab292ddf95630708
+        # for development only
+        env:
+          - name: K_PROCEVENTS_SINK
+            value: http://broker-ingress.knative-eventing.svc.cluster.local/krules-system/procevents
+---
+apiVersion: sources.knative.dev/v1beta1
+kind: SinkBinding
+metadata:
+  name: apiserversource-subscriber
+spec:
+  subject:
+    apiVersion: serving.knative.dev/v1
+    kind: Service
+    name: apiserversource-subscriber
+  sink:
+    ref:
+      apiVersion: eventing.knative.dev/v1
+      kind: Broker
+      name: default
