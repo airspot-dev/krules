@@ -94,8 +94,8 @@ class Subject(object):
                        PayloadConst.VALUE: value}
 
             from krules_core.providers import event_router_factory
-            from krules_core import types
-            event_router_factory().route(types.SUBJECT_PROPERTY_CHANGED, self, payload)
+            from krules_core import event_types
+            event_router_factory().route(event_types.SUBJECT_PROPERTY_CHANGED, self, payload)
 
         return value, old_value
 
@@ -165,8 +165,8 @@ class Subject(object):
             payload = {PayloadConst.PROPERTY_NAME: prop}
 
             from krules_core.providers import event_router_factory
-            from krules_core import types
-            event_router_factory().route(types.SUBJECT_PROPERTY_DELETED, self, payload)
+            from krules_core import event_types
+            event_router_factory().route(event_types.SUBJECT_PROPERTY_DELETED, self, payload)
 
     def delete(self, prop, muted=False, use_cache=None):
         self._delete(prop, False, muted, use_cache)

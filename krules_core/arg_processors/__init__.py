@@ -45,6 +45,9 @@ class DefaultArgProcessor(BaseArgProcessor):
     *A simple Argument Processor which returns the argument itself.*
     """
 
+    def __init__(self, arg):
+        super().__init__(lambda: arg)
+
     @staticmethod
     def interested_in(arg):
         """
@@ -60,7 +63,7 @@ class DefaultArgProcessor(BaseArgProcessor):
             Argument itself.
         """
 
-        return self._arg
+        return self._arg()
 
 
 class SimpleCallableArgProcessor(BaseArgProcessor):
