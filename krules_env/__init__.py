@@ -21,7 +21,7 @@ from krules_core.providers import (
     exceptions_dumpers_factory,
 )
 from krules_core.route.router import DispatchPolicyConst, EventRouter
-from krules_core.types import format_event_type
+from krules_core.event_types import format_event_type
 
 config_base_path = os.environ.get("KRULES_CONFIG_BASE_PATH", "/krules/config")
 
