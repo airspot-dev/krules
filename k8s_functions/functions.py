@@ -249,7 +249,9 @@ class K8sObjectCreate(K8sRuleFunctionBase):
             try:
                 obj_kind = self._get_object(apiversion, kind)
                 api = self.payload.get("_k8s_api_client")
-                obj_kind(api, obj).create()
+                obj_ref = obj_kind(api, obj)
+                if not obj_ref.exists():
+                    obj_ref.create()
                 break
             except pykube.exceptions.HTTPError as ex:
                 if ex.code == 409:
