@@ -14,7 +14,7 @@ from uuid import uuid4
 
 from .subject import storaged_subject
 from . import RuleConst as Const
-from .providers import event_router_factory, subject_factory
+from .providers import event_router_factory, subject_factory, configs_factory
 
 import sys
 import traceback
@@ -122,7 +122,7 @@ class Rule:
 
         process_id = str(uuid4())
         payload_copy = __copy(payload)
-        event_info = payload_copy.pop("_event_info", {})
+        event_info = payload_copy.pop("_event_info", subject.event_info())
 
         res_full = {
             Const.TYPE: event_type,
@@ -149,6 +149,10 @@ class Rule:
                 _cinst.event_type = event_type
                 _cinst.subject = subject
                 _cinst.payload = payload
+                _cinst.rule_name = self.name
+                _cinst.router = event_router_factory()
+                _cinst.configs = configs_factory()
+
                 res_in = {
                     Const.PROCESS_ID: process_id,
                     Const.TYPE: event_type,
@@ -201,6 +205,9 @@ class Rule:
                 _cinst.event_type = event_type
                 _cinst.subject = subject
                 _cinst.payload = payload
+                _cinst.rule_name = self.name
+                _cinst.router = event_router_factory()
+                _cinst.configs = configs_factory()
                 res_in = {
                     Const.PROCESS_ID: process_id,
                     Const.TYPE: event_type,

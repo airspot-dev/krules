@@ -83,6 +83,9 @@ class RuleFunctionBase:
 
     payload = {}
     event_type = ""
+    router = object()
+    configs = {}
+    rule_name = ""
 
     def __init__(self, *args, **kwargs):
         self._args = []
@@ -93,8 +96,6 @@ class RuleFunctionBase:
         for k, v in kwargs.items():
             self._kwargs[k] = self._get_arg_processor(v)
 
-        self.router = event_router_factory()
-        self.configs = configs_factory()
 
     @staticmethod
     def _get_arg_processor(arg):
