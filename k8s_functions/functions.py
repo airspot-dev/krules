@@ -8,6 +8,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from datetime import datetime, timezone
+import inspect
+import uuid
 
 import pykube
 from krules_core.base_functions import RuleFunctionBase
@@ -32,21 +35,85 @@ def k8s_subject(obj=None, resource_path=None, prefix="k8s:"):
     return subject_factory(f"{prefix}{resource_path}", event_data=obj)
 
 
-def k8s_object(subject):
+def k8s_object(subject, renew=False):
     """
     Returns the k8s resource providing a subject instance
     :param subject:
     :return:
     """
     try:
+        if renew:
+            subject._storage._reset()
         return subject._storage._get_resource()
     except AttributeError:
         raise TypeError("not a k8s storaged subject")
 
 
-class K8sObjectsQuery(RuleFunctionBase):
+def k8s_event_create(api, producer, action, message, reason, type,
+                     reporting_component=None, reporting_instance=None, involved_object=None, namespace=None,
+                     source_component=None,
+                     first_timestamp=datetime.now(timezone.utc).astimezone().isoformat(),
+                     last_timestamp=datetime.now(timezone.utc).astimezone().isoformat()):
 
-    def execute(self, apiversion=None, kind=None, foreach=None, returns=None, **filters):
+    obj = {
+            "apiVersion": "v1",
+            "kind": "Event",
+            "eventTime": datetime.now(timezone.utc).astimezone().isoformat(),
+            "firstTimestamp": first_timestamp,
+            "lastTimestamp": last_timestamp,
+            "metadata": {
+                "name": "{}.{}".format(producer, uuid.uuid4().hex[:16])
+            },
+            "action": action,
+            "message": message,
+            "reason": reason,
+            # "source": {
+            #     "component": source_component,
+            # },
+            "type": type
+        }
+
+    if reporting_component:
+        obj.update({
+            "reportingComponent": reporting_component
+        })
+    if reporting_instance:
+        obj.update({
+            "reportingInstance": reporting_instance
+        })
+    if source_component:
+        obj.update({
+            "source": {
+                "component": source_component
+            }
+        })
+
+    namespace = namespace is not None and namespace \
+                or involved_object is not None and involved_object.get("metadata", {}).get("namespace") \
+                or None
+    if namespace:
+        obj["metadata"].update({
+            "namespace": namespace
+        })
+
+    if involved_object:
+        obj.update({
+            "involvedObject": {
+                "apiVersion": involved_object.get("apiVersion"),
+                "kind": involved_object.get("kind"),
+                "name": involved_object.get("metadata").get("name"),
+                "namespace": involved_object.get("metadata").get("namespace"),
+                "resourceVersion": involved_object.get("metadata").get("resourceVersion"),
+                "uid": involved_object.get("metadata").get("uid")
+            },
+        })
+
+    pykube.Event(api, obj).create()
+
+
+class K8sRuleFunctionBase(RuleFunctionBase):
+
+    def _get_object(self, apiversion, kind):
 
         api = self.payload.get("_k8s_api_client")
         if api is None:
@@ -60,14 +127,22 @@ class K8sObjectsQuery(RuleFunctionBase):
         if kind is None and "kind" in self.subject.get_ext_props():
             kind = self.subject.get_ext("kind")
 
-        obj = pykube.object_factory(api, apiversion, kind)
+        return pykube.object_factory(api, apiversion, kind)
+
+
+class K8sObjectsQuery(K8sRuleFunctionBase):
+
+    def execute(self, apiversion=None, kind=None, foreach=None, returns=None, **filters):
+
+        obj = self._get_object(apiversion, kind)
 
         if "namespace" not in filters and "namespace" in self.subject.get_ext_props() \
                 and self.subject.ext_namespace is not None:
             filters.update({
                 "namespace": self.subject.get_ext("namespace")
             })
-        qobjs = obj.objects(api).filter(**filters)
+
+        qobjs = obj.objects(self.payload.get("_k8s_api_client")).filter(**filters)
 
         if foreach is not None:
             for obj in qobjs:
@@ -93,26 +168,14 @@ class K8sObjectsQuery(RuleFunctionBase):
         return len(qobjs)
 
 
-class K8sObjectUpdate(RuleFunctionBase):
+class K8sObjectUpdate(K8sRuleFunctionBase):
 
-    def execute(self, func, name=None, apiversion=None, kind=None, subresource=None, **filters):
+    def execute(self, patch, name=None, apiversion=None, kind=None, subresource=None, is_strategic=True, **filters):
 
         if name is None:
             name = self.subject.get_ext("name")
 
-        api = self.payload.get("_k8s_api_client")
-        if api is None:
-            config = pykube.KubeConfig.from_env()
-            api = pykube.HTTPClient(config)
-            self.payload["_k8s_api_client"] = api
-
-        if apiversion is None and "apiversion" in self.subject.get_ext_props():
-            apiversion = self.subject.get_ext("apiversion")
-
-        if kind is None and "kind" in self.subject.get_ext_props():
-            kind = self.subject.get_ext("kind")
-
-        obj = pykube.object_factory(api, apiversion, kind)
+        obj = self._get_object(apiversion, kind)
 
         if "namespace" not in filters and "namespace" in self.subject.get_ext_props() \
                 and self.subject.ext_namespace is not None:
@@ -120,13 +183,17 @@ class K8sObjectUpdate(RuleFunctionBase):
                 "namespace": self.subject.get_ext("namespace")
             })
 
-        obj = obj.objects(api).filter(**filters).get(name=name)
+        obj = obj.objects(self.payload.get("_k8s_api_client")).filter(**filters).get(name=name)
 
-        func(obj.obj)
+        # retrocompatibility
+        if inspect.isfunction(patch):
+            patch(obj.obj)
+        else:
+            obj.obj.update(patch)
 
         while True:
             try:
-                obj.update(subresource=subresource)
+                obj.update(subresource=subresource, is_strategic=is_strategic)
                 break
             except pykube.exceptions.HTTPError as ex:
                 if ex.code == 409:
@@ -135,29 +202,48 @@ class K8sObjectUpdate(RuleFunctionBase):
                     raise ex
 
 
-class K8sObjectCreate(RuleFunctionBase):
+class K8sObjectPatch(K8sRuleFunctionBase):
+
+    def execute(self, patch, name=None, apiversion=None, kind=None, subresource=None, **filters):
+
+        if name is None:
+            name = self.subject.get_ext("name")
+
+        obj = self._get_object(apiversion, kind)
+
+        if "namespace" not in filters and "namespace" in self.subject.get_ext_props() \
+                and self.subject.ext_namespace is not None:
+            filters.update({
+                "namespace": self.subject.get_ext("namespace")
+            })
+
+        obj = obj.objects(self.payload.get("_k8s_api_client")).filter(**filters).get(name=name)
+
+        while True:
+            try:
+                obj.patch(patch, subresource=subresource)
+                break
+            except pykube.exceptions.HTTPError as ex:
+                if ex.code == 409:
+                    continue
+                else:
+                    raise ex
+
+class K8sObjectCreate(K8sRuleFunctionBase):
 
     def execute(self, obj):
-
-        api = self.payload.get("_k8s_api_client")
-        if api is None:
-            config = pykube.KubeConfig.from_env()
-            api = pykube.HTTPClient(config)
-            self.payload["_k8s_api_client"] = api
 
         apiversion = obj.get("apiVersion")
         kind = obj.get("kind")
         while True:
             try:
-                pykube.object_factory(api, apiversion, kind)(api, obj).create()
+                self._get_object(apiversion, kind)(self.payload.get("_k8s_api_client"), obj).create()
                 break
             except pykube.exceptions.HTTPError as ex:
                 if ex.code == 409:
                     continue
                 else:
                     raise ex
-
-
 
 
 class K8sObjectDelete(K8sObjectsQuery):
