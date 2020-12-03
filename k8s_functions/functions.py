@@ -136,7 +136,10 @@ class K8sObjectsQuery(K8sRuleFunctionBase):
 
         obj = self._get_object(apiversion, kind)
 
-        if "namespace" not in filters and "namespace" in self.subject.get_ext_props() \
+        # we are implicitly referring to the resource in the subject
+        if kind is None and apiversion is None \
+                and "namespace" not in filters \
+                and "namespace" in self.subject.get_ext_props() \
                 and self.subject.ext_namespace is not None:
             filters.update({
                 "namespace": self.subject.get_ext("namespace")
@@ -177,7 +180,10 @@ class K8sObjectUpdate(K8sRuleFunctionBase):
 
         obj = self._get_object(apiversion, kind)
 
-        if "namespace" not in filters and "namespace" in self.subject.get_ext_props() \
+        # we are implicitly referring to the resource in the subject
+        if kind is None and apiversion is None \
+                and "namespace" not in filters \
+                and "namespace" in self.subject.get_ext_props() \
                 and self.subject.ext_namespace is not None:
             filters.update({
                 "namespace": self.subject.get_ext("namespace")
@@ -211,7 +217,10 @@ class K8sObjectPatch(K8sRuleFunctionBase):
 
         obj = self._get_object(apiversion, kind)
 
-        if "namespace" not in filters and "namespace" in self.subject.get_ext_props() \
+        # we are implicitly referring to the resource in the subject
+        if kind is None and apiversion is None \
+                and "namespace" not in filters \
+                and "namespace" in self.subject.get_ext_props() \
                 and self.subject.ext_namespace is not None:
             filters.update({
                 "namespace": self.subject.get_ext("namespace")
