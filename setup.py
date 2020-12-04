@@ -18,7 +18,7 @@ def read(fname):
 
 setup(
     name='krules-subjects-storage-k8s',
-    version="0.7",
+    version="0.7.1",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules k8s subjects storage implementation",
