@@ -51,27 +51,32 @@ def k8s_object(subject, renew=False):
 
 def k8s_event_create(api, producer, action, message, reason, type,
                      reporting_component=None, reporting_instance=None, involved_object=None, namespace=None,
-                     source_component=None,
-                     first_timestamp=datetime.now(timezone.utc).astimezone().isoformat(),
-                     last_timestamp=datetime.now(timezone.utc).astimezone().isoformat()):
+                     source_component=None, first_timestamp=None, last_timestamp=None):
+
+    dt_now = datetime.now(timezone.utc).astimezone().isoformat()
+
+    if first_timestamp is None:
+        first_timestamp = dt_now
+    if last_timestamp is None:
+        last_timestamp = dt_now
 
     obj = {
-            "apiVersion": "v1",
-            "kind": "Event",
-            "eventTime": datetime.now(timezone.utc).astimezone().isoformat(),
-            "firstTimestamp": first_timestamp,
-            "lastTimestamp": last_timestamp,
-            "metadata": {
-                "name": "{}.{}".format(producer, uuid.uuid4().hex[:16])
-            },
-            "action": action,
-            "message": message,
-            "reason": reason,
-            # "source": {
-            #     "component": source_component,
-            # },
-            "type": type
-        }
+        "apiVersion": "v1",
+        "kind": "Event",
+        "eventTime": datetime.now(timezone.utc).astimezone().isoformat(),
+        "firstTimestamp": first_timestamp,
+        "lastTimestamp": last_timestamp,
+        "metadata": {
+            "name": "{}.{}".format(producer, uuid.uuid4().hex[:16])
+        },
+        "action": action,
+        "message": message,
+        "reason": reason,
+        # "source": {
+        #     "component": source_component,
+        # },
+        "type": type
+    }
 
     if reporting_component:
         obj.update({
@@ -263,7 +268,6 @@ class K8sObjectCreate(K8sRuleFunctionBase):
 class K8sObjectDelete(K8sObjectsQuery):
 
     def execute(self, name=None, apiversion=None, kind=None, **filters):
-
         if name is None:
             name = self.subject.get_ext("name")
 
