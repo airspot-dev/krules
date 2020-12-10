@@ -14,7 +14,7 @@ spec:
       serviceAccountName: krules-controller
       containers:
       - name: ruleset
-        image: ade8850/krules-ns-injector@sha256:853516e1198a150c9aab22601774a1d4dbdc205d3c51bdb75ef001a3138dbfbe
+        image: ade8850/krules-ns-injector@sha256:7a92d56b5fbcb7328bcbb8160dc570fb7cba38256bcf650fc77612a047077633
         # for development only
         env:
           - name: K_PROCEVENTS_SINK

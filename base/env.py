@@ -12,7 +12,7 @@ def init():
        providers.Factory(lambda name, event_info, event_data:
                          name.startswith("k8s:") and k8s_storage_impl.SubjectsK8sStorage(
                                                         resource_path=name[4:],
-                                                        resource_body=event_data.get("object", event_data)
+                                                        resource_body=event_data.get("object")
                          ) or EmptySubjectStorage())
     )
 

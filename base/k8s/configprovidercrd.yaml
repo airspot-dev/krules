@@ -51,24 +51,18 @@ spec:
               type: object
               properties:
                 services:
-                  type: array
-                  items:
-                    type: object
-                    #x-kubernetes-patch-merge-key: service
-                    #x-kubernetes-patch-strategy: merge
-                    properties:
-                      service:
-                        type: string
-                      lastTransitionTime:
-                        type: string
-                      applied:
-                        type: boolean
-                      reason:
-                        type: string
-                    required:
-                      - service
-                      - applied
-                      - lastTransitionTime
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+#                  properties:
+#                    lastTransitionTime:
+#                      type: string
+#                    applied:
+#                      type: boolean
+#                    reason:
+#                      type: string
+#                  required:
+#                    - applied
+#                    - lastTransitionTime
                 applied_to:
                   type: string
           required:

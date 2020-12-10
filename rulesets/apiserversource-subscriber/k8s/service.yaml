@@ -11,9 +11,10 @@ spec:
       annotations:
         autoscaling.knative.dev/minScale: "0"
     spec:
+      serviceAccountName: krules-controller
       containers:
       - name: ruleset
-        image: ade8850/apiserversource-subscriber@sha256:6e21ecb55b8d8063c77d85cd350f821a57c73f070f695733ab292ddf95630708
+        image: ade8850/apiserversource-subscriber@sha256:de66780652b93e3c6c6c80e7ae1a691e2aa4f64d912089a0c14ef2ce3e1cbbc0
         # for development only
         env:
           - name: K_PROCEVENTS_SINK

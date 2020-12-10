@@ -28,13 +28,14 @@ class _RouteToLabeledK8sSubject(Route):
 
         event_type = "k8s.resource.{}".format(self.event_type.split(".")[-1])
         subject = k8s_subject(self.payload)
-        # injected resources
-        if self.payload.get("metadata", {}).get("labels", {}).get("krules.airspot.dev/injected") == "injected":
-            subject.set_ext("krulesinjected", "injected", use_cache=False)
-        # configuration provider generated cm
-        if self.payload.get("kind") == "ConfigMap" and \
-                self.payload.get("metadata", {}).get("labels", {}).get("config.krules.airspot.dev/provider", False):
-            subject.set_ext("krulesconfig", "provided", use_cache=False)
+        if event_type != "k8s.resource.delete":
+            # injected resources
+            if self.payload.get("metadata", {}).get("labels", {}).get("krules.airspot.dev/injected") == "injected":
+                subject.set_ext("krulesinjected", "injected", use_cache=False)
+            # configuration provider generated cm
+            if self.payload.get("kind") == "ConfigMap" and \
+                    self.payload.get("metadata", {}).get("labels", {}).get("config.krules.airspot.dev/provider", False):
+                subject.set_ext("krulesconfig", "provided", use_cache=False)
         payload = {
             'object': self.payload
         }

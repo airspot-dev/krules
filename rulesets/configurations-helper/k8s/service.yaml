@@ -9,16 +9,21 @@ spec:
   template:
     metadata:
       annotations:
-        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/minScale: "1"
     spec:
       serviceAccountName: krules-controller
       containers:
       - name: ruleset
-        image: ade8850/configurations-helper@sha256:dc12e50ebb8b7d4f713173d2926cd9a31dad0efa1e6b1a45d9a62ccba5e3476d
+        image: ade8850/configurations-helper@sha256:38af851b88607735f1203c1b9820a3eada64749313b1dda0c542fbbb331b6fa6
         # for development only
         env:
           - name: K_PROCEVENTS_SINK
             value: http://broker-ingress.knative-eventing.svc.cluster.local/krules-system/procevents
+#          - name: LOGGING_LEVEL
+#            value: "10"
+#          - name: CORE_LOGGING_LEVEL
+#            value: "10"
+
 ---
 apiVersion: sources.knative.dev/v1beta1
 kind: SinkBinding

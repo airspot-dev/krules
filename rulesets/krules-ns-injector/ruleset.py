@@ -198,6 +198,19 @@ injection_rules = [
                                 "list",
                                 "get",
                                 "watch",
+                                "patch",
+                            ]
+                        },
+                        {
+                            "apiGroups": [""],
+                            "resources": [
+                                "configmaps",
+                            ],
+                            "verbs": [
+                                "list",
+                                "get",
+                                "watch",
+                                "patch",
                             ]
                         },
                         {
@@ -211,6 +224,7 @@ injection_rules = [
                                 "list",
                                 "get",
                                 "watch",
+                                "patch",
                             ]
                         },
                     ]
@@ -244,6 +258,10 @@ injection_rules = [
                             {
                                 "apiVersion": "krules.airspot.dev/v1alpha1",
                                 "kind": "ConfigurationProvider"
+                            },
+                            {
+                                "apiVersion": "v1",
+                                "kind": "ConfigMap"
                             },
                             {
                                 "apiVersion": "eventing.knative.dev/v1",
