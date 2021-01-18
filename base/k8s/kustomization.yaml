@@ -1,5 +1,6 @@
 resources:
 - serviceaccount.yaml
 - brokers.yaml
-# - redis-credentials.yaml
+# - config-krules-subjects-redis.yaml
+# - config-krules-subjects-mongodb.yaml
 

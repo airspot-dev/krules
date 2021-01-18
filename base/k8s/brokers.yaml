@@ -1,9 +1,0 @@
-apiVersion: eventing.knative.dev/v1
-kind: Broker
-metadata:
-  name: default
----
-apiVersion: eventing.knative.dev/v1
-kind: Broker
-metadata:
-  name: procevents
