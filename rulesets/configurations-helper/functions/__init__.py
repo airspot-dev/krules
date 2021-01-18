@@ -67,7 +67,7 @@ def _update_configuration(instance, configuration, obj,
         configuration["metadata"]["name"],
         configuration["spec"]["data"],
     )
-    mount_path = "/config/krules/" + "/".join(configuration.get("spec").get("key").split("."))
+    mount_path = "/krules/config/" + "/".join(configuration.get("spec").get("key").split("."))
     _obj = copy.deepcopy(obj.obj)
     _obj_spec = _obj.get("spec").get("template").get("spec")
     patch = {
@@ -116,7 +116,28 @@ def _update_configuration(instance, configuration, obj,
                 "mountPath": mount_path
             })
 
-        target.update(configuration["spec"]["container"])
+        # preserve list elements in container section
+        conf = configuration["spec"]["container"]
+        for k, v in target.items():
+            if isinstance(v, type([])) and k in conf:
+                if k == "env":
+                    target_d = {d["name"]: d for d in target[k]}
+                    conf_d = {d["name"]: d for d in conf[k]}
+                    env = []
+                    all_names = set(list(target_d.keys())+list(conf_d.keys()))
+                    for name in all_names:
+                        if name in conf_d:
+                            env.append(conf_d[name])
+                        else:
+                            env.append(target_d[name])
+                    conf[k] = env
+                else:
+                    if v not in conf[k]:
+                        for el in v:
+                            if el not in conf[k]:
+                                conf[k].append(el)
+
+        target.update(conf)
         _logs.append({"target": target})
 
     else:
