@@ -123,6 +123,7 @@ class RuleFunctionBase:
 
 from krules_core.base_functions.filters import *
 from krules_core.base_functions.processing import *
+from krules_core.base_functions.misc import *
 
 
 def Callable(_callable):
