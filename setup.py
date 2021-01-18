@@ -23,7 +23,8 @@ setup(
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
-        'krules-core==0.7',
+        'krules-core==0.8',
+        'cloudevents==0.3.0',
     ],
     setup_requires=[
         'pytest-runner',
