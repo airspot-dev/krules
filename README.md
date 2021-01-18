@@ -1,3 +1,3 @@
 # krules-controllers
 
-This repo include rulesets in krules-system namespace
+This repo includes rulesets in krules-system namespace
