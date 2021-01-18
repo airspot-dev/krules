@@ -1,0 +1,5 @@
+resources:
+- serviceaccount.yaml
+- brokers.yaml
+# - redis-credentials.yaml
+
