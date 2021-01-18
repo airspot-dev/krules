@@ -132,12 +132,6 @@ create_configuration_rulesdata = [
         ruledata: {
             filters: [
                 OnSubjectPropertyChanged("cm_name", old_value=lambda v: v is not None),
-                # K8sObjectsQuery(
-                #     apiversion="v1", kind="ConfigMap",
-                #     namespace=lambda subject: subject.get_ext("namespace"),
-                #     returns=lambda payload: lambda qobjs:
-                #         bool(qobjs.get_or_none(name=payload["old_value"]))
-                # )
             ],
             processing: [
                 K8sObjectDelete(
@@ -287,26 +281,6 @@ apply_confugaration_rulesdata = [
                     },
                     subresource="status"
                 )
-
-                # K8sObjectsQuery(
-                #     apiversion="krules.airspot.dev/v1alpha1", kind="ConfigurationProvider",
-                #     namespace=lambda subject: subject.get_ext("namespace"),
-                #     foreach=lambda self: lambda obj: (
-                #         # TODO
-                #         # simulates a configuration change
-                #         # all services are checked again
-                #         # this is a !BAD! solution to have the selector logic in one place only
-                #         self.router.route(
-                #             event_type="subject-property-changed",
-                #             subject=k8s_subject(obj),
-                #             payload={
-                #                 "object": obj.obj,
-                #                 "property_name": "cfgp_hash",
-                #                 "value": k8s_subject(obj).get("cfgp_hash")
-                #             }
-                #         )
-                #     )
-                # )
             ]
             ,
         }
