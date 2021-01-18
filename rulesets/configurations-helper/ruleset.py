@@ -28,11 +28,7 @@ DEFAULT_BROKER = "default"
 PROCEVENTS_BROKER = "procevents"
 PROCEVENTS_TRIGGER = "procevents-trigger"
 
-from krules_core.providers import proc_events_rx_factory
-import pprint
 
-# for both ide and flask app
-#try:
 from functions import (
     PatchExistingServices,
     PatchService,
@@ -40,22 +36,14 @@ from functions import (
     _hashed
 )
 
-#except ImportError:
-#    from .functions import (
-#        PatchExistingServices,
-#        PatchService,
-#        CreateConfigMap,
-#        _hashed
-#    )
-
-proc_events_rx_factory().subscribe(
-    on_next=pprint.pprint
-)
-
-
-proc_events_rx_factory().subscribe(
-    on_next=publish_proc_events_all,
-)
+# from krules_core.providers import proc_events_rx_factory
+# import pprint
+# proc_events_rx_factory().subscribe(
+#     on_next=pprint.pprint
+# )
+# proc_events_rx_factory().subscribe(
+#     on_next=publish_proc_events_all,
+# )
 
 
 
@@ -190,14 +178,14 @@ apply_confugaration_rulesdata = [
                     configuration=lambda payload: payload["object"],
                     prepare_status_out="_preparedStatus"
                 ),
-                K8sObjectUpdate(
-                    lambda payload: {
-                        "status": {
-                            "services": payload["_preparedStatus"],
-                        }
-                    },
-                    subresource="status"
-                )
+                # K8sObjectUpdate(
+                #     lambda payload: {
+                #         "status": {
+                #             "services": payload["_preparedStatus"],
+                #         }
+                #     },
+                #     subresource="status"
+                # )
             ]
         }
     },
@@ -273,14 +261,14 @@ apply_confugaration_rulesdata = [
                 PatchService(
                     prepare_status_out="_preparedStatus"
                 ),
-                K8sObjectUpdate(
-                    lambda payload: {
-                        "status": {
-                            "services": payload["_preparedStatus"],
-                        }
-                    },
-                    subresource="status"
-                )
+                # K8sObjectUpdate(
+                #     lambda payload: {
+                #         "status": {
+                #             "services": payload["_preparedStatus"],
+                #         }
+                #     },
+                #     subresource="status"
+                # )
             ]
             ,
         }

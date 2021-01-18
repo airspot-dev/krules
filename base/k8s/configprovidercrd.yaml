@@ -50,9 +50,9 @@ spec:
             status:
               type: object
               properties:
-                services:
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
+#                services:
+#                  type: object
+#                  x-kubernetes-preserve-unknown-fields: true
 #                  properties:
 #                    lastTransitionTime:
 #                      type: string
@@ -78,6 +78,6 @@ spec:
       - jsonPath: .status.applied_to
         name: APPLIES
         type: string
-      - jsonPath: .status.services[?(@.applied==false)].reason
-        name: FAILURES
-        type: string
+#      - jsonPath: .status.services[?(@.applied==false)].reason
+#        name: FAILURES
+#        type: string

@@ -14,11 +14,11 @@ spec:
       serviceAccountName: krules-controller
       containers:
       - name: ruleset
-        image: ade8850/krules-ns-injector@sha256:7a92d56b5fbcb7328bcbb8160dc570fb7cba38256bcf650fc77612a047077633
+        image: gcr.io/airspot/krules-ns-injector:0.8
         # for development only
-        env:
-          - name: K_PROCEVENTS_SINK
-            value: http://broker-ingress.knative-eventing.svc.cluster.local/krules-system/procevents
+#        env:
+#          - name: K_PROCEVENTS_SINK
+#            value: http://broker-ingress.knative-eventing.svc.cluster.local/krules-system/procevents
 ---
 apiVersion: sources.knative.dev/v1beta1
 kind: SinkBinding

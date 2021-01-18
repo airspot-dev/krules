@@ -1,4 +1,4 @@
-FROM ade8850/krules-system-base@sha256:abf25f833ad4acc0b927bd0f01121b250d53b46851e59e884c5c685db7c260c9
+FROM gcr.io/airspot/krules-system-base:0.8
 
 ADD functions/ /app/functions/
 ADD ruleset.py /app/ruleset.py

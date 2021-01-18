@@ -28,12 +28,12 @@ SYSTEM_NS = "krules-system"
 APISERVERSOURCE_APIVERSION = "sources.knative.dev/v1beta1"
 
 
-proc_events_rx_factory().subscribe(
-    on_next=pprint.pprint
-)
-proc_events_rx_factory().subscribe(
-    on_next=publish_proc_events_all,
-)
+# proc_events_rx_factory().subscribe(
+#     on_next=pprint.pprint
+# )
+# proc_events_rx_factory().subscribe(
+#     on_next=publish_proc_events_all,
+# )
 
 
 class K8sQueryResourceDoesNotExists(K8sObjectsQuery):
