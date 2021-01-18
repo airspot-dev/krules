@@ -29,7 +29,7 @@ html_theme_options = {
 }
 
 # The full version, including alpha/beta/rc tags
-release = '0.6'
+release = '0.7'
 
 
 # -- General configuration ---------------------------------------------------
@@ -77,3 +77,4 @@ smv_tag_whitelist = r'^.*$'
 smv_branch_whitelist = r'^(develop).*$'
 
 locale_dirs = ['locale/']
+language = "en"

@@ -32,8 +32,6 @@ Acting on Subject
 
 Acting on Payload
 -----------------
-.. autoclass:: UpdatePayload()
-   :members:
 .. autoclass:: SetPayloadProperties()
    :members:
 .. autoclass:: SetPayloadProperty()
