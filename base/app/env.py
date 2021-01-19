@@ -6,7 +6,8 @@ from krules_core.providers import (
 
 
 def init():
-    # Redis subjects storage support
+    pass  # remove me
+    ## Redis subjects storage support
     # from redis_subjects_storage import storage_impl as redis_storage_impl
     #
     # subjects_redis_storage_settings = configs_factory() \
@@ -15,15 +16,15 @@ def init():
     #
     # subject_storage_factory.override(
     #     providers.Factory(lambda name, **kwargs:
-    #                       redis_storage_impl.SubjectsRedisStorage(
-    #                           name,
-    #                           subjects_redis_storage_settings.get("url"),
-    #                           key_prefix=subjects_redis_storage_settings.get("key_prefix")
-    #                       )
+    #                           redis_storage_impl.SubjectsRedisStorage(
+    #                               name,
+    #                               subjects_redis_storage_settings.get("url"),
+    #                               key_prefix=subjects_redis_storage_settings.get("key_prefix")
+    #                           )
     #                       )
     # )
 
-    # MongoDB subjects storage support
+    ## MongoDB subjects storage support
     # from mongodb_subjects_storage import storage_impl as mongo_storage_impl
     #
     # subjects_mongodb_storage_settings = configs_factory() \
@@ -43,10 +44,7 @@ def init():
     #             collection,
     #             client_args=client_args,
     #             client_kwargs=client_kwargs,
-    #             use_atomic_ops_collection=use_atomic_ops_collection,
-    #             atomic_ops_collection_size=atomic_ops_collection_size,
-    #             atomic_ops_collection_max=atomic_ops_collection_max
     #         ))
     # )
-
-    pass
+    
+    
