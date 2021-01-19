@@ -1,3 +1,4 @@
+namespace: krules-system
 resources:
   - base/k8s/namespace.yaml
   - base/k8s/brokers.yaml
