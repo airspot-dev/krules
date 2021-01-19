@@ -7,11 +7,8 @@ RUN apk add --no-cache --virtual .build-deps g++ python3-dev && \
     pip3 install --upgrade pip setuptools
 
 RUN pip3 install pyyaml anyjson \
-    pytest jsonpath-rw jsonpath-rw-ext redis python-dateutil pytz requests gunicorn \
-    flask json-logging bumpversion cloudevents==0.3.0
-
-# TODO REMOVE
-RUN pip install pykube-ng
+    jsonpath-rw jsonpath-rw-ext python-dateutil pytz requests gunicorn \
+    flask json-logging
 
 ADD ./app /app
 
