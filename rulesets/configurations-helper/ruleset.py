@@ -36,11 +36,11 @@ from functions import (
     _hashed
 )
 
-# from krules_core.providers import proc_events_rx_factory
-# import pprint
-# proc_events_rx_factory().subscribe(
-#     on_next=pprint.pprint
-# )
+from krules_core.providers import proc_events_rx_factory
+import pprint
+proc_events_rx_factory().subscribe(
+    on_next=pprint.pprint
+)
 # proc_events_rx_factory().subscribe(
 #     on_next=publish_proc_events_all,
 # )

@@ -14,7 +14,7 @@ spec:
       serviceAccountName: krules-controller
       containers:
       - name: ruleset
-        image: gcr.io/airspot/krules-ns-injector:0.8
+        image: gcr.io/airspot/krules-ns-injector:0.8.1
         # for development only
 #        env:
 #          - name: K_PROCEVENTS_SINK

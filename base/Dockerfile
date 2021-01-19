@@ -1,4 +1,4 @@
-FROM gcr.io/airspot/ruleset-image-base:0.8
+FROM gcr.io/airspot/ruleset-image-base:0.8.1
 
 #RUN pip install ipython
 #ADD ipython_config.py /root/.ipython/profile_default/

@@ -14,11 +14,11 @@ spec:
       serviceAccountName: krules-controller
       containers:
       - name: ruleset
-        image: gcr.io/airspot/configurations-helper:0.8
+        image: gcr.io/airspot/configurations-helper:0.8.1
         # for development only
-        env:
-          - name: K_SINK
-            value: http://broker-ingress.mink-system.svc.cluster.local/krules-system/default
+#        env:
+#          - name: K_SINK
+#            value: http://broker-ingress.mink-system.svc.cluster.local/krules-system/default
 #          - name: LOGGING_LEVEL
 #            value: "10"
 #          - name: CORE_LOGGING_LEVEL
