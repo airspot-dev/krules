@@ -34,9 +34,6 @@ def init():
     # client_kwargs = subjects_mongodb_storage_settings["client_kwargs"]
     # database = subjects_mongodb_storage_settings["database"]
     # collection = subjects_mongodb_storage_settings.get("collection", "subjects")
-    # use_atomic_ops_collection = subjects_mongodb_storage_settings.get("use_atomic_ops_collection", False)
-    # atomic_ops_collection_size = subjects_mongodb_storage_settings.get("atomic_ops_collection_size", 5242880)
-    # atomic_ops_collection_max = subjects_mongodb_storage_settings.get("atomic_ops_collection_max", 1000)
     #
     # subject_storage_factory.override(
     #     providers.Factory(
