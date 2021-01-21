@@ -9,7 +9,7 @@ Meanwhile, if you are brave and you do not fear the unknown [get in touch with u
 
 # Repos
 
-## Start from here..
+## Starting material
 
 - [krules-project-template](https://github.com/airspot-dev/krules-project-template): A KRules empty project sekeleton. Include a a step by step guide.
 
