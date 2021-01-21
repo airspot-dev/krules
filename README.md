@@ -3,25 +3,7 @@
 KRules is an open source framework that provides, to Python developers, a flexible and fast way to build cloud native applications, 
 creating event driven, context aware, and reactive microservices in a Kubernetes cluster.
 
-# Overviews
-
-- [Technical Overview](https://intro.krules.io/OVERVIEW.html): An introductory guide to the framework basic concepts.
-
-- [How argument are processed](https://intro.krules.io/ArgumentProcessors.html): A brief explanation of how argument processing works and 
-how it can help application development.
-
-**Base functions library**
-
-Provides a set of basic building blocks to compose your rulesets which will define your microservices-based event-driven application logic.
-
-- [Filters](https://intro.krules.io/Filters.html): A set o basic functions designed to be used in the **filters** section for the purpose of 
-define conditions to enable or disable application logic.
-
-- [Processing](https://intro.krules.io/Processing.html): A set o basic functions designed to be used in the **processing** section for the purpose 
-of to read and manipulate event data and implement yur application logic.
-
-- [Miscellaneous](https://intro.krules.io/Miscellaneous.html): Generic functions which could be used both like filters or processing.
-
+An extended documentatio is not available yet but you can take a look to [our introductionary material](https://intro.krules.io).
 
 # Repos
 
