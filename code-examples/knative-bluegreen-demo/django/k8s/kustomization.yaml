@@ -1,0 +1,4 @@
+resources:
+  #- django-config.yaml
+  #- django-secrets.yaml
+  - service.yaml

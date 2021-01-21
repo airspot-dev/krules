@@ -1,0 +1,4 @@
+.idea/
+django/env
+django/env_secrets
+

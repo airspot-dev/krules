@@ -1,0 +1,12 @@
+apiVersion: events.cloud.google.com/v1
+kind: CloudStorageSource
+metadata:
+  name: cloud-storage-source
+spec:
+  serviceAccountName: default-cre-dataplane
+  bucket: iot-demo-01
+  sink:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: on-gcs-csv-upload

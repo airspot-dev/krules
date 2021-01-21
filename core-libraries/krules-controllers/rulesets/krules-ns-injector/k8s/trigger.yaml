@@ -1,0 +1,30 @@
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: ns-sugar-ns-label-inject
+spec:
+  broker: default
+  filter:
+    attributes:
+      kind: Namespace
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: krules-ns-injector
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: on-injected-resource-deleted
+spec:
+  broker: default
+  filter:
+    attributes:
+      type: k8s.resource.delete
+      krulesinjected: injected
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: krules-ns-injector

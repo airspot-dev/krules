@@ -1,0 +1,74 @@
+apiVersion: eventing.knative.dev/v1
+kind: Broker
+metadata:
+  name: data-received
+---
+apiVersion: eventing.knative.dev/v1
+kind: Broker
+metadata:
+  name: class-a
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: default-to-class-a-trigger
+spec:
+  broker: default
+  filter:
+    attributes:
+      deviceclass: class-a
+  subscriber:
+    ref:
+      apiVersion: eventing.knative.dev/v1
+      kind: Broker
+      name: class-a
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: data-received-to-class-a-trigger
+spec:
+  broker: data-received
+  filter:
+    attributes:
+      deviceclass: class-a
+  subscriber:
+    ref:
+      apiVersion: eventing.knative.dev/v1
+      kind: Broker
+      name: class-a
+---
+apiVersion: eventing.knative.dev/v1
+kind: Broker
+metadata:
+  name: class-b
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: default-to-class-b-trigger
+spec:
+  broker: default
+  filter:
+    attributes:
+      deviceclass: class-b
+  subscriber:
+    ref:
+      apiVersion: eventing.knative.dev/v1
+      kind: Broker
+      name: class-b
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: data-received-to-class-b-trigger
+spec:
+  broker: data-received
+  filter:
+    attributes:
+      deviceclass: class-b
+  subscriber:
+    ref:
+      apiVersion: eventing.knative.dev/v1
+      kind: Broker
+      name: class-b

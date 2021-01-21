@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-django
+data:
+  DJANGO_ALLOWED_HOSTS: 
+  STATIC_ENDPOINT_URL: 
+  STATIC_BUCKET_NAME: 
+  DJANGO_LOGLEVEL: 
+  #DEBUG: 
+  DATABASE_ENGINE: 

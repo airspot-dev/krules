@@ -1,0 +1,40 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: k8s-subscriber
+  labels:
+    serving.knative.dev/visibility: cluster-local
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+    spec:
+      serviceAccountName: lab-serviceaccount
+      containers:
+      - name: ruleset
+        image: ade8850/k8s-subscriber:pre4
+        volumeMounts:
+          - name: config-krules-subjects-redis-volume
+            mountPath: /krules/config/subjects-backends/redis
+      volumes:
+        - name: config-krules-subjects-redis-volume
+          configMap:
+            name: config-krules-subjects-redis
+---
+apiVersion: sources.knative.dev/v1alpha2
+kind: SinkBinding
+metadata:
+ name: k8s-subscriber
+spec:
+ subject:
+   apiVersion: apps/v1
+   kind: Deployment
+   selector:
+     matchLabels:
+       serving.knative.dev/service: k8s-subscriber
+ sink:
+   ref:
+     apiVersion: eventing.knative.dev/v1
+     kind: Broker
+     name: default

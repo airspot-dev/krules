@@ -1,0 +1,52 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: procevents-store-django
+  labels:
+    serving.knative.dev/visibility: cluster-local
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+    spec:
+      serviceAccountName: lab-serviceaccount
+      containers:
+      - name: ruleset
+        image: ade8850/bluegreen-procevents-store-django:pre3
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: ruleset_django_settings
+        - name: DEBUG
+          value: "0"
+        envFrom:
+          - secretRef:
+              name: django-secrets
+          - configMapRef:
+              name: config-django
+        volumeMounts:
+          - name: config-krules-subjects-redis-volume
+            mountPath: /krules/config/subjects-backends/redis
+      volumes:
+        - name: config-krules-subjects-redis-volume
+          configMap:
+            name: config-krules-subjects-redis
+
+
+---
+apiVersion: sources.knative.dev/v1alpha2
+kind: SinkBinding
+metadata:
+ name: procevents-store-django
+spec:
+ subject:
+   apiVersion: apps/v1
+   kind: Deployment
+   selector:
+     matchLabels:
+       serving.knative.dev/service: procevents-store-django
+ sink:
+   ref:
+     apiVersion: eventing.knative.dev/v1
+     kind: Broker
+     name: default

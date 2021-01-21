@@ -1,0 +1,4 @@
+namespace: krules-system
+resources:
+  - apiserversource.yaml
+  - service.yaml

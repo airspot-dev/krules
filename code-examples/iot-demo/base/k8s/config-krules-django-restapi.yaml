@@ -1,0 +1,18 @@
+apiVersion: krules.airspot.dev/v1alpha1
+kind: ConfigurationProvider
+metadata:
+  name: config-krules-django-restapi
+spec:
+  key: django.restapi
+  appliesTo:
+    configs.krules.airspot.dev/django-restapi-consumer: inject
+  data:
+    url: "https://django.iot-demo.gke1.airspot.dev/api"
+    api_key: $RESTAPI_TOKEN
+  container:
+    envFrom:
+      - secretRef:
+          name: restapi-auth
+    env:
+      - name: TEST_VAR
+        value: "hi there, me again!!"

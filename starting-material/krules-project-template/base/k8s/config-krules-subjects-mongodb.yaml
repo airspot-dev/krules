@@ -1,0 +1,24 @@
+apiVersion: krules.airspot.dev/v1alpha1
+kind: ConfigurationProvider
+metadata:
+  name: config-krules-subjects-redis
+spec:
+  key: subjects-backends.mongodb
+  appliesTo:
+    krules.airspot.dev/type: ruleset
+  data:
+    # python client *args and **kwargs 
+    # https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html
+    client_args:
+      - mongodb.address
+    client_kwargs:
+      authSource: admin
+      username: $KRULES_SUBJECTS_MONGODB_USER
+      password: $KRULES_SUBJECTS_MONGODB_PASSWORD
+    database: database
+    collection: subjects
+    # use_atomic_ops_collection: false
+  container:
+    envFrom:
+      - secretRef:
+          name: mongodb-credentials

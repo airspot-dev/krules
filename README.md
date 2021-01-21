@@ -50,5 +50,5 @@ It sends cloudevents via http to a configurable url
 
 ## License
 
-Each KRules product is released under an Apache License 2.0 license. Refer to [LICENSE](.support/LICENSE) for license text.
+Each KRules product is released under an Apache License 2.0 license. Refer to [LICENSE](LICENSE) for license text.
 

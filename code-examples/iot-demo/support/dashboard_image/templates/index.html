@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<head>
+  <title>%% fleet_name %% dashboard</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+  <h1>%% fleet_name %% dashboard</h1>
+  <div id="app">
+    <div class="panel">
+      <div class="panel-heading">
+        <h3 class="panel-title">Devices</h3>
+        <div class="right">
+          <button type="button" class="btn-toggle-collapse" @click="togglePanel"><i class="lnr lnr-chevron-up"></i></button>
+        </div>
+      </div>
+      <div class="panel-body no-padding">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Device id</th>
+              <th>Class</th>
+              <th>Value</th>
+              <th>Event</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(device, index) in devices" :key="index">
+              <td><a href="#">{{ device.id }}</a></td>
+              <td>{{ device.device_class }}</td>
+              <td>
+                <span v-if="device.device_class == 'class-b'" class="fa fa-map-marker"></span>
+                {{ device.value }}
+                <span v-if="device.device_class == 'class-a'">°C</span>
+              </td>
+              <td v-if="device.event_class == 'cheering'" class="alert alert-info"><i class="fa fa-info-circle"></i>{{ device.event }}</td>
+              <td v-else-if="device.event_class == 'warning'" class="alert-warning"><i class="fa fa-warning"></i>{{ device.event }}</td>
+              <td v-else-if="device.event_class == 'critical'" class="alert-danger"><i class="fa fa-times-circle"></i>{{ device.event }}</td>
+              <td v-else>{{ device.event }}</td>
+              <td>
+                <span v-if="device.status == 'ACTIVE'" class="label label-success">{{ device.status }}</span>
+                <span v-else-if="device.status == 'READY'" class="label label-warning">{{ device.status }}</span>
+                <span v-else class="label label-danger">{{ device.status }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script>
+    // Enable pusher logging - don't include this in production
+    Pusher.logToConsole = true;
+
+    var pusher = new Pusher('%% api_key %%', {
+      cluster: 'eu'
+    });
+
+    var channel = pusher.subscribe('%% fleet_channel %%');
+    channel.bind('%% device_event %%', function(data) {
+      var to_add = true;
+      for(var idx in app.devices){
+        d = app.devices[idx];
+        if(d && d.id === data.id) {
+          to_add = false;
+          for(var k in data) {
+            d[k] = data[k]
+          }
+        }
+      }
+      if(to_add) {
+        app.devices.push(data);
+      }
+    });
+
+    // Vue application
+    const app = new Vue({
+      el: '#app',
+      data: {
+        devices: [],
+      },
+      methods: {
+        togglePanel () {
+          this.collapsed = !this.collapsed
+          $('table')[0].hidden = this.collapsed
+          var btn = $('.panel .btn-toggle-collapse')[0]
+          var i = btn.children[0]
+          if (this.collapsed) {
+            i.className = 'lnr lnr-chevron-down'
+          } else {
+            i.className = 'lnr lnr-chevron-up'
+          }
+        }
+      },
+
+    });
+  </script>
+  <style lang="scss">
+  @import '%% url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.min.css') %%';
+  </style>
+
+  <style lang="scss">
+  @import '/static/assets/vendor/font-awesome/css/font-awesome.min.css';
+  </style>
+  <style lang="scss">
+  @import '/static/assets/vendor/linearicons/style.css';
+  </style>
+  <style lang="scss">
+  @import '/static/assets/vendor/chartist/css/chartist-custom.css';
+  </style>
+  <style lang="scss">
+  @import '/static/assets/css/main.css';
+  </style>
+  <style>
+  #app {
+    font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #2c3e50;
+  }
+  </style>
+  <!-- Add "scoped" attribute to limit CSS to this component only -->
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped>
+h1, h2 {
+  font-weight: normal;
+}
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+li {
+  display: inline-block;
+  margin: 0 10px;
+}
+a {
+  color: #42b983;
+}
+.row-equal .flex {
+    .va-card {
+      height: 100%;
+    }
+  }
+
+  .dashboard {
+    .va-card {
+      margin-bottom: 0 !important;
+    }
+  }
+
+  table {
+    text-align: center;
+  }
+
+  th {
+    text-align: center;
+  }
+
+  .panel-title {
+    text-align: center;
+  }
+
+  .dropdown-menu {
+    min-width: 50px!important;
+  }
+
+  .graph-content {
+    margin-top: 5vh;
+    display: flex;
+    height: 65vh;
+  }
+</style>
+</body>

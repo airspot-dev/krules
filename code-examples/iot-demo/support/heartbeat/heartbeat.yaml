@@ -1,0 +1,28 @@
+apiVersion: sources.knative.dev/v1alpha2
+kind: ContainerSource
+metadata:
+  name: heartbeats
+spec:
+  template:
+    spec:
+      containers:
+        - image: eu.gcr.io/krules-dev-254113/heartbeats-1c2797901d077071b664df50ca35a17f
+          name: heartbeats
+          args:
+            - --period=2
+            - --eventType=krules.heartbeat
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+  sink:
+    ref:
+      apiVersion: v1
+      kind: Service
+      name: scheduler
+---

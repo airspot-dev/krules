@@ -1,0 +1,14 @@
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: django-orm-subscriber-trigger
+spec:
+  broker: default
+  filter:
+    attributes:
+      djangoapp: configs
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: django-orm-subscriber
