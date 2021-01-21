@@ -11,7 +11,7 @@ Meanwhile, if you are brave and you do not fear the unknown [get in touch with u
 
 ## Starting material
 
-- [krules-project-template](https://github.com/airspot-dev/krules-project-template): A KRules empty project sekeleton. Include a a step by step guide with some basic concept explaination.
+- [krules-project-template](https://github.com/airspot-dev/krules-project-template): A KRules empty project sekeleton. Include a a step by step guide.
 
 ## Core libraries
 
@@ -35,6 +35,12 @@ It sends cloudevents via http to a configurable url
 ## Miscellaneous
 
 - [rulesset-image-base](https://github.com/airspot-dev/rulesset-image-base): Repo to build the Rulesets Docker image base 
+
+- [django-krules-scheduler](https://github.com/airspot-dev/django-krules-scheduler): Provides models and admin interface to manage scheduled events.
+
+- [django-signals-cloudevents](https://github.com/airspot-dev/django-signals-cloudevents): allows you to produce [Clouevents](https://cloudevents.io/) starting from your models signals sending them to a configurable url (sink).
+
+- [django-krules-procevents](https://github.com/airspot-dev/django-krules-procevents): provides models and admin interface to store and manage your krules application within your Django ORM
 
 ## Code Examples
 
