@@ -10,13 +10,13 @@ if you are interested to go more deeply into the concepts of the KRules framewor
 
 ## Requirements
 
-- An up and running Kubernetes cluster. To take your first steps you can use a more developer-friendly local 
+- An up and running **Kubernetes cluster**. To take your first steps you can use a more developer-friendly local 
 installation like, for example, minikube, Kind or whatever you prefer;
-- A Knative updated version working installation (including serving and eventing). You can 
+- A **Knative** updated version working installation (including serving and eventing). You can 
 follow [the official Knative installation guide](https://knative.dev/v0.19-docs/install/any-kubernetes-cluster/) 
 or opt for a simpler installation using [Mink](https://github.com/mattmoor/mink);
-- In order to configure a subjects storage provider, you need at least a Redis or a MongoDB database;
-- A working Docker installation and a registry accessible from the cluster to push your images to. 
+- In order to configure a subjects storage provider, you need at least a **Redis** or a **MongoDB** database;
+- A working **Docker** installation and a registry accessible from the cluster to push your images to. 
 This is needed in order build and publish your rulesets.
 
 ## Choosing the right subjects storage provider backend 
@@ -37,38 +37,23 @@ are supported.
 
     If you cannot predict how many subjects will be created during your app execution and you don't want to 
 worry about dismissing unnecessary ones (subjects who are no longer involved in the business logic and 
-won't receive or produce events anymore) you may need a more scalable solution. For example in a supply 
-chain solution to track all process from the supplying, passing from production, to the final distribution, 
-each subject represents an item, no matter if is a lot of raw material, a single element derived from its 
-aggregation and processing, the package containing the final good, the truck that is moving and carrying it, 
-etc. they all produce and receive cascading related events until the last package is sold off the shelf in 
-the market or more.
+won't receive or produce events anymore) you may need a more scalable solution. 
 
-Note that, as you will see, you can use both solutions at once. You can configure your environment to use 
-one backend or another depending on the kind of subject you're referring to
+Note,you can use both solutions at once. You can configure your environment to use 
+one backend or another depending on the kind of subject you're referring to. More explainations will follow later. 
 
 ## Install KRules base system
 
-Once all previously mentioned requirements are satisfied you can proceed with the installation of  KRules base 
+Once all previously mentioned requirements are satisfied you can proceed with the installation of KRules base 
 system running:
 
 ```
 $ kubectl apply -f https://github.com/airspot-dev/krules-controllers/releases/download/v0.8.1/release.yaml
 ```
 
-**WARNING**: If you are using a Mink cluster ensuring that all pods are in a `Running` status and all 
-container are `READY` before run the previous command. 
-
-```
-$ kubectl -n mink-system get pods
-NAME                              READY   STATUS      RESTARTS   AGE
-contour-certgen-v1.10.0-n59lk     0/1     Completed   0          10m
-controlplane-0                    4/4     Running     0          10m
-dataplane-tzs77                   5/5     Running     0          10m
-default-domain-6jt6q              1/1     Running     0          3m30s
-imc-controller-574f6f959-mflmq    1/1     Running     0          10m
-imc-dispatcher-6cd567446c-ktbrw   1/1     Running     0          10m
-```
+:warning: **WARNING**: Ensure that all pods are in a `Running` status and all container are `READY` before run the previous command. If you have installed
+Knative in a standard way you can check pods status in **knative-eventing** and **knative-serving** namespaces. While if you had chose to use Mink 
+check **mink-system** namespace.
 
 This command will install various kinds of stuff in the `krules-system`  namespace.
 Most of them are Knative services able to scale to zero, so if you want to check the installation status run the 
@@ -117,11 +102,12 @@ Now it's time to download the base structure of your project.
 If you have a GitHub account you can start by using this repo as a template to fork directly to your own project. 
 
 You can just click on "Use this template" as shown below.
+
 ![UseThisTemplate](UseThisTemplate.png)
 
 Follow the Github instructions to create your own repository then clone it and start work.
 
-### If don't you have a Github account
+### If you don't have a Github account
 
 First, create an empty repository wherever you want.
 
@@ -171,7 +157,7 @@ environment variable substitution;
 - **container**: If no name is provided it refers to ruleset container. This section is useful to provide all 
 environment variables referred to in the data section. Commonly this is made using a secret but it is not mandatory.
 
-Note that in both provided configurations we refer to a secret that doesn't really exist. You have to create on your 
+Note that in both provided configurations we refer to a secret that you need to create on your 
 own following our indication or in the way is more suitable for you.
 
 On how to create secrets refer to 
@@ -185,7 +171,7 @@ resources:
 # - config-krules-subjects-mongodb.yaml
 ```
 
-Wait to apply the configuration. It will be done later.
+:warning: **WARNING**: Wait to apply the configuration. It will be done later.
 
 ## Build the base image
 
@@ -194,7 +180,7 @@ your cluster. All services share a common configuration in order to be made awar
 storage instance and more.
 
 In the same way, each rules needs to access a base environment configuration, which is contained in the base image of 
-the KRules, which also provides all the building blocks of which the rules themselves are composed.
+the KRules.
 
 In order to a rules to be able to access both the basic configuration and the project specific ones, there must be an 
 intermediate layer.
@@ -216,9 +202,9 @@ factory is a _callable_ receiving the following parameters:
 
 - **event_data**: The received payload.
 
-Usually, we only need the name parameter which acts as a discriminant to determine which kind of subject it is and 
-consequently which component to instantiate for (ex: Redis or MongoDB implementation). Although we provide a skeleton 
-that you can easily use without the need to understand it too deeply, the mechanism is open and you can customize it 
+Usually, we only need the _name_ parameter which acts as a discriminant to determine which kind of subject it is and 
+consequently which component to instantiate for (ex: Redis or MongoDB implementation). We provide a skeleton 
+that you can easily use without the need to understand it too deeply, although the mechanism is open and you can customize it 
 for your special needs.
 
 To define your environment's storage configuration go to `${PROJECT_DIR}/base/app/env.py`.
@@ -295,11 +281,11 @@ def init():
   )
 ```
 
-We assumed here that we are tacking items for a supply chain application where each item, according to a GS1 
+:bangbang: We assumed here that we are tracking items for a supply chain application where each of them, according to a GS1 
 specification, is identified by its [EPC code](https://www.epc-rfid.info/) which universally identify the corresponding 
 physical object. Potentially, they could be billions. We are also tracking different entities (eg. warehouses, 
 manufacturer, scanner, etc ...), some of them directly related to EPCs, accessed very often and concurrently, for 
-example, any time an owned item produce or receive some kind of event. However they are In a fewer and more predictable 
+example, any time a related item produces or receive some kind of event. However they are In a fewer and more predictable 
 number, so we'd like to keep them all backed by Redis.
 
 
@@ -527,7 +513,7 @@ when some exception is raised processing the rules.
 
 ## What to do now
 
-We understand that this guide is not enough to get you started building your first micro-services event-driven 
+This guide, of course, is not enough to get you started building your first micro-services event-driven 
 application using KRules. Please be confident and patient while we're working hard to provide you new useful 
 documentation to help you being profitable using KRules and of course, its stack which is based upon like KNative 
 eventing and python.
