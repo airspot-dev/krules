@@ -5,7 +5,7 @@ creating event driven, context aware, and reactive microservices in a Kubernetes
 
 Extended documentation is not yet available, but you can take a look at [our introductionary material](https://intro.krules.io).
 
-Meanwhile, if you are brave and you do not fear the unknown [get in touch with us](mailto:info@airspot.tech). 
+Meanwhile.. if you are brave and you do not fear the unknown [get in touch with us](mailto:info@airspot.tech)! 
 
 # Repos
 
@@ -18,7 +18,7 @@ Meanwhile, if you are brave and you do not fear the unknown [get in touch with u
 - [krules-core](https://github.com/airspot-dev/krules-core): KRules core package containing all base components
 
 - [krules-dispatcher-cloudevents](https://github.com/airspot-dev/krules-dispatcher-cloudevents): KRules's router dispatcher component.
-It sends cloudevents via http to a configurable url
+It sends [clouevents](https://cloudevents.io/) via http to a configurable url
 
 - [krules-env](https://github.com/airspot-dev/krules-env): A module mainly intended for the setup of different environments in the context of a basic image
 
@@ -38,7 +38,7 @@ It sends cloudevents via http to a configurable url
 
 - [django-krules-scheduler](https://github.com/airspot-dev/django-krules-scheduler): A Django app that provides models and admin interface to manage scheduled events.
 
-- [django-signals-cloudevents](https://github.com/airspot-dev/django-signals-cloudevents): A Django extension that allows you to produce [Clouevents](https://cloudevents.io/) starting from your models signals sending them to a configurable url (sink).
+- [django-signals-cloudevents](https://github.com/airspot-dev/django-signals-cloudevents): A Django extension that allows you to produce [clouevents](https://cloudevents.io/) starting from your models signals sending them to a configurable url (sink).
 
 - [django-krules-procevents](https://github.com/airspot-dev/django-krules-procevents): A Django app that provides models and admin interface to store and manage your krules application within your Django ORM
 
