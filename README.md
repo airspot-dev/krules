@@ -525,5 +525,5 @@ In the meantime, if you have the soul of a pioneer, take a look at some code in 
 
 - [blue-green demo](https://github.com/airspot-dev/knative-bluegreen-demo)
 
-Of course, we are, love and support pioneers, so don't esitate to [contact us](mailto:info@airspot.tech).
+:heart: Of course, we are, love and support pioneers, so don't esitate to :email: [contact us](mailto:info@airspot.tech).
 
