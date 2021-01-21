@@ -81,7 +81,7 @@ def fake_receiver(request):
 
 
 def test_dispatched_event(fake_receiver):
-    from krules_core import types
+    from krules_core import event_types
 
     event_dispatcher_factory.override(
         providers.Singleton(lambda: CloudEventsDispatcher(fake_receiver.url, "pytest", test=True))
@@ -108,7 +108,7 @@ def test_dispatched_event(fake_receiver):
     assert(sent_headers.get("ce-Originid") == '1234')
 
     # property name
-    _, _, sent_headers = router.route(types.SUBJECT_PROPERTY_CHANGED, subject, {PayloadConst.PROPERTY_NAME: "foo"})
+    _, _, sent_headers = router.route(event_types.SUBJECT_PROPERTY_CHANGED, subject, {PayloadConst.PROPERTY_NAME: "foo"})
     assert (sent_headers.get("ce-propertyname") == 'foo')
 
 
