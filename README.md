@@ -24,7 +24,7 @@ It sends cloudevents via http to a configurable url
 
 - [krules-controllers](https://github.com/airspot-dev/krules-controllers): Includes rulesets in krules-system namespace
 
-## Subjects storages
+## Subjects storage
 
 - [krules-subjects-storage-redis](https://github.com/airspot-dev/krules-subjects-storage-redis): Redis based subjects storage
 
@@ -42,7 +42,7 @@ It sends cloudevents via http to a configurable url
 
 - [django-krules-procevents](https://github.com/airspot-dev/django-krules-procevents): A Django app that provides models and admin interface to store and manage your krules application within your Django ORM
 
-## Code Examples
+## Code examples
 
 - [IoT example](https://github.com/airspot-dev/iot-demo)
 
