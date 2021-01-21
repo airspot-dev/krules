@@ -1,6 +1,6 @@
 # KRules project template
 
-This repo provides the base structure to easily start to create your own project using the KRules framework.
+This repo provides the base structure to easily start to create your own project using the [KRules framework](https://github.com/airspot-dev/krules).
 
 This is not just a step by step guide showing you how to create a new project starting from the provided base structure 
 and how to customize and adapt it to your own environment. It also wants to introduce you to some basic KRules concepts. 
