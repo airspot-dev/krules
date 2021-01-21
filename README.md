@@ -24,7 +24,7 @@ It sends cloudevents via http to a configurable url
 
 - [krules-controllers](https://github.com/airspot-dev/krules-controllers): Includes rulesets in krules-system namespace
 
-## Subjects storage
+## Subjects storage backends
 
 - [krules-subjects-storage-redis](https://github.com/airspot-dev/krules-subjects-storage-redis): Redis based subjects storage
 
