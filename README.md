@@ -117,7 +117,7 @@ Now it's time to download the base structure of your project.
 If you have a GitHub account you can start by using this repo as a template to fork directly to your own project. 
 
 You can just click on "Use this template" as shown below.
-![UseThisTemplate](https://drive.google.com/file/d/10nRQGtH4TwzqJb8dndYwJzpkvK0B2gmQ/preview)
+![UseThisTemplate](UseThisTemplate.png)
 
 Follow the Github instructions to create your own repository then clone it and start work.
 
