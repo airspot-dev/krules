@@ -36,11 +36,11 @@ It sends cloudevents via http to a configurable url
 
 - [rulesset-image-base](https://github.com/airspot-dev/rulesset-image-base): Repo to build the Rulesets Docker image base 
 
-- [django-krules-scheduler](https://github.com/airspot-dev/django-krules-scheduler): Provides models and admin interface to manage scheduled events.
+- [django-krules-scheduler](https://github.com/airspot-dev/django-krules-scheduler): A Django app that provides models and admin interface to manage scheduled events.
 
-- [django-signals-cloudevents](https://github.com/airspot-dev/django-signals-cloudevents): allows you to produce [Clouevents](https://cloudevents.io/) starting from your models signals sending them to a configurable url (sink).
+- [django-signals-cloudevents](https://github.com/airspot-dev/django-signals-cloudevents): A Django extension that allows you to produce [Clouevents](https://cloudevents.io/) starting from your models signals sending them to a configurable url (sink).
 
-- [django-krules-procevents](https://github.com/airspot-dev/django-krules-procevents): provides models and admin interface to store and manage your krules application within your Django ORM
+- [django-krules-procevents](https://github.com/airspot-dev/django-krules-procevents): A Django app that provides models and admin interface to store and manage your krules application within your Django ORM
 
 ## Code Examples
 
