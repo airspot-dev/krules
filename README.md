@@ -5,7 +5,7 @@ creating event driven, context aware, and reactive microservices in a Kubernetes
 
 Extended documentation is not yet available, but you can take a look at [our introductionary material](https://intro.krules.io).
 
-Meanwhile.. if you are brave and you do not fear the unknown [get in touch with us](mailto:info@airspot.tech)! 
+Meanwhile.. if yo're brave and you do not fear the unknown [get in touch with us](mailto:info@airspot.tech)! 
 
 # Repos
 
