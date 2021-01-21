@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: config-krules-project
-data:
-  imageBase: ""

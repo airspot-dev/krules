@@ -1,2 +1,0 @@
-#API_URL=http://localhost:8001 NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}') python setup.py pytest
-NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}') python setup.py pytest
