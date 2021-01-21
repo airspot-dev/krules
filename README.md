@@ -5,7 +5,7 @@ This repo provides the base structure to easily start to create your own project
 This is not just a step by step guide showing you how to create a new project starting from the provided base structure 
 and how to customize and adapt it to your own environment. It also wants to introduce you to some basic KRules concepts. 
 
-More documentation will follow, for now, you can also read our [overview](https://intro.krules.io/en/0.8/OVERVIEW.html)
+More documentation will follow, for now, you can also read our [overview](https://intro.krules.io/OVERVIEW.html)
 if you are interested to go more deeply into the concepts of the KRules framework.
 
 ## Requirements
@@ -502,12 +502,12 @@ rulesdata = [
 All rules, which compose the ruleset logic, are declared within **rulesdata**.
 
 We won't explain what each rule does, because that's outside the scope of this document, but if you want to learn more, 
-you can consult our [base functions overview](https://intro.krules.io/en/0.8/BaseFunctions.html).
+you can consult our [base functions overview](https://intro.krules.io/BaseFunctions.html).
 
 An important thing to notice is the observability definition.
 
 It is possible to decide what to do with the 
-[resulting ruleset processing events](https://intro.krules.io/en/0.8/OVERVIEW.html#observability-and-errors-management)
+[resulting ruleset processing events](https://intro.krules.io/OVERVIEW.html#observability-and-errors-management)
 just notice how we use another provider onwing an RX ReplySubject instance, deciding, by default, only to publish events 
 when some exception is raised processing the rules.
 
