@@ -291,13 +291,13 @@ number, so we'd like to keep them all backed by Redis.
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
     :eyes: &nbsp; An important point that needs to be discussed here is that the chosen database solution for the subjects storage 
-implementation doesn't correspond to the database you may choose to give safe persistence to all data regarding the 
-entities related to your application even if they actually have an exact match with subjects. They are two totally 
-different things. Subjects are meant to be the reactive part of your application and consequentially the contexts of the 
-rules we'll define. They are always accessed directly by name and we can't do queries like _"give me all subjects having this value for that property"_. 
-You still need to have a more usual database solution for that, which one is totally up to you and, easily, in the 
-context of a KRules based application, its records will be kept updated by some rule reacting to some subject's state 
-changes.
+    implementation doesn't correspond to the database you may choose to give safe persistence to all data regarding the 
+    entities related to your application even if they actually have an exact match with subjects. They are two totally 
+    different things. Subjects are meant to be the reactive part of your application and consequentially the contexts of the 
+    rules we'll define. They are always accessed directly by name and we can't do queries like _"give me all subjects having this value for that property"_. 
+    You still need to have a more usual database solution for that, which one is totally up to you and, easily, in the 
+    context of a KRules based application, its records will be kept updated by some rule reacting to some subject's state 
+    changes.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
