@@ -289,7 +289,7 @@ example, any time a related item produces or receive some kind of event. However
 number, so we'd like to keep them all backed by Redis.
 
 
-:bell: &nbsp; An important point that needs to be discussed here is that the chosen database solution for the subjects storage 
+:eyes: &nbsp; An important point that needs to be discussed here is that the chosen database solution for the subjects storage 
 implementation doesn't correspond to the database you may choose to give safe persistence to all data regarding the 
 entities related to your application even if they actually have an exact match with subjects. They are two totally 
 different things. Subjects are meant to be the reactive part of your application and consequentially the contexts of the 
