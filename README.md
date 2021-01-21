@@ -103,7 +103,7 @@ If you have a GitHub account you can start by using this repo as a template to f
 
 You can just click on "Use this template" as shown below.
 
-![UseThisTemplate](UseThisTemplate.png)
+![UseThisTemplate](https://github.com/airspot-dev/krules/blob/main/.support/UseThisTemplate.png)
 
 Follow the Github instructions to create your own repository then clone it and start work.
 
