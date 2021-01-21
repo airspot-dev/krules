@@ -26,7 +26,7 @@ It sends cloudevents via http to a configurable url
 
 ## Subjects storages
 
-- [krules-subjects-redis-storage](https://github.com/airspot-dev/krules-subjects-storage-redis): Redis based subjects storage
+- [krules-subjects-storage-redis](https://github.com/airspot-dev/krules-subjects-storage-redis): Redis based subjects storage
 
 - [krules-subjects-storage-mongodb](https://github.com/airspot-dev/krules-subjects-storage-mongodb): MongoDB based subjects storage
 
