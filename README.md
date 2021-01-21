@@ -27,15 +27,15 @@ are supported.
 
 - **Redis** :
 
-Redis is fast and naturally suitable to be safe in a high concurrency environment, for example where 
-subjects own properties acting like counters accessed and modified simultaneously from multiple services. 
+    Redis is fast and naturally suitable to be safe in a high concurrency environment, for example where 
+    subjects own properties acting like counters accessed and modified simultaneously from multiple services. 
 
-Unless you have specific scalability needs, in terms of the unpredictable amount of subjects to create, 
-Redis is the recommended choice.
+    Unless you have specific scalability needs, in terms of the unpredictable amount of subjects to create, 
+    Redis is the recommended choice.
 
 - **MongoDB**:
 
-if you cannot predict how many subjects will be created during your app execution and you don't want to 
+    If you cannot predict how many subjects will be created during your app execution and you don't want to 
 worry about dismissing unnecessary ones (subjects who are no longer involved in the business logic and 
 won't receive or produce events anymore) you may need a more scalable solution. For example in a supply 
 chain solution to track all process from the supplying, passing from production, to the final distribution, 
