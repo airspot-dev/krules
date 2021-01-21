@@ -296,7 +296,7 @@ different things. Subjects are meant to be the reactive part of your application
 rules we'll define. They are always accessed directly by name and we can't do queries like _"give me all subjects having this value for that property"_. 
 You still need to have a more usual database solution for that, which one is totally up to you and, easily, in the 
 context of a KRules based application, its records will be kept updated by some rule reacting to some subject's state 
-changes. :bell:
+changes.
 
 ### Build and deploy the image
 
@@ -525,5 +525,5 @@ In the meantime, if you have the soul of a pioneer, take a look at some code in 
 
 - [blue-green demo](https://github.com/airspot-dev/knative-bluegreen-demo)
 
-:heart: Of course, we are, love and support pioneers, so don't esitate to [contact us](mailto:info@airspot.tech) :email:
+:heart:  Of course, we are, love and support pioneers, so don't esitate to [contact us](mailto:info@airspot.tech)  :email:
 
