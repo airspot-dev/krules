@@ -288,7 +288,6 @@ manufacturer, scanner, etc ...), some of them directly related to EPCs, accessed
 example, any time a related item produces or receive some kind of event. However they are In a fewer and more predictable 
 number, so we'd like to keep them all backed by Redis.
 
----------------------------------------------------------------------------------------------------------------------------------------------------------
 
     :eyes: &nbsp; An important point that needs to be discussed here is that the chosen database solution for the subjects storage 
     implementation doesn't correspond to the database you may choose to give safe persistence to all data regarding the 
@@ -299,7 +298,6 @@ number, so we'd like to keep them all backed by Redis.
     context of a KRules based application, its records will be kept updated by some rule reacting to some subject's state 
     changes.
 
-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### Build and deploy the image
 
