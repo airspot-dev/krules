@@ -1,4 +1,4 @@
-# krules-subjects-redis-storage
+# krules-subjects-storage-redis
 
 KRules is a rules engine primarily intended to run on Kubernetes. 
 However the core can be easily used even in different contexts. 
