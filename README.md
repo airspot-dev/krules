@@ -18,9 +18,8 @@ It sends cloudevents via http to a configurable url
 
 - [krules-env](https://github.com/airspot-dev/krules-env): A module mainly intended for the setup of different environments in the context of a basic image
 
-## Docker images
+- [krules-controllers](https://github.com/airspot-dev/krules-controllers): Includes rulesets in krules-system namespace
 
-- [rulesset-image-base](https://github.com/airspot-dev/rulesset-image-base): Repo to build the Rulesets Docker image base 
 
 ## Subjects storages
 
@@ -30,7 +29,9 @@ It sends cloudevents via http to a configurable url
 
 - [krules-subjects-storage-k8s](https://github.com/airspot-dev/krules-subjects-storage-k8s): A subjects storage that use Kubernetes resources as subjects storage 
 
-## Developer tools
+## Miscellaneous
+
+- [rulesset-image-base](https://github.com/airspot-dev/rulesset-image-base): Repo to build the Rulesets Docker image base 
 
 - [krules-project-template](https://github.com/airspot-dev/krules-project-template): A KRules empty project sekeleton. Include a a step by step guide.
 
