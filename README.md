@@ -5,7 +5,7 @@ This repo provides the base structure to easily start to create your own project
 This is not just a step by step guide showing you how to create a new project starting from the provided base structure 
 and how to customize and adapt it to your own environment. It also wants to introduce you to some basic KRules concepts. 
 
-More documentation will follow, for now, you can also read our [overview](https://intro.krules.io/en/0.8/OVERVIEW.html) 
+More documentation will follow, for now, you can also read our [overview](https://intro.krules.io/en/0.8/OVERVIEW.html){:target="_blank"}
 if you are interested to go more deeply into the concepts of the KRules framework.
 
 ## Requirements
