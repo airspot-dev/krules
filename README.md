@@ -3,7 +3,9 @@
 KRules is an open source framework that provides, to Python developers, a flexible and fast way to build cloud native applications, 
 creating event driven, context aware, and reactive microservices in a Kubernetes cluster.
 
-An extended documentatio is not available yet but you can take a look to [our introductionary material](https://intro.krules.io).
+Extended documentation is not yet available, but you can take a look at [our introductionary material](https://intro.krules.io).
+
+Meanwhile, if you are brave and you have no fear abuot the uknown [get in touch with us](mailto:info@airspot.tech). 
 
 # Repos
 
