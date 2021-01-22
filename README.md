@@ -54,5 +54,5 @@ It sends [clouevents](https://cloudevents.io/) via http to a configurable url
 
 Each KRules product is released under an Apache License 2.0 license. Refer to [LICENSE](LICENSE) for license text.
 
-[![Analytics](https://ga-beacon.appspot.com/G-QEPJXYD2GZ/krules/readme)](https://github.com/igrigorik/ga-beacon)
+[![Analytics](https://ga-beacon.appspot.com/UA-187895089/krules/readme)](https://github.com/igrigorik/ga-beacon)
 
