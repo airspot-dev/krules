@@ -48,7 +48,7 @@ It sends [clouevents](https://cloudevents.io/) via http to a configurable url
 
 - [IoT example](https://github.com/airspot-dev/iot-demo)
 
-- [Knative blue-green exemple](https://github.com/airspot-dev/knative-bluegreen-demo)
+- [Knative blue-green example](https://github.com/airspot-dev/knative-bluegreen-demo)
 
 ## License
 
