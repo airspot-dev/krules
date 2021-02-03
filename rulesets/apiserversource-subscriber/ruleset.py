@@ -1,4 +1,3 @@
-import pprint
 
 from k8s_functions import k8s_subject
 from krules_core.base_functions.processing import Route, DispatchPolicyConst, Process
@@ -14,6 +13,8 @@ filters = Const.FILTERS
 processing = Const.PROCESSING
 
 
+import pprint
+
 # proc_events_rx_factory().subscribe(
 #     on_next=publish_proc_events_all,
 # )
@@ -21,13 +22,19 @@ processing = Const.PROCESSING
 #    on_next=pprint.pprint
 #)
 
+proc_events_rx_factory().subscribe(
+    on_next=pprint.pprint
+)
+
 
 class _RouteToLabeledK8sSubject(Route):
 
     def execute(self, **kwargs):
 
         event_type = "k8s.resource.{}".format(self.event_type.split(".")[-1])
-        subject = k8s_subject(self.payload)
+        subject = k8s_subject(self.payload, resource_path="/api/v1/namespaces/{}".format(
+                                self.payload.get("metadata").get("name"))
+                              )
         if event_type != "k8s.resource.delete":
             # injected resources
             if self.payload.get("metadata", {}).get("labels", {}).get("krules.airspot.dev/injected") == "injected":

@@ -14,7 +14,7 @@ spec:
       serviceAccountName: krules-controller
       containers:
       - name: ruleset
-        image: gcr.io/airspot/apiserversource-subscriber:0.8.1
+        image: localhost:5000/apiserversource-subscriber@sha256:1818bfb26132f09685aa7141ebf4eaaeddf700703c64ad016feda0a592d0a083
         # for development only
 #        env:
 #          - name: K_PROCEVENTS_SINK
