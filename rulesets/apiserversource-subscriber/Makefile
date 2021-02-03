@@ -6,9 +6,10 @@ RELEASE_TARGET_IMAGE_VERSION=0.8.1
 RELEASE_TARGET_IMAGE:=${BASE_RELEASE_TARGET_IMAGE}:${RELEASE_TARGET_IMAGE_VERSION}
 
 
-all: build push resources
+all: build push
 
 resources:
+	sed -i "s%image: .*%image: $(shell cat .digest)%" k8s/service.yaml
 	kubectl apply -n ${NAMESPACE} -k k8s
 
 build: check-env
@@ -17,7 +18,6 @@ build: check-env
 push: check-env
 	docker push ${WORKING_TARGET_IMAGE}
 	docker inspect --format='{{index .RepoDigests 0}}' ${WORKING_TARGET_IMAGE} >.digest
-	sed -i "s%image: .*%image: $(shell cat .digest)%" k8s/service.yaml
 
 release: build
 	docker tag ${WORKING_TARGET_IMAGE} ${RELEASE_TARGET_IMAGE}
