@@ -6,9 +6,7 @@ RUN apk add --no-cache --virtual .build-deps g++ python3-dev && \
     apk add --no-cache --update python3 && \
     pip3 install --upgrade pip setuptools
 
-RUN pip3 install pyyaml anyjson \
-    jsonpath-rw jsonpath-rw-ext python-dateutil pytz requests gunicorn \
-    flask json-logging
+RUN pip3 install anyjson jsonpath-rw jsonpath-rw-ext python-dateutil gunicorn
 
 ADD ./app /app
 
