@@ -4,7 +4,7 @@ import json_logging
 import logging
 import sys
 import importlib
-from krules_env import env
+from krules_env import init
 from dependency_injector import providers
 from krules_core.providers import (
     subject_factory,
@@ -73,7 +73,14 @@ class KRulesApp(Flask):
         self.req_logger.setLevel(logging.ERROR)
         self.req_logger.propagate = False
 
-        env.init()
+        init()
+
+        try:
+            import env
+            env.init()
+        except ImportError:
+            self.logger.warning("No app env defined!")
+
         subject_factory.override(providers.Factory(lambda *args, **kw: g_wrap(subject_factory.cls, *args, **kw)))
 
         try:
