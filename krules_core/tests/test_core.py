@@ -10,7 +10,7 @@
 # limitations under the License.
 
 import pytest
-import rx
+from rx import subject as rx_subject
 
 import dependency_injector.providers as providers
 from krules_core.base_functions import Callable
@@ -49,13 +49,12 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
 
     return event_router_factory()
 
 
 def test_internal_routing(subject, router):
-
     RuleFactory.create('test-rule-filters-pass',
                        subscribe_to="test-type",
                        data={
@@ -92,14 +91,14 @@ def test_internal_routing(subject, router):
                   _assert(
                       x[RuleConst.PROCESSED] and
                       len(x[RuleConst.PROCESSING]) == 1
-                  ) and print(x)
+                  )
     )
     proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-rule-filters-fails' and
                   _assert(
                       not x[RuleConst.PROCESSED] and
                       len(x[RuleConst.PROCESSING]) == 0
-                  ) and print(x)
+                  )
     )
 
     router.route("test-type", subject, {})

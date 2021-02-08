@@ -12,7 +12,7 @@ import json
 import re
 
 import pytest
-import rx
+from rx import subject as rx_subject
 from dependency_injector import providers
 from krules_core.base_functions.filters import Filter, CheckSubjectProperty, PayloadMatch, SubjectNameMatch, \
     SubjectNameDoesNotMatch, PayloadMatchOne, OnSubjectPropertyChanged
@@ -43,7 +43,7 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
 
     return event_router_factory()
 
@@ -244,7 +244,7 @@ def test_check_subject_property(router, subject, asserted):
 
     # clean up
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
 
     # check direct
     subject.set("prop-1", "value-2")

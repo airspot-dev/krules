@@ -1,5 +1,5 @@
 
-import rx
+from rx import subject as rx_subject
 
 from dependency_injector import providers
 from krules_core.providers import event_router_factory, proc_events_rx_factory
@@ -21,7 +21,7 @@ def _assert(expr, msg="test failed"):
 
 def test_router():
     subject = "test-subject"
-    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
     proc_events_rx = proc_events_rx_factory()
 
     start_time = datetime.now()
