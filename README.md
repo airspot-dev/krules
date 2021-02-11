@@ -1,6 +1,6 @@
 # KRules project template
 
-This repo provides the base structure to easily start to create your own project using the KRules framework.
+This repo provides the base structure to easily start to create your own project using the [KRules framework](https://github.com/airspot-dev/krules).
 
 This is not just a step by step guide showing you how to create a new project starting from the provided base structure 
 and how to customize and adapt it to your own environment. It also wants to introduce you to some basic KRules concepts. 
@@ -289,14 +289,15 @@ example, any time a related item produces or receive some kind of event. However
 number, so we'd like to keep them all backed by Redis.
 
 
-:bell: An important point that needs to be discussed here is that the chosen database solution for the subjects storage 
+> :eyes: &nbsp; An important point that needs to be discussed here is that the chosen database solution for the subjects storage 
 implementation doesn't correspond to the database you may choose to give safe persistence to all data regarding the 
 entities related to your application even if they actually have an exact match with subjects. They are two totally 
 different things. Subjects are meant to be the reactive part of your application and consequentially the contexts of the 
 rules we'll define. They are always accessed directly by name and we can't do queries like _"give me all subjects having this value for that property"_. 
 You still need to have a more usual database solution for that, which one is totally up to you and, easily, in the 
 context of a KRules based application, its records will be kept updated by some rule reacting to some subject's state 
-changes. :bell:
+changes.
+
 
 ### Build and deploy the image
 
@@ -525,5 +526,5 @@ In the meantime, if you have the soul of a pioneer, take a look at some code in 
 
 - [blue-green demo](https://github.com/airspot-dev/knative-bluegreen-demo)
 
-Of course, we are, love and support pioneers, so don't esitate to [contact us](mailto:info@airspot.tech).
+:heart: &nbsp; Of course, we are, love and support pioneers, so don't esitate to [contact us](mailto:info@airspot.tech):email:
 
