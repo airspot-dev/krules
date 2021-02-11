@@ -8,12 +8,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
 
 import pytest
-import rx
+from rx import subject as rx_subject
 from dependency_injector import providers
-from krules_core import RuleConst
+from krules_core import RuleConst, ProcEventsLevel
 from krules_core.base_functions import SetPayloadProperties, SetPayloadProperty, SetSubjectProperty, \
     OnSubjectPropertyChanged, SetSubjectExtendedProperty, SetSubjectPropertyImmediately, \
     RuleFunctionBase, SetSubjectProperties, Process
@@ -30,6 +30,7 @@ from krules_core.providers import (
 counter = 0
 asserted = []
 
+os.environ.setdefault("PUBLISH_PROCEVENTS", str(ProcEventsLevel.FULL))
 
 @pytest.fixture
 def subject():
@@ -43,7 +44,7 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
 
     return event_router_factory()
 
@@ -161,7 +162,7 @@ def test_subject_functions(subject, router, asserted):
                 SetSubjectProperty("my_prop_4", value=lambda x: x is None and 1 or x + 1, use_cache=False),
                 _CheckStoredValue("my_prop_4", 1),  # cached property in not considered
                 SetSubjectProperty("my_prop_4", value=lambda x: x is None and -1.5 or x - 1.5, use_cache=False),
-                SetSubjectProperty("my_silent_prop_6", value=lambda x: x-1, muted=True),
+                SetSubjectProperty("my_silent_prop_6", value=lambda x: x is None and 1 or x-1, muted=True),
             ]
         }
     )

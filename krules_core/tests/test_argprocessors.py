@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
-import rx
+from rx import subject as rx_subject
 from dependency_injector import providers
 
 from krules_core.arg_processors import BaseArgProcessor
@@ -27,7 +27,7 @@ processed = RuleConst.PROCESSED
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
 
     return event_router_factory()
 

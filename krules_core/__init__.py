@@ -48,3 +48,10 @@ class RuleConst(object):
 class ConfigKeyConst(object):
 
     TYPE_TOPICS_PREFIX = "TYPE_TOPICS_PREFIX"
+
+
+class ProcEventsLevel(object):
+
+    FULL = 0
+    LIGHT = 1
+    DISABLED = 2

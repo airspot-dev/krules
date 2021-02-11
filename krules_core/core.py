@@ -13,7 +13,7 @@ import inspect
 from uuid import uuid4
 
 from .subject import storaged_subject
-from . import RuleConst as Const
+from . import RuleConst as Const, ProcEventsLevel
 from .providers import event_router_factory, subject_factory, configs_factory
 
 import sys
@@ -25,8 +25,9 @@ logger = logging.getLogger("__core__")
 
 from .providers import exceptions_dumpers_factory
 import jsonpatch
-
+import os
 from collections.abc import Mapping
+
 
 class Rule:
 
@@ -121,21 +122,23 @@ class Rule:
         proc_events_rx = proc_events_rx_factory()  # one event for each processed rule
 
         process_id = str(uuid4())
-        payload_copy = __copy(payload)
-        event_info = payload_copy.pop("_event_info", subject.event_info())
-
-        res_full = {
-            Const.TYPE: event_type,
-            Const.SUBJECT: str(subject.name),
-            Const.RULENAME: self.name,
-            Const.PAYLOAD: payload_copy,
-            Const.FILTERS: [],
-            Const.PROCESSING: [],
-            Const.GOT_ERRORS: False,
-            Const.EVENT_INFO: event_info,
-        }
-
-        last_payload = __copy(payload)
+        procevents_level = int(os.environ.get("PUBLISH_PROCEVENTS", ProcEventsLevel.FULL))
+        last_payload = {}
+        if procevents_level != ProcEventsLevel.DISABLED:
+            payload_copy = __copy(payload)
+            event_info = payload_copy.pop("_event_info", subject.event_info())
+            res_full = {
+                Const.TYPE: event_type,
+                Const.SUBJECT: str(subject.name),
+                Const.RULENAME: self.name,
+                Const.PAYLOAD: payload_copy,
+                Const.FILTERS: [],
+                Const.PROCESSING: [],
+                Const.GOT_ERRORS: False,
+                Const.EVENT_INFO: event_info,
+            }
+            if procevents_level == ProcEventsLevel.FULL:
+                last_payload = __copy(payload)
 
         res_in = {}
         processed_args = {}
@@ -152,19 +155,19 @@ class Rule:
                 _cinst.rule_name = self.name
                 _cinst.router = event_router_factory()
                 _cinst.configs = configs_factory()
-
-                res_in = {
-                    Const.PROCESS_ID: process_id,
-                    Const.TYPE: event_type,
-                    Const.SUBJECT: str(subject.name),
-                    Const.RULENAME: self.name,
-                    Const.SECTION: Const.FILTERS,
-                    Const.FUNC_NAME: _cinst_name,
-                    Const.PAYLOAD: __copy(payload),
-                    Const.ARGS: __copy_list(_c._args),
-                    Const.KWARGS: __copy(_c._kwargs),
-                }
-                logger.debug("> processing: {0}".format(res_in))
+                if procevents_level != ProcEventsLevel.DISABLED:
+                    res_in = {
+                        Const.PROCESS_ID: process_id,
+                        Const.TYPE: event_type,
+                        Const.SUBJECT: str(subject.name),
+                        Const.RULENAME: self.name,
+                        Const.SECTION: Const.FILTERS,
+                        Const.FUNC_NAME: _cinst_name,
+                        Const.PAYLOAD: __copy(payload),
+                        Const.ARGS: __copy_list(_c._args),
+                        Const.KWARGS: __copy(_c._kwargs),
+                    }
+                    logger.debug("> processing: {0}".format(res_in))
                 try:
                     processed_args = _c._get_args(_cinst)
                     processed_kwargs = _c._get_kwargs(_cinst)
@@ -172,30 +175,33 @@ class Rule:
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
                     raise TypeError(msg + str(ex))
+                if procevents_level != ProcEventsLevel.DISABLED:
+                    res_out = {
+                        Const.PROCESS_ID: res_in[Const.PROCESS_ID],
+                        Const.TYPE: res_in[Const.TYPE],
+                        Const.SUBJECT: res_in[Const.SUBJECT],
+                        Const.RULENAME: res_in[Const.RULENAME],
+                        Const.SECTION: res_in[Const.SECTION],
+                        Const.FUNC_NAME: res_in[Const.FUNC_NAME],
+                        Const.ARGS: __copy_list(processed_args),
+                        Const.KWARGS: __copy(processed_kwargs),
+                        Const.RETURNS: res
+                    }
 
-                payload_copy = __copy(payload)
-                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload_copy).patch
-                last_payload = payload_copy
-                res_out = {
-                    Const.PROCESS_ID: res_in[Const.PROCESS_ID],
-                    Const.TYPE: res_in[Const.TYPE],
-                    Const.SUBJECT: res_in[Const.SUBJECT],
-                    Const.RULENAME: res_in[Const.RULENAME],
-                    Const.SECTION: res_in[Const.SECTION],
-                    Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD_DIFFS: payload_patches,
-                    Const.ARGS: __copy_list(processed_args),
-                    Const.KWARGS: __copy(processed_kwargs),
-                    Const.RETURNS: res
-                }
-                logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS], 'returns': res_out[Const.RETURNS]}))
-                res_full[Const.FILTERS].append(__clean(res_out))
+                    if procevents_level == ProcEventsLevel.FULL:
+                        payload_copy = __copy(payload)
+                        payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload_copy).patch
+                        last_payload = payload_copy
+                        res_out[Const.PAYLOAD_DIFFS] = payload_patches,
+                        logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS], 'returns': res_out[Const.RETURNS]}))
+                    res_full[Const.FILTERS].append(__clean(res_out))
                 if not res:
-                    res_full[Const.PROCESSED] = False
-                    proc_events_rx.on_next(res_full)
+                    if procevents_level != ProcEventsLevel.DISABLED:
+                        res_full[Const.PROCESSED] = False
+                        proc_events_rx.on_next(res_full)
                     return
-
-            res_full[Const.PROCESSED] = True
+                if procevents_level != ProcEventsLevel.DISABLED:
+                    res_full[Const.PROCESSED] = True
 
             for _c in self._processing:
                 if inspect.isclass(_c):
@@ -208,18 +214,19 @@ class Rule:
                 _cinst.rule_name = self.name
                 _cinst.router = event_router_factory()
                 _cinst.configs = configs_factory()
-                res_in = {
-                    Const.PROCESS_ID: process_id,
-                    Const.TYPE: event_type,
-                    Const.SUBJECT: str(subject.name),
-                    Const.RULENAME: self.name,
-                    Const.SECTION: Const.PROCESSING,
-                    Const.FUNC_NAME: _cinst_name,
-                    Const.PAYLOAD: __copy(payload),
-                    Const.ARGS: __copy_list(_c._args),
-                    Const.KWARGS: __copy(_c._kwargs),
-                }
-                logger.debug("> processing: {0}".format(res_in))
+                if procevents_level != ProcEventsLevel.DISABLED:
+                    res_in = {
+                        Const.PROCESS_ID: process_id,
+                        Const.TYPE: event_type,
+                        Const.SUBJECT: str(subject.name),
+                        Const.RULENAME: self.name,
+                        Const.SECTION: Const.PROCESSING,
+                        Const.FUNC_NAME: _cinst_name,
+                        Const.PAYLOAD: __copy(payload),
+                        Const.ARGS: __copy_list(_c._args),
+                        Const.KWARGS: __copy(_c._kwargs),
+                    }
+                    logger.debug("> processing: {0}".format(res_in))
                 try:
                     processed_args = _c._get_args(_cinst)
                     processed_kwargs = _c._get_kwargs(_cinst)
@@ -227,31 +234,36 @@ class Rule:
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
                     raise TypeError(msg + str(ex))
-                payload_copy = __copy(payload)
-                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload_copy).patch
-                last_payload = payload_copy
-                res_out = {
-                    Const.PROCESS_ID: res_in[Const.PROCESS_ID],
-                    Const.TYPE: res_in[Const.TYPE],
-                    Const.SUBJECT: res_in[Const.SUBJECT],
-                    Const.RULENAME: res_in[Const.RULENAME],
-                    Const.SECTION: res_in[Const.SECTION],
-                    Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD_DIFFS: payload_patches,
-                    Const.ARGS: __copy_list(processed_args),
-                    Const.KWARGS: __copy(processed_kwargs),
-                    Const.RETURNS: res,
-                }
-                logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS], 'returns': res_out[Const.RETURNS]}))
-                res_full[Const.PROCESSING].append(__clean(res_out))
+                if procevents_level != ProcEventsLevel.DISABLED:
+                    res_out = {
+                        Const.PROCESS_ID: res_in[Const.PROCESS_ID],
+                        Const.TYPE: res_in[Const.TYPE],
+                        Const.SUBJECT: res_in[Const.SUBJECT],
+                        Const.RULENAME: res_in[Const.RULENAME],
+                        Const.SECTION: res_in[Const.SECTION],
+                        Const.FUNC_NAME: res_in[Const.FUNC_NAME],
+                        Const.ARGS: __copy_list(processed_args),
+                        Const.KWARGS: __copy(processed_kwargs),
+                        Const.RETURNS: res,
+                    }
+                    if procevents_level == ProcEventsLevel.FULL:
+                        payload_copy = __copy(payload)
+                        payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload_copy).patch
+                        last_payload = payload_copy
+                        res_out[Const.PAYLOAD_DIFFS] = payload_patches
+                        logger.debug("< processed: {0}".format({'payload_diffs': res_out[Const.PAYLOAD_DIFFS],
+                                                                'returns': res_out[Const.RETURNS]}))
+                    res_full[Const.PROCESSING].append(__clean(res_out))
 
-            proc_events_rx.on_next(res_full)
+            if procevents_level != ProcEventsLevel.DISABLED:
+                if Const.PROCESSED not in res_full:
+                    res_full[Const.PROCESSED] = True
+                proc_events_rx.on_next(res_full)
 
         except Exception as e:
             logger.error("catched exception of type {0} ({1})".format(type(e), getattr(e, 'message', str(e))))
-            if proc_events_rx:
-                payload_copy = __copy(payload)
-                payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload_copy).patch
+            if proc_events_rx and procevents_level != ProcEventsLevel.DISABLED:
+
                 type_, value_, traceback_ = sys.exc_info()
                 res_out = {
                     Const.PROCESS_ID: res_in[Const.PROCESS_ID],
@@ -260,7 +272,6 @@ class Rule:
                     Const.RULENAME: res_in[Const.RULENAME],
                     Const.SECTION: res_in[Const.SECTION],
                     Const.FUNC_NAME: res_in[Const.FUNC_NAME],
-                    Const.PAYLOAD_DIFFS: payload_patches,
                     Const.ARGS: __copy_list(processed_args),
                     Const.KWARGS: __copy(processed_kwargs),
                     Const.RETURNS: None,
@@ -268,6 +279,11 @@ class Rule:
                     Const.EXC_INFO: traceback.format_exception(type_, value_, traceback_),
                     Const.EXC_EXTRA_INFO: exceptions_dumpers_factory().dump(e),
                 }
+                if procevents_level == ProcEventsLevel.FULL:
+                    payload_copy = __copy(payload)
+                    payload_patches = jsonpatch.JsonPatch.from_diff(last_payload, payload_copy).patch
+                    res_out[Const.PAYLOAD_DIFFS] = payload_patches
+
                 logger.error(res_out)
                 logger.debug("# unprocessed: {0}".format(res_out))
                 res_full[Const.GOT_ERRORS] = True

@@ -10,7 +10,7 @@
 # limitations under the License.
 
 import pytest
-import rx
+from rx import subject as rx_subject
 from dependency_injector import providers
 from krules_core import RuleConst
 from krules_core.base_functions.misc import PyCall
@@ -41,7 +41,7 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
 
     return event_router_factory()
 
@@ -117,6 +117,5 @@ def test_pycall(subject, router, asserted):
 
     router.route("test-pycall", subject, {})
 
-    print(asserted)
     assert "test-pycall-no-error" in asserted
     assert "test-pycall-with-error" in asserted

@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='krules-core',
-    version="0.8.1",
+    version="0.8.2",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules Python core package",
@@ -23,8 +23,8 @@ setup(
     python_requires='>3.7',
     install_requires=[
         'dependency-injector==4.5.1',
-        'rx==1.6.1',
         'wrapt==1.12.1',
+        'rx==3.1.1',
         'jsonpatch==1.26',
         'jsonpath-rw-ext==1.2.2',
     ],
