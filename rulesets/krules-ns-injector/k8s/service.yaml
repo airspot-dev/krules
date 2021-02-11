@@ -14,7 +14,7 @@ spec:
       serviceAccountName: krules-controller
       containers:
       - name: ruleset
-        image: localhost:5000/krules-ns-injector@sha256:ada93f31a44c3084b6bf9f88152dc59c1f2b2b67334dc5344f1e4ba753053cf4
+        image: gcr.io/airspot/krules-ns-injector:0.8.2
         # for development only
 #        env:
 #          - name: K_PROCEVENTS_SINK

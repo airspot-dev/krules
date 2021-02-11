@@ -42,10 +42,50 @@ spec:
                 container:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
-              required:
-                - key
-                - appliesTo
-                - data
+                extraVolumes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      secret:
+                        type: object
+                        properties:
+                          secretName:
+                            type: string
+                      configMap:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                    oneOf:
+                      - required:
+                          - name
+                          - secret
+                      - required:
+                          - name
+                          - configMap
+
+                    x-kubernetes-preserve-unknown-fields: true
+
+#              required:
+#                - key
+#                - appliesTo
+#                #- data
+              anyOf:
+                - required:
+                  - key
+                  - appliesTo
+                  - data
+                - required:
+                  - key
+                  - appliesTo
+                  - container
+                - required:
+                  - key
+                  - appliesTo
+                  - extraVolumes
 
             status:
               type: object
