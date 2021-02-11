@@ -19,5 +19,5 @@ docker build -t ${TARGET_IMAGE} .
 docker push ${TARGET_IMAGE}
 docker inspect --format='{{index .RepoDigests 0}}' ${TARGET_IMAGE} >.digest
 kubectl apply -n ${NAMESPACE} -k k8s/
-kubectl create cm config-krules-project -n ${NAMESPACE} --dry-run=true -oyaml | kubectl apply -f -
+kubectl create cm config-krules-project -n ${NAMESPACE} --dry-run=client -oyaml | kubectl apply -f -
 kubectl patch cm config-krules-project -n ${NAMESPACE} -p "{\"data\": {\"imageBase\": \"$(cat .digest)\"}}"

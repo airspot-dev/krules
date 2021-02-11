@@ -151,6 +151,23 @@ def cmd_deploy(spec_module, path, namespace, registry):
     ksvc_procevents_sink = _resolve_broker(api, getattr(spec_module, "ksvc_procevents_sink", "broker:procevents"), namespace)
 
     service_account = getattr(spec_module, "service_account", "")
+    extra_environ = getattr(spec_module, "environ", {})
+    environ = [
+        {
+            "name": "K_SINK",
+            "value": ksvc_sink,
+        },
+        {
+            "name": "K_PROCEVENTS_SINK",
+            "value": ksvc_procevents_sink
+        }
+    ]
+    for k, v in extra_environ.items():
+        environ.append({
+            "name": k,
+            "value": v,
+        })
+
     logger.debug(f"service account: {service_account}")
 
     revision_name = _hashed(spec_module.name, #labels,
@@ -162,6 +179,7 @@ def cmd_deploy(spec_module, path, namespace, registry):
     ).objects(api).get_or_none(name=spec_module.name)
     if obj_ref is None:
         logger.debug("creating object..")
+
         obj = {
             "apiVersion": "serving.knative.dev/v1",
             "kind": "Service",
@@ -181,16 +199,7 @@ def cmd_deploy(spec_module, path, namespace, registry):
                             {
                                 "name": "ruleset",
                                 "image": digest,
-                                "env": [
-                                    {
-                                        "name": "K_SINK",
-                                        "value": ksvc_sink,
-                                    },
-                                    {
-                                        "name": "K_PROCEVENTS_SINK",
-                                        "value": ksvc_procevents_sink
-                                    }
-                                ]
+                                "env": environ
                             }
                         ]
                     }
@@ -214,12 +223,11 @@ def cmd_deploy(spec_module, path, namespace, registry):
         for container in containers:
             if container["name"] == "ruleset":
                 container["image"] = digest
-            envs = container["env"]
-            for env in envs:
-                if env["name"] == "K_SINK":
-                    env["value"] = ksvc_sink
-                elif env["name"] == "K_PROCEVENTS_SINK":
-                    env["value"] = ksvc_procevents_sink
+            envs = {e["name"]: e["value"] for e in container["env"]}
+            envs["K_SINK"] = ksvc_sink
+            envs["K_PROCEVENTS_SINK"] = ksvc_procevents_sink
+            envs.update(extra_environ)
+            container["env"] = [{"name": k, "value": v} for k, v in envs.items()]
 
         if service_account != "":
             obj_ref.obj["spec"]["template"]["spec"]["serviceAccountName"] = service_account
