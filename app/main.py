@@ -2,22 +2,19 @@ import json
 import os
 from datetime import datetime
 
-from dependency_injector import providers
 from flask import Response
 from flask import request
 from krules_core.providers import subject_factory
 
 from krules_core.route.router import DispatchPolicyConst
-import env as app_env
 import io
 
 from cloudevents.sdk.event import v1
 from cloudevents.sdk import marshaller
 
-from krules_env.flask import KRulesApp
+from krules_flask_env import KRulesApp
 
 app = KRulesApp("ruleset")
-app_env.init()
 
 
 @app.route('/', methods=['POST'], auto_store_subjects=True)
