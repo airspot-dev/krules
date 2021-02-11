@@ -60,7 +60,6 @@ def publish_proc_events_filtered(result, jp_expr, expt_value, debug=False):
         for expr in jp_expr:
             if callable(expt_value):
                 _pass = expt_value(jp.match1(expr, [result]))
-                print(_pass)
             else:
                 _pass = (jp.match1(expr, [result]) == expt_value)
             if not _pass:
