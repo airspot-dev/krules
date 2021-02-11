@@ -1,3 +1,5 @@
-dependency-injector>=3.14.8
+dependency-injector==4.5.1
+rx==3.1.1
 cloudstorage==0.10.0
 jsonpatch==1.26
+flask
