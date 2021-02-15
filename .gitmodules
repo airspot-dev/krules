@@ -82,3 +82,6 @@
 [submodule "subjects-storage-backends/krules-subjects-storage-k8s"]
 	path = subjects-storage-backends/krules-subjects-storage-k8s
 	url = https://github.com/airspot-dev/krules-subjects-storage-k8s
+[submodule "miscellanoeus/krules-flask-env"]
+	path = miscellanoeus/krules-flask-env
+	url = https://github.com/airspot-dev/krules-flask-env.git
