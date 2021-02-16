@@ -10,7 +10,7 @@
 # limitations under the License.
 
 import pytest
-import rx
+from rx import subject as rx_subject
 from dependency_injector import providers
 from krules_core import RuleConst
 from krules_core.base_functions.misc import PyCall
@@ -41,7 +41,7 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.queue.clear()
 
     return event_router_factory()
 
@@ -56,7 +56,7 @@ def asserted():
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
 rulename = RuleConst.RULENAME
-processed = RuleConst.PROCESSED
+passed = RuleConst.PASSED
 
 
 def _assert(name, expr, msg="test failed"):
@@ -99,7 +99,7 @@ def test_pycall(subject, router, asserted):
         }
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-pycall-no-error" and _assert(
             x[rulename],
             get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) == [2, 1]
@@ -107,7 +107,7 @@ def test_pycall(subject, router, asserted):
         )
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-pycall-with-error" and _assert(
             x[rulename],
             not get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) and
@@ -117,6 +117,5 @@ def test_pycall(subject, router, asserted):
 
     router.route("test-pycall", subject, {})
 
-    print(asserted)
     assert "test-pycall-no-error" in asserted
     assert "test-pycall-with-error" in asserted

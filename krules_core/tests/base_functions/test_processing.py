@@ -8,12 +8,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
 
 import pytest
-import rx
+from rx import subject as rx_subject
 from dependency_injector import providers
-from krules_core import RuleConst
+from krules_core import RuleConst, ProcEventsLevel
 from krules_core.base_functions import SetPayloadProperties, SetPayloadProperty, SetSubjectProperty, \
     OnSubjectPropertyChanged, SetSubjectExtendedProperty, SetSubjectPropertyImmediately, \
     RuleFunctionBase, SetSubjectProperties, Process
@@ -30,6 +30,7 @@ from krules_core.providers import (
 counter = 0
 asserted = []
 
+os.environ.setdefault("PUBLISH_PROCEVENTS", str(ProcEventsLevel.FULL))
 
 @pytest.fixture
 def subject():
@@ -43,7 +44,7 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.queue.clear()
 
     return event_router_factory()
 
@@ -58,7 +59,7 @@ def asserted():
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
 rulename = RuleConst.RULENAME
-processed = RuleConst.PROCESSED
+passed = RuleConst.PASSED
 
 
 def _assert(name, expr, msg="test failed"):
@@ -95,7 +96,7 @@ def test_payload_functions(subject, router, asserted):
         }
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-alter-payload" and _assert(
             "test-update-1",
             get_value_from_payload_diffs("k3", x[processing][0]["payload_diffs"]) == 3 and
@@ -107,7 +108,7 @@ def test_payload_functions(subject, router, asserted):
         )
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-alter-payload" and _assert(
             "test-update-2",
             get_value_from_payload_diffs("k1", x[processing][1]["payload_diffs"]) == 0 and
@@ -115,7 +116,7 @@ def test_payload_functions(subject, router, asserted):
             get_value_from_payload_diffs("k4", x[processing][1]["payload_diffs"]) == -1
         )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-alter-payload" and _assert(
             "test-update-3",
             get_value_from_payload_diffs("k4", x[processing][1]["payload_diffs"]) == 0
@@ -161,14 +162,14 @@ def test_subject_functions(subject, router, asserted):
                 SetSubjectProperty("my_prop_4", value=lambda x: x is None and 1 or x + 1, use_cache=False),
                 _CheckStoredValue("my_prop_4", 1),  # cached property in not considered
                 SetSubjectProperty("my_prop_4", value=lambda x: x is None and -1.5 or x - 1.5, use_cache=False),
-                SetSubjectProperty("my_silent_prop_6", value=lambda x: x-1, muted=True),
+                SetSubjectProperty("my_silent_prop_6", value=lambda x: x is None and 1 or x-1, muted=True),
             ]
         }
     )
-    from krules_core import types
+    from krules_core import event_types
     RuleFactory.create(
         "test-non-muted-property",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("my_prop", lambda value, old_value: value == 1 and old_value is None)
@@ -177,7 +178,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-muted-property",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("something_to_say")
@@ -186,7 +187,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-direct-property",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("my_prop_2", lambda value, old_value: value == 2 and old_value is None)
@@ -195,7 +196,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-muted-direct-property",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("my_prop_3")
@@ -204,7 +205,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-multi-set-properties-unmuted",
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged("my_prop_4")
@@ -213,7 +214,7 @@ def test_subject_functions(subject, router, asserted):
     )
     RuleFactory.create(
         "test-multi-set-properties-muted",   # never processed
-        subscribe_to=types.SUBJECT_PROPERTY_CHANGED,
+        subscribe_to=event_types.SUBJECT_PROPERTY_CHANGED,
         data={
             filters: [
                 OnSubjectPropertyChanged(lambda p: p in ("my_silent_prop_5", "my_silent_prop_6"))
@@ -221,44 +222,44 @@ def test_subject_functions(subject, router, asserted):
         }
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-set-subject-property" and _assert(
             x[rulename],
-            x[processed]
+            x[passed]
         )
     )
-    proc_events_rx_factory().subscribe(
-        lambda x: x[rulename] == "test-non-muted-property" and x[processed] and _assert(
+    proc_events_rx_factory.subscribe(
+        lambda x: x[rulename] == "test-non-muted-property" and x[passed] and _assert(
             x[rulename],
             True
         )
     )
-    proc_events_rx_factory().subscribe(
-        lambda x: x[rulename] == "test-muted-property" and x[processed] and _assert(
+    proc_events_rx_factory.subscribe(
+        lambda x: x[rulename] == "test-muted-property" and x[passed] and _assert(
             x[rulename],
             False
         )
     )
-    proc_events_rx_factory().subscribe(
-        lambda x: x[rulename] == "test-direct-property" and x[processed] and _assert(
+    proc_events_rx_factory.subscribe(
+        lambda x: x[rulename] == "test-direct-property" and x[passed] and _assert(
             x[rulename],
             True
         )
     )
-    proc_events_rx_factory().subscribe(
-        lambda x: x[rulename] == "test-muted-direct-property" and x[processed] and _assert(
+    proc_events_rx_factory.subscribe(
+        lambda x: x[rulename] == "test-muted-direct-property" and x[passed] and _assert(
             x[rulename],
             False
         )
     )
-    proc_events_rx_factory().subscribe(
-        lambda x: x[rulename] == "test-multi-set-properties-unmuted" and x[processed] and _assert(
+    proc_events_rx_factory.subscribe(
+        lambda x: x[rulename] == "test-multi-set-properties-unmuted" and x[passed] and _assert(
             x[rulename],
             True
         )
     )
-    proc_events_rx_factory().subscribe(
-        lambda x: x[rulename] == "test-multi-set-properties-muted" and x[processed] and _assert(
+    proc_events_rx_factory.subscribe(
+        lambda x: x[rulename] == "test-multi-set-properties-muted" and x[passed] and _assert(
             x[rulename],
             False
         )

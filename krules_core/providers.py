@@ -10,7 +10,7 @@
 # limitations under the License.
 
 
-import rx
+from rx import subject, from_future
 
 from dependency_injector import providers as providers
 from krules_core.subject.empty_storage import EmptySubjectStorage
@@ -20,8 +20,6 @@ from .route.router import EventRouter
 from .subject.storaged_subject import Subject
 from .exceptions_dumpers import ExceptionsDumpers
 
-import logging
-logger = logging.getLogger(__name__)
 
 configs_factory = providers.Singleton(lambda: {})
 
@@ -29,9 +27,8 @@ configs_factory = providers.Singleton(lambda: {})
 subject_storage_factory = providers.Factory(lambda *args, **kwargs: EmptySubjectStorage())
 
 subject_factory = providers.Factory(Subject)
-proc_events_rx_factory = providers.Singleton(rx.subjects.ReplaySubject)
+# proc_events_rx_factory = providers.Singleton(subject.ReplaySubject)
+proc_events_rx_factory = subject.ReplaySubject()
 event_router_factory = providers.Singleton(EventRouter)
 event_dispatcher_factory = providers.Singleton(BaseDispatcher)
 exceptions_dumpers_factory = providers.Singleton(ExceptionsDumpers)
-
-
