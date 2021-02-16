@@ -56,7 +56,7 @@ def asserted():
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
 rulename = RuleConst.RULENAME
-processed = RuleConst.PROCESSED
+passed = RuleConst.PASSED
 
 
 def _assert(name, expr, msg="test failed"):

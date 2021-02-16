@@ -59,7 +59,7 @@ def asserted():
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
 rulename = RuleConst.RULENAME
-processed = RuleConst.PROCESSED
+passed = RuleConst.PASSED
 
 
 def _assert(name, expr, msg="test failed"):
@@ -225,41 +225,41 @@ def test_subject_functions(subject, router, asserted):
     proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-set-subject-property" and _assert(
             x[rulename],
-            x[processed]
+            x[passed]
         )
     )
     proc_events_rx_factory.subscribe(
-        lambda x: x[rulename] == "test-non-muted-property" and x[processed] and _assert(
+        lambda x: x[rulename] == "test-non-muted-property" and x[passed] and _assert(
             x[rulename],
             True
         )
     )
     proc_events_rx_factory.subscribe(
-        lambda x: x[rulename] == "test-muted-property" and x[processed] and _assert(
+        lambda x: x[rulename] == "test-muted-property" and x[passed] and _assert(
             x[rulename],
             False
         )
     )
     proc_events_rx_factory.subscribe(
-        lambda x: x[rulename] == "test-direct-property" and x[processed] and _assert(
+        lambda x: x[rulename] == "test-direct-property" and x[passed] and _assert(
             x[rulename],
             True
         )
     )
     proc_events_rx_factory.subscribe(
-        lambda x: x[rulename] == "test-muted-direct-property" and x[processed] and _assert(
+        lambda x: x[rulename] == "test-muted-direct-property" and x[passed] and _assert(
             x[rulename],
             False
         )
     )
     proc_events_rx_factory.subscribe(
-        lambda x: x[rulename] == "test-multi-set-properties-unmuted" and x[processed] and _assert(
+        lambda x: x[rulename] == "test-multi-set-properties-unmuted" and x[passed] and _assert(
             x[rulename],
             True
         )
     )
     proc_events_rx_factory.subscribe(
-        lambda x: x[rulename] == "test-multi-set-properties-muted" and x[processed] and _assert(
+        lambda x: x[rulename] == "test-multi-set-properties-muted" and x[passed] and _assert(
             x[rulename],
             False
         )

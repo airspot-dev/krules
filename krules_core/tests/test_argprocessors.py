@@ -21,7 +21,7 @@ from krules_core.providers import event_router_factory, subject_factory, proc_ev
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
 rulename = RuleConst.RULENAME
-processed = RuleConst.PROCESSED
+passed = RuleConst.PASSED
 
 @pytest.fixture
 def router():

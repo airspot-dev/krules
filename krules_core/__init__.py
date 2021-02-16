@@ -34,7 +34,7 @@ class RuleConst(object):
     ARGS = "args"
     KWARGS = "kwargs"
     RETURNS = "returns"
-    PROCESSED = "processed"
+    PASSED = "passed"
     EVENT_INFO = "event_info"
 
     GOT_ERRORS = "got_errors"
