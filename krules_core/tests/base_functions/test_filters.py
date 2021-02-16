@@ -43,7 +43,7 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
+    proc_events_rx_factory.queue.clear()
 
     return event_router_factory()
 
@@ -76,7 +76,7 @@ def test_return(subject, router, asserted):
                            ],
                        })
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == 'test-returns' and _assert(
             'test-returns-something',
             x[processed] and x[filters][0]["returns"] == "something"
@@ -111,13 +111,13 @@ def test_truth(subject, router, asserted):
     #                        ],
     #                    })
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == 'test-is-true' and _assert(
             'test-is-true',
             x[processed] and x[filters][0]["returns"] is True
             )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == 'test-is-false' and _assert(
             'test-is-false',
             x[processed] and x[filters][0]["returns"] is True
@@ -155,13 +155,13 @@ def test_subject_match(router, asserted):
                            ]
                        })
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == 'test-subject-match' and _assert(
             'test-subject-match',
             x[processed] is True
             )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == 'test-subject-does-not-match' and _assert(
             'test-subject-does-not-match',
             x[processed] is True
@@ -217,19 +217,19 @@ def test_check_subject_property(router, subject, asserted):
     subject.set("prop-2", 2)
     subject.set_ext("ext-prop", "extprop")
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-simple-subject-property" and _assert(
             x[rulename],
             x[processed] is True
         )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-simple-subject-property-fails" and _assert(
             x[rulename],
             x[processed] is False
         )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-expr-subject-property" and _assert(
             x[rulename],
             x[processed] is True
@@ -244,7 +244,7 @@ def test_check_subject_property(router, subject, asserted):
 
     # clean up
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
+    proc_events_rx_factory.queue.clear()
 
     # check direct
     subject.set("prop-1", "value-2")
@@ -271,14 +271,14 @@ def test_check_subject_property(router, subject, asserted):
         }
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-subject-property-direct" and _assert(
             x[rulename],
             not x[processed]
         )
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-subject-property-ext-direct" and _assert(
             x[rulename],
             not x[processed]
@@ -362,19 +362,19 @@ def test_check_payload_match(router, subject, asserted):
         }
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-check-payload-jpmatch-not-empty" and _assert(
             x[rulename],
             x[processed]
         )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-check-payload-jpmatch-store-result" and _assert(
             x[rulename],
             x[processed]
         )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-check-payload-jpmatch-one" and _assert(
             x[rulename],
             x[processed]
@@ -448,37 +448,36 @@ def test_on_subject_property_changed(router, subject, asserted):
         }
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-prop-changed" and _assert(
             x[rulename],
             x[processed], "{} not processed".format(x[rulename])
         )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-prop-changed-fails-1" and _assert(
             x[rulename],
             not x[processed], "{} should not be not processed".format(x[rulename])
         )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-prop-changed-fails-2" and _assert(
             x[rulename],
             not x[processed], "{} should not be not processed".format(x[rulename])
         )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-prop-changed-fails-3" and _assert(
             x[rulename],
             not x[processed], "{} should not be not processed".format(x[rulename])
         )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-prop-changed-fails-4" and _assert(
             x[rulename],
             not x[processed], "{} should not be not processed".format(x[rulename])
         )
     )
-
 
     subject.prop_a = 1
 

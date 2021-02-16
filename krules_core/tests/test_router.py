@@ -21,8 +21,7 @@ def _assert(expr, msg="test failed"):
 
 def test_router():
     subject = "test-subject"
-    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
-    proc_events_rx = proc_events_rx_factory()
+    proc_events_rx_factory.queue.clear()
 
     start_time = datetime.now()
     router = event_router_factory()
@@ -32,7 +31,7 @@ def test_router():
                        subscribe_to="some-type",
                        data={})
 
-    proc_events_rx.subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: _assert(
                     x[RuleConst.TYPE] == "some-type" and
                     "key1" in x[RuleConst.PAYLOAD] and

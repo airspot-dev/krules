@@ -41,7 +41,7 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
+    proc_events_rx_factory.queue.clear()
 
     return event_router_factory()
 
@@ -99,7 +99,7 @@ def test_pycall(subject, router, asserted):
         }
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-pycall-no-error" and _assert(
             x[rulename],
             get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) == [2, 1]
@@ -107,7 +107,7 @@ def test_pycall(subject, router, asserted):
         )
     )
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[rulename] == "test-pycall-with-error" and _assert(
             x[rulename],
             not get_value_from_payload_diffs("pycall_returns", x[processing][0]["payload_diffs"], default_value=None) and
