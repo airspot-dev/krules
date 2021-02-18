@@ -111,7 +111,7 @@ def test_create(api, namespace):
     proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-k8s-create' and
                   _assert(
-                      not x[RuleConst.GOT_ERRORS] and x[RuleConst.PROCESSED],
+                      not x[RuleConst.GOT_ERRORS] and x[RuleConst.PASSED],
                       "test-k8s-create proc failed"
                   )
     )
@@ -157,7 +157,7 @@ def test_update(api, namespace):
     proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-k8s-update-in-context' and
                   _assert(
-                      x[RuleConst.PROCESSED] and x[RuleConst.GOT_ERRORS] is False,
+                      x[RuleConst.PASSED] and x[RuleConst.GOT_ERRORS] is False,
                       "test-k8s-update-in-context proc failed"
                   )
     )
@@ -200,7 +200,7 @@ def test_update(api, namespace):
     proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-k8s-update-off-context' and
                   _assert(
-                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PROCESSED],
+                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PASSED],
                       "test-k8s-update-off-context proc failed"
                   )
     )
@@ -250,7 +250,7 @@ def tests_query_foreach(api, namespace):
     proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-k8s-query-foreach' and
                   _assert(
-                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PROCESSED],
+                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PASSED],
                       "test-k8s-query-foreach proc failed"
                   )
     )
@@ -312,7 +312,7 @@ def test_k8s_subject(api, namespace):
     proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-k8s-subject' and
                   _assert(
-                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PROCESSED],
+                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PASSED],
                       "test-k8s-subject proc failed"
                   )
     )
@@ -343,7 +343,7 @@ def test_delete(api, namespace):
     proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-k8s-delete-in-context' and
                   _assert(
-                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PROCESSED],
+                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PASSED],
                       "test-k8s-delete-in-context proc failed"
                   )
     )
@@ -378,7 +378,7 @@ def test_delete(api, namespace):
     proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-k8s-delete-off-context' and
                   _assert(
-                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PROCESSED],
+                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PASSED],
                       "test-k8s-delete-off-context proc failed"
                   )
     )
