@@ -1,8 +1,3 @@
-.. krules core documentation master file, created by
-   sphinx-quickstart on Tue Sep 15 12:34:40 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome
 *******
 
@@ -32,5 +27,7 @@ Contents:
 
    `Miscellaneous <Miscellaneous.html>`_
       Generic functions which could be used both like filters or processing.
+
+- `K8sFunctions library <K8sFunctions.html>`_
 
 Do not hesitate to `contact us <mailto:info@airspot.tech>`_ if you are interested in further information.
