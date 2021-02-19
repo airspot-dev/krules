@@ -85,15 +85,15 @@ dl.py dt, code {
     margin-bottom: 10px;
 }
 
-dl.class {
+dl.class, dl.function{
    margin: 10px 0 30px;
 }
 
-dl.class dt {
+dl.class dt, dl.function dt{
     font-size: 1em;
 }
 
-dl.method {
+dl.method, dl.function{
     font-size: 14px;
 }
 
@@ -212,7 +212,7 @@ div.sphinxsidebar form {
     margin-top: 0;
 }
 
-dl.class dt.field-odd {
+dl.class dt.field-odd, dl.function dt.field-odd{
     font-size: 0.95em;
 }
 
