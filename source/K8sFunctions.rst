@@ -1,3 +1,8 @@
+K8s functions library
+---------------------
+
+A set of basic functions to manage k8s objects.
+
 .. automodule:: k8s_functions.functions
 
 .. autofunction:: k8s_subject
