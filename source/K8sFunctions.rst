@@ -5,10 +5,6 @@ A set of basic functions to interact with Kubernetes resources.
 
 .. automodule:: k8s_functions.functions
 
-.. autofunction:: k8s_subject
-
-.. autofunction:: k8s_object
-
 .. autofunction:: k8s_event_create
 
 .. autoclass:: K8sObjectsQuery()
@@ -22,3 +18,7 @@ A set of basic functions to interact with Kubernetes resources.
 
 .. autoclass:: K8sObjectDelete()
     :members:
+
+.. autofunction:: k8s_subject
+
+.. autofunction:: k8s_object
