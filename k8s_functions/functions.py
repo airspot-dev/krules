@@ -20,11 +20,36 @@ from krules_core.providers import subject_factory
 
 def k8s_subject(obj=None, resource_path=None, prefix="k8s:"):
     """
-    Returns a k8s subject instance providing a kubernetes resource
-    :param obj:
-    :param resource_path:
-    :param prefix:
-    :return:
+    *Returns a k8s subject instance providing a kubernetes resource.*
+
+    ::
+
+        rulesdata = [
+            {
+                rulename: "...",
+                subscibre_to: "...",
+                ruledata: {
+                    filters: [
+                        Filter(
+                            K8sObjectsQuery(
+                                returns=lambda obj: (
+                                    k8s_subject(obj).ext_name == "my-pod"
+                                )
+                            )
+                        )
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            }
+        ]
+
+    Args:
+
+        obj: K8s object from which the subject will be created
+        resource_path: If is None is equal to object selfLink. BE CAREFUL from Kubernetes 1.20 selfLink is deprecated![default None]
+        prefix: [default k8s:]
     """
     if hasattr(obj, 'obj'):
         obj = obj.obj
@@ -37,9 +62,31 @@ def k8s_subject(obj=None, resource_path=None, prefix="k8s:"):
 
 def k8s_object(subject, renew=False):
     """
-    Returns the k8s resource providing a subject instance
-    :param subject:
-    :return:
+    *Returns the k8s resource providing a subject instance.*
+
+    ::
+
+        rulesdata = [
+            {
+                rulename: "...",
+                subscibre_to: "...",
+                ruledata: {
+                    filters: [
+                        Filter(
+                            lambda subject: "my-label" in k8s_object(subject).get("metadata", {}).get("labels", {})
+                        )
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            }
+        ]
+
+    Args:
+
+        subject: Subject from which will be get the K8s object
+        renew: If True reset subject property to the corresponding resource[default False]
     """
     try:
         if renew:
@@ -52,7 +99,10 @@ def k8s_object(subject, renew=False):
 def k8s_event_create(api, producer, action, message, reason, type,
                      reporting_component=None, reporting_instance=None, involved_object=None, namespace=None,
                      source_component=None, first_timestamp=None, last_timestamp=None):
+    """
+    *Crate a Kubernetes reosurce of type v1/Event.*
 
+    """
     dt_now = datetime.now(timezone.utc).astimezone().isoformat()
 
     if first_timestamp is None:
@@ -136,8 +186,45 @@ class K8sRuleFunctionBase(RuleFunctionBase):
 
 
 class K8sObjectsQuery(K8sRuleFunctionBase):
+    """
+    *Search for a list of K8s resources using the given filters.*
+
+    ::
+
+        rulesdata = [
+            {
+                rulename: "...",
+                subscibre_to: "...",
+                ruledata: {
+                    filters: [
+                        Filter(
+                            K8sObjectsQuery(
+                                kind="Pod",
+                                returns=lambda payload: lambda obj: (
+                                    payload.set_default("pods", obj)
+                                )
+                            )
+                        )
+                    ]
+                    processing: [
+                        ...
+                    ]
+                }
+            }
+        ]
+    """
 
     def execute(self, apiversion=None, kind=None, foreach=None, returns=None, **filters):
+
+        """
+        Args:
+
+            apiversion: resources api version, if None get this value from subject extended properties[default None]
+            kind: resources kind version, if None get this value from subject extended properties[default None]
+            foreach: an optional callable that will be execute for each query element[default None]
+            returns: an optional callable that will received as parameters the whole query elements[default None]
+            **filters: query kwargs
+        """
 
         obj = self._get_object(apiversion, kind)
 
@@ -178,7 +265,49 @@ class K8sObjectsQuery(K8sRuleFunctionBase):
 
 class K8sObjectUpdate(K8sRuleFunctionBase):
 
+    """
+    *Update a K8s object.*
+
+    ::
+
+        rulesdata = [
+            {
+                rulename: "...",
+                subscibre_to: "...",
+                ruledata: {
+                    filters: [
+                        ...
+                    ]
+                    processing: [
+                        K8sObjectUpdate(
+                            lambda obj: (
+                                obj["metadata"]["labels"].update({
+                                    "updated": "my-pod"
+                                })
+                            ),
+                            name="my-pod",
+                            apiversion="v1",
+                            kind="Pod",
+                            namespace="default"
+                        ),
+                    ]
+                }
+            }
+        ]
+    """
+
     def execute(self, patch, name=None, apiversion=None, kind=None, subresource=None, is_strategic=True, **filters):
+
+        """
+        Args:
+            patch: could be a callable that receive a dict or a dict itself
+            name: resource name, if None get this value from subject extended properties[default None]
+            apiversion: resource api version, if None get this value from subject extended properties[default None]
+            kind: resource kind version, if None get this value from subject extended properties[default None]
+            subresource: subresource parameter of pykube object update[default None]
+            is_strategic: is_strategic parameter of pykube object update[default True]
+            **filters: query kwargs
+        """
 
         if name is None:
             name = self.subject.get_ext("name")
@@ -213,40 +342,79 @@ class K8sObjectUpdate(K8sRuleFunctionBase):
                     raise ex
 
 
-class K8sObjectPatch(K8sRuleFunctionBase):
-
-    def execute(self, patch, name=None, apiversion=None, kind=None, subresource=None, **filters):
-
-        if name is None:
-            name = self.subject.get_ext("name")
-
-        obj = self._get_object(apiversion, kind)
-
-        # we are implicitly referring to the resource in the subject
-        if kind is None and apiversion is None \
-                and "namespace" not in filters \
-                and "namespace" in self.subject.get_ext_props() \
-                and self.subject.ext_namespace is not None:
-            filters.update({
-                "namespace": self.subject.get_ext("namespace")
-            })
-
-        obj = obj.objects(self.payload.get("_k8s_api_client")).filter(**filters).get(name=name)
-
-        while True:
-            try:
-                obj.patch(patch, subresource=subresource)
-                break
-            except pykube.exceptions.HTTPError as ex:
-                if ex.code == 409:
-                    continue
-                else:
-                    raise ex
+# class K8sObjectPatch(K8sRuleFunctionBase):
+#
+#     def execute(self, patch, name=None, apiversion=None, kind=None, subresource=None, **filters):
+#
+#         if name is None:
+#             name = self.subject.get_ext("name")
+#
+#         obj = self._get_object(apiversion, kind)
+#
+#         # we are implicitly referring to the resource in the subject
+#         if kind is None and apiversion is None \
+#                 and "namespace" not in filters \
+#                 and "namespace" in self.subject.get_ext_props() \
+#                 and self.subject.ext_namespace is not None:
+#             filters.update({
+#                 "namespace": self.subject.get_ext("namespace")
+#             })
+#
+#         obj = obj.objects(self.payload.get("_k8s_api_client")).filter(**filters).get(name=name)
+#
+#         while True:
+#             try:
+#                 obj.patch(patch, subresource=subresource)
+#                 break
+#             except pykube.exceptions.HTTPError as ex:
+#                 if ex.code == 409:
+#                     continue
+#                 else:
+#                     raise ex
 
 
 class K8sObjectCreate(K8sRuleFunctionBase):
+    """
+    *Create a K8s object.*
+
+    ::
+
+        rulesdata = [
+            {
+                rulename: "...",
+                subscibre_to: "...",
+                ruledata: {
+                    filters: [
+                        ...
+                    ]
+                    processing: [
+                        K8sObjectCreate({
+                            "apiVersion": "v1",
+                            "kind": "Pod",
+                            "metadata": {
+                                "name": "my-pod",
+                                "labels": {
+                                    "app": "pytest-temp"
+                                }
+                            },
+                            "spec": {
+                                "containers": [{
+                                    "name": "hello",
+                                    "image": "karthequian/helloworld"
+                                }]
+                            }
+                        })
+                    ]
+                }
+            }
+        ]
+    """
 
     def execute(self, obj):
+        """
+        Args:
+            obj: dict representing the structure of the object you want to create.
+        """
 
         apiversion = obj.get("apiVersion")
         kind = obj.get("kind")
@@ -266,8 +434,40 @@ class K8sObjectCreate(K8sRuleFunctionBase):
 
 
 class K8sObjectDelete(K8sObjectsQuery):
+    """
+    *Delete a K8s object.*
+
+    ::
+
+        rulesdata = [
+            {
+                rulename: "...",
+                subscibre_to: "...",
+                ruledata: {
+                    filters: [
+                        ...
+                    ]
+                    processing: [
+                        K8sObjectCreate(
+                            name="my-pod",
+                            apiversion="v1",
+                            kind="Pod",
+                            namespace="default"
+                        )
+                    ]
+                }
+            }
+        ]
+    """
 
     def execute(self, name=None, apiversion=None, kind=None, **filters):
+        """
+        Args:
+            name: resource name, if None get this value from subject extended properties[default None]
+            apiversion: resource api version, if None get this value from subject extended properties[default None]
+            kind: resource kind version, if None get this value from subject extended properties[default None]
+            **filters: query kwargs
+        """
         if name is None:
             name = self.subject.get_ext("name")
 
