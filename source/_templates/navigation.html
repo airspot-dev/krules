@@ -68,6 +68,7 @@
         </a>
     </li>
     {%- endif %}
+    {%- if current_version.name > "0.8" %}
     <li class="toctree-l1">
         <a href="K8sFunctions.html">
             {%- if pagename == "K8sFunctions" %}
@@ -79,4 +80,5 @@
             {%- endif %}
         </a>
     </li>
+    {%- endif %}
 </ul>
