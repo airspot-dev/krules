@@ -28,7 +28,7 @@ Contents:
    `Miscellaneous <Miscellaneous.html>`_
       Generic functions which could be used both like filters or processing.
 
-- `K8sFunctions library <K8sFunctions.html>`_
-    A set of basic functions to manage k8s objects.
+- `K8s functions library <K8sFunctions.html>`_
+    A set of basic functions to interact with Kubernetes resources.
 
 Do not hesitate to `contact us <mailto:info@airspot.tech>`_ if you are interested in further information.

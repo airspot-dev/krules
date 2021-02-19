@@ -1,7 +1,7 @@
 K8s functions library
----------------------
+*********************
 
-A set of basic functions to manage k8s objects.
+A set of basic functions to interact with Kubernetes resources.
 
 .. automodule:: k8s_functions.functions
 
