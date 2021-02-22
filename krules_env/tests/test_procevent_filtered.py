@@ -8,7 +8,7 @@ from dependency_injector import providers
 from krules_core.base_functions.filters import Filter
 from krules_core.base_functions.processing import Process, SetPayloadProperty
 
-from krules_core import RuleConst
+from krules_core import RuleConst, ProcEventsLevel
 
 from krules_core.core import RuleFactory
 
@@ -40,7 +40,7 @@ subscribed_rules = []
 
 
 def test_filtered(router, subject):
-    os.environ["PUBLISH_PROCEVENTS"] = "0"
+    os.environ["PUBLISH_PROCEVENTS"] = str(ProcEventsLevel.FULL)
     os.environ["PUBLISH_PROCEVENTS_FILTERS"] = "$[?(passed=true)]"
 
     proc_events_rx_factory.subscribe(
