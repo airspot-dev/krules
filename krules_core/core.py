@@ -122,7 +122,7 @@ class Rule:
         proc_events_rx = proc_events_rx_factory  # one event for each processed rule
 
         process_id = str(uuid4())
-        procevents_level = int(os.environ.get("PUBLISH_PROCEVENTS", ProcEventsLevel.FULL))
+        procevents_level = int(os.environ.get("PUBLISH_PROCEVENTS", ProcEventsLevel.DISABLED))
         last_payload = {}
         if procevents_level != ProcEventsLevel.DISABLED:
             payload_copy = __copy(payload)

@@ -52,6 +52,6 @@ class ConfigKeyConst(object):
 
 class ProcEventsLevel(object):
 
-    FULL = 0
+    DISABLED = 0
     LIGHT = 1
-    DISABLED = 2
+    FULL = 2
