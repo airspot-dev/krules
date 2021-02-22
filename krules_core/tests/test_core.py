@@ -49,7 +49,7 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
+    proc_events_rx_factory.queue.clear()
 
     return event_router_factory()
 
@@ -66,7 +66,7 @@ def test_internal_routing(subject, router):
                            RuleConst.PROCESSING: [
                                Callable(
                                    lambda self:
-                                   self.payload["processed"].setdefault(True)
+                                   self.payload.setdefault(RuleConst.PASSED, True)
                                ),
                            ],
                        })
@@ -81,22 +81,22 @@ def test_internal_routing(subject, router):
                            RuleConst.PROCESSING: [
                                Callable(
                                    lambda self:
-                                   self.payload["processed"].setdefault(False)
+                                   self.payload.setdefault(RuleConst.PASSED, False)
                                ),
                            ],
                        })
 
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-rule-filters-pass' and
                   _assert(
-                      x[RuleConst.PROCESSED] and
-                      len(x[RuleConst.PROCESSING]) == 1
+                      x[RuleConst.PASSED] and
+                      len(x[RuleConst.PROCESSING]) > 0 or print("##### LEN ", x[RuleConst.PROCESSING])
                   )
     )
-    proc_events_rx_factory().subscribe(
+    proc_events_rx_factory.subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-rule-filters-fails' and
                   _assert(
-                      not x[RuleConst.PROCESSED] and
+                      not x[RuleConst.PASSED] and
                       len(x[RuleConst.PROCESSING]) == 0
                   )
     )

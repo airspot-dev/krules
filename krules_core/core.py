@@ -119,10 +119,10 @@ class Rule:
 
         from .providers import proc_events_rx_factory
 
-        proc_events_rx = proc_events_rx_factory()  # one event for each processed rule
+        proc_events_rx = proc_events_rx_factory  # one event for each processed rule
 
         process_id = str(uuid4())
-        procevents_level = int(os.environ.get("PUBLISH_PROCEVENTS", ProcEventsLevel.FULL))
+        procevents_level = int(os.environ.get("PUBLISH_PROCEVENTS", ProcEventsLevel.DISABLED))
         last_payload = {}
         if procevents_level != ProcEventsLevel.DISABLED:
             payload_copy = __copy(payload)
@@ -197,11 +197,11 @@ class Rule:
                     res_full[Const.FILTERS].append(__clean(res_out))
                 if not res:
                     if procevents_level != ProcEventsLevel.DISABLED:
-                        res_full[Const.PROCESSED] = False
+                        res_full[Const.PASSED] = False
                         proc_events_rx.on_next(res_full)
                     return
                 if procevents_level != ProcEventsLevel.DISABLED:
-                    res_full[Const.PROCESSED] = True
+                    res_full[Const.PASSED] = True
 
             for _c in self._processing:
                 if inspect.isclass(_c):
@@ -256,8 +256,8 @@ class Rule:
                     res_full[Const.PROCESSING].append(__clean(res_out))
 
             if procevents_level != ProcEventsLevel.DISABLED:
-                if Const.PROCESSED not in res_full:
-                    res_full[Const.PROCESSED] = True
+                if Const.PASSED not in res_full:
+                    res_full[Const.PASSED] = True
                 proc_events_rx.on_next(res_full)
 
         except Exception as e:
@@ -287,8 +287,8 @@ class Rule:
                 logger.error(res_out)
                 logger.debug("# unprocessed: {0}".format(res_out))
                 res_full[Const.GOT_ERRORS] = True
-                if Const.PROCESSED not in res_full:  # this happens when exception is in filters
-                    res_full[Const.PROCESSED] = False
+                if Const.PASSED not in res_full:  # this happens when exception is in filters
+                    res_full[Const.PASSED] = False
                 res_full[res_out[Const.SECTION]].append(__clean(res_out))
                 proc_events_rx.on_next(res_full)
 

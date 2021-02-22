@@ -34,7 +34,7 @@ class RuleConst(object):
     ARGS = "args"
     KWARGS = "kwargs"
     RETURNS = "returns"
-    PROCESSED = "processed"
+    PASSED = "passed"
     EVENT_INFO = "event_info"
 
     GOT_ERRORS = "got_errors"
@@ -52,6 +52,6 @@ class ConfigKeyConst(object):
 
 class ProcEventsLevel(object):
 
-    FULL = 0
+    DISABLED = 0
     LIGHT = 1
-    DISABLED = 2
+    FULL = 2
