@@ -51,7 +51,8 @@ class KRulesApp(Flask):
             root_path
         )
 
-        json_logging.init_flask()
+        json_logging.ENABLE_JSON_LOGGING = True
+        json_logging.init_flask(enable_json=True)
         json_logging.init_request_instrument(self)
 
         self.logger = logging.getLogger(self.name)
