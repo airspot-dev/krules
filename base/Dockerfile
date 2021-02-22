@@ -1,4 +1,4 @@
-FROM gcr.io/airspot/ruleset-image-base:0.8.2
+FROM gcr.io/airspot/ruleset-image-base:0.8.3
 
 ADD ./app /app
 
@@ -6,5 +6,5 @@ ADD ./app /app
 RUN pip install ipython
 ADD ipython_config.py /root/.ipython/profile_default/
 
-# RUN pip install krules-subjects-storage-redis==0.8.2
-# RUN pip install krules-subjects-storage-mongodb==0.8.2
+# RUN pip install krules-subjects-storage-redis==0.8.3
+# RUN pip install krules-subjects-storage-mongodb==0.8.3

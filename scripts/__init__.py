@@ -24,6 +24,11 @@ template_annotations = {{
 
 #service_account = "my-service-account"
 
+environ = {
+    "PUBLISH_PROCEVENTS": "2",
+    "PUBLISH_PROCEVENTS_FILTERS": "$[?(got_errors=true)]",
+}
+
 triggers = (
 #    {{
 #        "name": "test-trigger",
@@ -73,10 +78,10 @@ filters = Const.FILTERS
 processing = Const.PROCESSING
 
 
-# proc_events_rx_factory().subscribe(
+# proc_events_rx_factory.subscribe(
 #   on_next=publish_proc_events_all,
 # )
-proc_events_rx_factory().subscribe(
+proc_events_rx_factory.subscribe(
  on_next=publish_proc_events_errors,
 )
 
