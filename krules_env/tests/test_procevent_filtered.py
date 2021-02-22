@@ -27,7 +27,7 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
+    proc_events_rx_factory.queue.clear()
 
     return event_router_factory()
 
@@ -35,16 +35,17 @@ def router():
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
 rulename = RuleConst.RULENAME
-processed = RuleConst.PROCESSED
+processed = RuleConst.PASSED
 subscribed_rules = []
 
 
 def test_filtered(router, subject):
     os.environ["PUBLISH_PROCEVENTS"] = "0"
-    os.environ["PUBLISH_PROCEVENTS_FILTERS"] = "$[?(processed=true)]"
+    os.environ["PUBLISH_PROCEVENTS_FILTERS"] = "$[?(passed=true)]"
 
-    proc_events_rx_factory().subscribe(
-        on_next=lambda x: publish_proc_events_filtered(x, "$[?(processed=true)]", lambda match: match is not None, debug=True))
+    proc_events_rx_factory.subscribe(
+        on_next=lambda x: publish_proc_events_filtered(x, "$[?(passed=true)]", lambda match: match is not None,
+                                                       debug=True))
 
     from pprint import pprint
 

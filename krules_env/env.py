@@ -93,9 +93,7 @@ def init():
         providers.Singleton(lambda: krules_settings)
     )
 
-    proc_events_rx_factory.override(
-        providers.Singleton(subject.ReplaySubject)
-    )
+    proc_events_rx_factory.queue.clear()
 
     event_router_factory.override(
         providers.Singleton(lambda: EventRouter())
@@ -139,11 +137,11 @@ def init():
 
     proc_events_filters = os.environ.get("PUBLISH_PROCEVENTS_FILTERS")
     if proc_events_filters:
-        proc_events_rx_factory().subscribe(
+        proc_events_rx_factory.subscribe(
             on_next=lambda x: publish_proc_events_filtered(x, proc_events_filters.split(";"),
                                                            lambda match: match is not None)
         )
     else:
-        proc_events_rx_factory().subscribe(
+        proc_events_rx_factory.subscribe(
             on_next=lambda x: publish_proc_events_all(x)
         )
