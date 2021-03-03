@@ -83,15 +83,6 @@ class KRulesApp(Flask):
             self.logger.warning("No app env defined!")
 
         subject_factory.override(providers.Factory(lambda *args, **kw: g_wrap(subject_factory.cls, *args, **kw)))
-
-        try:
-            m_rules = importlib.import_module("ruleset")
-            load_rules_from_rulesdata(m_rules.rulesdata)
-        except ModuleNotFoundError:
-            self.logger.warning("No rules defined!")
-        except Exception as ex:
-            self.logger.error(str(ex))
-
         self.router = event_router_factory()
 
     def _wrap_function(self, view_func):

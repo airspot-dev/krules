@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='krules-flask-env',
-    version="0.8.3",
+    version="0.8.3.1",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules environment base package",
