@@ -23,6 +23,6 @@ def load_rules_from_rulesdata(rulesdata):
         elif type(el) == type({}) and RuleConst.RULENAME in el:
             el[RuleConst.DESCRIPTION] = description
             if el.get(RuleConst.SUBSCRIBE_TO, None) is None:
-                el[RuleConst.SUBSCRIBE_TO] = os.environ["TOPIC"]  # TODO: should not rely on this variable. The name of the subscription message should be inferred differently
+                el[RuleConst.SUBSCRIBE_TO] = "*"
             RuleFactory.create(**el)
             description = ""

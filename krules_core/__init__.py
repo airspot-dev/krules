@@ -36,6 +36,7 @@ class RuleConst(object):
     RETURNS = "returns"
     PASSED = "passed"
     EVENT_INFO = "event_info"
+    SOURCE = "source"
 
     GOT_ERRORS = "got_errors"
     EXCEPTION = "exception"

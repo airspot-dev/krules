@@ -60,6 +60,11 @@ class EventRouter(object):
 
         _callables = self._callables.get(event_type, None)
 
+        if _callables is None:
+            _callables = self._callables.get("*", None)
+        else:
+            _callables.extend(self._callables.get("*", []))
+
         #        try:
         if not dispatch_policy == DispatchPolicyConst.DIRECT:
             if _callables is not None:

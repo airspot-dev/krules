@@ -136,6 +136,7 @@ class Rule:
                 Const.PROCESSING: [],
                 Const.GOT_ERRORS: False,
                 Const.EVENT_INFO: event_info,
+                Const.SOURCE: os.environ.get("K_SERVICE", os.environ.get("SOURCE")),
             }
             if procevents_level == ProcEventsLevel.FULL:
                 last_payload = __copy(payload)
