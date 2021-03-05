@@ -22,7 +22,7 @@ setup(
     ],
     install_requires=[
         "pyyaml",
-        "krules-dispatcher-cloudevents==0.8.3.1",
+        "krules-dispatcher-cloudevents==0.8.5",
     ],
     setup_requires=[
         'pytest-runner',
