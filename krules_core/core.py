@@ -149,13 +149,6 @@ class Rule:
                 if inspect.isclass(_c):
                     _c = _c()
                 _cinst_name = _c.__class__.__name__
-                _cinst = type(_cinst_name, (_c.__class__,), {})()
-                _cinst.event_type = event_type
-                _cinst.subject = subject
-                _cinst.payload = payload
-                _cinst.rule_name = self.name
-                _cinst.router = event_router_factory()
-                _cinst.configs = configs_factory()
                 if procevents_level != ProcEventsLevel.DISABLED:
                     res_in = {
                         Const.PROCESS_ID: process_id,
@@ -169,6 +162,13 @@ class Rule:
                         Const.KWARGS: __copy(_c._kwargs),
                     }
                     logger.debug("> processing: {0}".format(res_in))
+                _cinst = type(_cinst_name, (_c.__class__,), {})()
+                _cinst.event_type = event_type
+                _cinst.subject = subject
+                _cinst.payload = payload
+                _cinst.rule_name = self.name
+                _cinst.router = event_router_factory()
+                _cinst.configs = configs_factory()
                 try:
                     processed_args = _c._get_args(_cinst)
                     processed_kwargs = _c._get_kwargs(_cinst)
@@ -208,13 +208,6 @@ class Rule:
                 if inspect.isclass(_c):
                     _c = _c()
                 _cinst_name = _c.__class__.__name__
-                _cinst = type(_cinst_name, (_c.__class__,), {})()
-                _cinst.event_type = event_type
-                _cinst.subject = subject
-                _cinst.payload = payload
-                _cinst.rule_name = self.name
-                _cinst.router = event_router_factory()
-                _cinst.configs = configs_factory()
                 if procevents_level != ProcEventsLevel.DISABLED:
                     res_in = {
                         Const.PROCESS_ID: process_id,
@@ -228,6 +221,13 @@ class Rule:
                         Const.KWARGS: __copy(_c._kwargs),
                     }
                     logger.debug("> processing: {0}".format(res_in))
+                _cinst = type(_cinst_name, (_c.__class__,), {})()
+                _cinst.event_type = event_type
+                _cinst.subject = subject
+                _cinst.payload = payload
+                _cinst.rule_name = self.name
+                _cinst.router = event_router_factory()
+                _cinst.configs = configs_factory()
                 try:
                     processed_args = _c._get_args(_cinst)
                     processed_kwargs = _c._get_kwargs(_cinst)
