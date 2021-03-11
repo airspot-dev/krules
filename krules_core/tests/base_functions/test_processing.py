@@ -30,7 +30,7 @@ from krules_core.providers import (
 counter = 0
 asserted = []
 
-os.environ.setdefault("PUBLISH_PROCEVENTS", str(ProcEventsLevel.FULL))
+os.environ.setdefault("PUBLISH_PROCEVENTS_LEVEL", str(ProcEventsLevel.FULL))
 
 @pytest.fixture
 def subject():
