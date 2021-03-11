@@ -20,17 +20,17 @@ sys.path.insert(0, os.path.abspath('../../krules-libs/krules-subjects-k8s-storag
 # -- Project information -----------------------------------------------------
 
 project = 'KRules documentation'
-copyright = '2021, Airspot s.r.l.'
+copyright = '2021, Airspot s.r.l. Sede Legale:Via Ormea 33 10125 Torino, TO Italy C.F. e P. IVA: 12141910013'
 author = 'Airspot s.r.l.'
 logo = 'krules_ext_logo.png'
 html_theme_options = {
     # 'logo': 'krules_ext_logo.png',
     'github_user': 'airspot-dev',
-    'github_repo': 'krules',
+    'github_repo': 'krules-doc',
 }
 
 # The full version, including alpha/beta/rc tags
-release = '0.8.3'
+release = '0.8.5'
 
 
 # -- General configuration ---------------------------------------------------
