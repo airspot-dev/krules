@@ -13,7 +13,7 @@ import logging
 import io
 import pykube
 import subprocess
-from io import BytesIO
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 logger = logging.getLogger()
 logger_handler = logging.StreamHandler(sys.stdout)
@@ -21,11 +21,18 @@ logger_formatter = logging.Formatter('[%(name)s %(levelname)s]> %(message)s')
 logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
 
+
 # import script module
 spec = importlib.util.spec_from_file_location("script_module", os.path.join(sys.path[0], "__init__.py"))
 script_module = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = script_module
 spec.loader.exec_module(script_module)
+
+# Jinja env
+env = Environment(
+    loader=PackageLoader('script_module', 'templates'),
+)
+
 
 parser = argparse.ArgumentParser(description="Manage rulesets")
 
@@ -75,8 +82,10 @@ def _resolve_broker(api, ksvc_sink, namespace):
 
 
 def cmd_deploy(spec_module, path, namespace, registry):
+
     global logger
     global script_module
+    global env
 
     logger.debug("cmd_deploy for ruleset {} in {}".format(spec_module.name, path))
 
@@ -120,11 +129,15 @@ def cmd_deploy(spec_module, path, namespace, registry):
 
     logger.debug("build image locally")
     tag = "{}/{}".format(registry, spec_module.name)
-    dockerfile = script_module.dockerfile_skel.format(
+
+    tpl = env.get_template("Dockerfile.j2")
+    dockerfile = tpl.render(
         image_base=image_base,
         add_section=add_section.getvalue(),
         extra_commands=extra_commands.getvalue()
     )
+    # dockerfile = script_module.dockerfile_skel.format(
+    # )
     logger.debug(f"Dockerfile:\n{dockerfile}")
     ret = subprocess.run(("docker", "build", path, f"-t{tag}", "-f-"),
                          input=bytes(dockerfile, encoding='utf-8'))
@@ -298,24 +311,27 @@ def main():
             logger.warning("__deploy__.py already exists.. skipped")
         else:
             p_deploy.write_text(
-                script_module.deploy_py.format(name=name)
+                env.get_template("__deploy__.py.j2").render(
+                    name=name
+                )
             )
         p_ruleset = Path(os.path.join(ruleset_dir, "ruleset.py"))
         # create empty ruleset function module
         Path(os.path.join(ruleset_dir, "ruleset_functions")).mkdir(exist_ok=True)
         p_init_module = Path(os.path.join(ruleset_dir, "ruleset_functions", "__init__.py"))
+
         if p_init_module.exists():
             logger.warning("ruleset_functions/__init__.py already exists.. skipped")
         else:
             p_init_module.write_text(
-                script_module.ruleset_functions__init__py
+                env.get_template("ruleset_functions/__init__.py.j2").render()
             )
 
         if p_ruleset.exists():
             logger.warning("ruleset.py already exists.. skipped")
         else:
             p_ruleset.write_text(
-                script_module.ruleset_py
+                env.get_template("ruleset.py.j2").render()
             )
 
         p_readme = Path(os.path.join(ruleset_dir, "README.md"))
@@ -323,7 +339,7 @@ def main():
             logger.warning("README.md already exists.. skipped")
         else:
             p_readme.write_text(
-                script_module.README.format(name=name)
+                env.get_template("README.md.j2").render(name=name)
             )
 
     elif action == "deploy":

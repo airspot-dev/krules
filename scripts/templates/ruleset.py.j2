@@ -1,0 +1,31 @@
+from krules_core.base_functions import *
+from krules_core import RuleConst as Const
+
+try:
+    from ruleset_functions import *
+except ImportError:
+    # for local development
+    from .ruleset_functions import *
+
+
+rulename = Const.RULENAME
+subscribe_to = Const.SUBSCRIBE_TO
+ruledata = Const.RULEDATA
+filters = Const.FILTERS
+processing = Const.PROCESSING
+
+
+rulesdata = [
+    """
+    Rule description here..
+    """,
+    {
+        rulename: "rule-name",
+        subscribe_to: ["event-type"],
+        ruledata: {
+            filters: [],
+            processing: []
+        }
+    },
+    # more rules here..
+]

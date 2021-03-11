@@ -1,0 +1,55 @@
+name = "{{ name }}"
+
+add_files = (
+    "ruleset.py",
+)
+
+add_modules = True  # find modules in directory (folders having __init__.py file) and add them to container
+
+extra_commands = (
+#    ("RUN", "pip install some-useful-lib==1.0"),
+)
+
+labels = {
+    "serving.knative.dev/visibility": "cluster-local",
+    "krules.airspot.dev/type": "ruleset",
+    "krules.airspot.dev/ruleset": "{{ name }}"
+}
+
+template_annotations = {
+    #"autoscaling.knative.dev/minScale": "1",
+}
+
+#service_account = "my-service-account"
+
+environ = {
+    # what metrics are generated (before they are published)
+    # 0 - nothing (best optimization), 1 - skip payload diffs, 2 - everything (for dev)
+    "PUBLISH_PROCEVENTS_LEVEL": "2",
+    # what metrics are acutally published
+    "PUBLISH_PROCEVENTS_MATCHES": "*",
+    # you can define more than one expression speratated by ';'
+    # if you want to catch errors..
+    # "PUBLISH_PROCEVENTS_MATCHES": "got_errors=true",
+    # if you want all errors and one specific rule..
+    # "PUBLISH_PROCEVENTS_MATCHES": "got_errors=true; rule_name='my-rule-name",
+}
+
+triggers = (
+#    {
+#        "name": "{{ name }}-my-type",
+#        # broker: "my-broker",
+#        "filter": {
+#            "attributes": {
+#                "type": "my-type"
+#                # ...
+#            }
+#        }
+#    },
+#    ...
+)
+triggers_default_broker = "default"
+
+ksvc_sink = "broker:default"
+ksvc_procevents_sink = "broker:procevents"
+
