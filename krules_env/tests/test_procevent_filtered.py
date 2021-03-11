@@ -41,13 +41,11 @@ subscribed_rules = []
 
 def test_filtered(router, subject):
     os.environ["PUBLISH_PROCEVENTS_LEVEL"] = str(ProcEventsLevel.FULL)
-    os.environ["PUBLISH_PROCEVENTS_MATCHING"] = "$[?(passed=true)]"
+    os.environ["PUBLISH_PROCEVENTS_MATCHING"] = "passed=true"
 
     proc_events_rx_factory.subscribe(
-        on_next=lambda x: publish_proc_events_filtered(x, "$[?(passed=true)]", lambda match: match is not None,
+        on_next=lambda x: publish_proc_events_filtered(x, "passed=true", lambda match: match is not None,
                                                        debug=True))
-
-    from pprint import pprint
 
     RuleFactory.create('check-even-value',
                        subscribe_to="event-test-procevents",
