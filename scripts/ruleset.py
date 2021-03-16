@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import hashlib
-import json
 import os
 import pprint
 import sys
@@ -13,14 +12,13 @@ import logging
 import io
 import pykube
 import subprocess
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, PackageLoader
 
 logger = logging.getLogger()
 logger_handler = logging.StreamHandler(sys.stdout)
 logger_formatter = logging.Formatter('[%(name)s %(levelname)s]> %(message)s')
 logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
-
 
 # import script module
 spec = importlib.util.spec_from_file_location("script_module", os.path.join(sys.path[0], "__init__.py"))
@@ -33,13 +31,9 @@ env = Environment(
     loader=PackageLoader('script_module', 'templates'),
 )
 
-
-parser = argparse.ArgumentParser(description="Manage rulesets")
-
-parser.add_argument("-l", type=int, dest="level", default=logging.INFO, help="logging level")
-subparsers = parser.add_subparsers(dest="action", title="actions")
-
-create_parser = subparsers.add_parser("create", help="create ruleset skeleton directory")
+ext_modules = [
+    importlib.import_module(f".base", "ext_modules")
+]
 
 
 def _ruleset_name_type(arg_value, p=re.compile(r"^[0-9a-z\-]+$")):
@@ -48,10 +42,63 @@ def _ruleset_name_type(arg_value, p=re.compile(r"^[0-9a-z\-]+$")):
     return arg_value
 
 
+def _ext_moudules_type(arg_value):
+    req_modules = arg_value.split(",")
+    for req_module in req_modules:
+        try:
+            m = importlib.import_module(f".{req_module}", "ext_modules")
+            ext_modules.append(m)
+        except ImportError:
+            try:
+                m = importlib.import_module(req_module)
+                ext_modules.append(m)
+            except ImportError:
+                logger.error(f"Cannot import ext module '{req_module}'")
+
+
+def _ext_modules_util_add_lines(name, where, extra_vars, map_fn=lambda x: x):
+    all_lines = []
+    for m in ext_modules:
+        logger_name = m.__name__
+        new_lines = getattr(m, name, [])
+
+        if len(new_lines) == 0:
+            continue
+
+        fn_logger = logging.getLogger(logger_name)
+
+        n_added = 0
+        for line in new_lines:
+            if line not in all_lines:
+                n_added += 1
+                if isinstance(line, str):
+                    line = line.format(**extra_vars)
+                elif isinstance(line, (type(()), type([]))):
+                    line = list(line)
+                    for i in range(len(line)):
+                        line[i] = line[i].format(**extra_vars)
+                    line = tuple(line)
+                all_lines.append(line)
+
+        fn_logger.debug(f"added {n_added} line(s) to {where}")
+
+    return [*map(map_fn, all_lines)]
+
+
+parser = argparse.ArgumentParser(description="Manage rulesets")
+
+parser.add_argument("-l", type=int, dest="level", default=logging.INFO, help="logging level")
+subparsers = parser.add_subparsers(dest="action", title="actions")
+
+create_parser = subparsers.add_parser("create", help="create ruleset skeleton directory")
+
 create_parser.add_argument("name", type=_ruleset_name_type, help="the path where the ruleset is to be created")
 create_parser.add_argument("-p", type=str, default=os.getcwd(), dest="path", help="base dir (default cur dir)")
+create_parser.add_argument("-e", metavar="module1,module2,...", type=_ext_moudules_type, dest="modules",
+                           help="extension modules")
+create_parser.add_argument("--set", metavar="KEY=VALUE,...", dest="extra_vars", help="extra vars")
 
-deploy_parser = subparsers.add_parser("deploy", help="buid and deploy ruleset")
+deploy_parser = subparsers.add_parser("deploy", help="build and deploy ruleset")
 deploy_parser.add_argument("-p", type=str, default=os.getcwd(), dest="path", help="ruleset dir")
 deploy_parser.add_argument("-n", type=str, default=os.environ.get("NAMESPACE", None), dest="namespace",
                            help="namespace to deploy to (dafault from env var NAMESPACE if present)")
@@ -59,11 +106,13 @@ deploy_parser.add_argument("--docker-registry", type=str, default=os.environ.get
                            dest="registry",
                            help="docker registry (dafault from env var DOCKER_REGISTRY)")
 
+
 def _hashed(name, *args, length=10):
     hash = ""
     for arg in args:
         hash += pprint.pformat(arg)
     return "{}-{}".format(name, hashlib.md5(hash.encode("utf8")).hexdigest()[:length])
+
 
 def _resolve_broker(api, ksvc_sink, namespace):
     global logger
@@ -82,9 +131,7 @@ def _resolve_broker(api, ksvc_sink, namespace):
 
 
 def cmd_deploy(spec_module, path, namespace, registry):
-
     global logger
-    global script_module
     global env
 
     logger.debug("cmd_deploy for ruleset {} in {}".format(spec_module.name, path))
@@ -136,8 +183,7 @@ def cmd_deploy(spec_module, path, namespace, registry):
         add_section=add_section.getvalue(),
         extra_commands=extra_commands.getvalue()
     )
-    # dockerfile = script_module.dockerfile_skel.format(
-    # )
+
     logger.debug(f"Dockerfile:\n{dockerfile}")
     ret = subprocess.run(("docker", "build", path, f"-t{tag}", "-f-"),
                          input=bytes(dockerfile, encoding='utf-8'))
@@ -145,7 +191,7 @@ def cmd_deploy(spec_module, path, namespace, registry):
         logger.critical("docker build failed")
         sys.exit(ret.returncode)
     logger.debug(f"push {tag} image to registry")
-    ret = subprocess.run(("docker", "push",  f"{tag}"))
+    ret = subprocess.run(("docker", "push", f"{tag}"))
     if ret.returncode > 0:
         logger.critical("docker push failed")
         sys.exit(ret.returncode)
@@ -161,7 +207,8 @@ def cmd_deploy(spec_module, path, namespace, registry):
                                              "krules.airspot.dev/type": "ruleset"})
     template_annotations = getattr(spec_module, "template_annotations", {})
     ksvc_sink = _resolve_broker(api, getattr(spec_module, "ksvc_sink", "broker:default"), namespace)
-    ksvc_procevents_sink = _resolve_broker(api, getattr(spec_module, "ksvc_procevents_sink", "broker:procevents"), namespace)
+    ksvc_procevents_sink = _resolve_broker(api, getattr(spec_module, "ksvc_procevents_sink", "broker:procevents"),
+                                           namespace)
 
     service_account = getattr(spec_module, "service_account", "")
     extra_environ = getattr(spec_module, "environ", {})
@@ -183,8 +230,9 @@ def cmd_deploy(spec_module, path, namespace, registry):
 
     logger.debug(f"service account: {service_account}")
 
-    revision_name = _hashed(spec_module.name, #labels,
-                            template_annotations, ksvc_sink, ksvc_procevents_sink, service_account, digest, service_account)
+    revision_name = _hashed(spec_module.name,  # labels,
+                            template_annotations, ksvc_sink, ksvc_procevents_sink, service_account, digest,
+                            service_account)
     logger.info(f"Revision name: {revision_name}")
 
     obj_ref = pykube.object_factory(
@@ -205,7 +253,7 @@ def cmd_deploy(spec_module, path, namespace, registry):
                     "metadata": {
                         "name": revision_name,
                         "annotations": template_annotations,
-                        #"labels": labels
+                        # "labels": labels
                     },
                     "spec": {
                         "containers": [
@@ -249,14 +297,14 @@ def cmd_deploy(spec_module, path, namespace, registry):
         logger.info(f"Ruleset '{spec_module.name}' updated")
 
     # Create/Update triggers
-    triggers = getattr(spec_module, "triggers", ())
+    triggers: object = getattr(spec_module, "triggers", ())
     for trigger in triggers:
         try:
             obj_ref = pykube.object_factory(
                 api, "eventing.knative.dev/v1", "Trigger"
             ).objects(api).get_or_none(name=trigger.get("name"))
             if obj_ref is None:
-                name=trigger.pop('name')
+                name = trigger.pop('name')
                 logging.debug(f"creating trigger {name}")
                 trigger.update({
                     "subscriber": {
@@ -295,6 +343,96 @@ def cmd_deploy(spec_module, path, namespace, registry):
             logger.error(f"Error processing trigger:\n{trigger}")
             logger.exception(ex)
 
+
+def cmd_create(name, ruleset_dir, extra_vars):
+    global logger
+    global env
+    global ext_modules
+
+    p_root = Path(ruleset_dir)
+    p_root.mkdir(exist_ok=True)
+    for m in ext_modules:
+        getattr(m, "init_dir", lambda x: None)(p_root)
+
+    p_deploy = Path(os.path.join(ruleset_dir, "__deploy__.py"))
+    if p_deploy.exists():
+        logger.warning("__deploy__.py already exists.. skipped")
+    else:
+        p_deploy.write_text(
+            env.get_template("__deploy__.py.j2").render(
+                name=name,
+                add_files="\n    ".join(
+                    _ext_modules_util_add_lines("deploy__add_files", "__deploy__.add_files",
+                                                extra_vars,
+                                                lambda x: f"{repr(x)},")
+                ),
+                extra_commands="\n    ".join(
+                    _ext_modules_util_add_lines("deploy__extra_commands", "__deploy__.extra_commands",
+                                                extra_vars,
+                                                lambda x: f"{repr(x)},")
+                ),
+                labels="\n    ".join(
+                    _ext_modules_util_add_lines("deploy__labels", "__deploy__.labels",
+                                                extra_vars,
+                                                lambda x: f"{repr(x[0])}: {repr(x[1])},")
+                ),
+                template_annotations="\n    ".join(
+                    _ext_modules_util_add_lines("deploy__template_annotations", "__deploy__.template_annotations",
+                                                extra_vars,
+                                                lambda x: f"{repr(x[0])}: {repr(x[1])},")
+                ),
+                environ="\n    ".join(
+                    _ext_modules_util_add_lines("deploy__environ", "__deploy__.environ",
+                                                extra_vars,
+                                                lambda x: f"{repr(x[0])}: {repr(x[1])},")
+                )
+            )
+        )
+
+    p_ruleset = Path(os.path.join(ruleset_dir, "ruleset.py"))
+    if p_ruleset.exists():
+        logger.warning("ruleset.py already exists.. skipped")
+    else:
+        p_ruleset.write_text(
+            env.get_template("ruleset.py.j2").render(
+                init_code="\n".join(
+                    _ext_modules_util_add_lines("ruleset__init_code", "ruleset.py", extra_vars)
+                ),
+            )
+        )
+    # create empty ruleset function module
+    Path(os.path.join(ruleset_dir, "ruleset_functions")).mkdir(exist_ok=True)
+    p_init_module = Path(os.path.join(ruleset_dir, "ruleset_functions", "__init__.py"))
+    if p_init_module.exists():
+        logger.warning("ruleset_functions/__init__.py already exists.. skipped")
+    else:
+        p_init_module.write_text(
+            env.get_template("ruleset_functions/__init__.py.j2").render()
+        )
+
+    p_ipython_config = Path(os.path.join(ruleset_dir, "ipython_config.py"))
+    if p_ipython_config.exists():
+        logger.warning("ipython_config.py already exists.. skipped")
+    else:
+        p_ipython_config.write_text(
+            env.get_template("ipython_config.py.j2").render(
+                exec_lines="\n    ".join(
+                    _ext_modules_util_add_lines("ishell__exec_lines", "ipython_config.exec_lines",
+                                                extra_vars,
+                                                lambda x: f"{repr(x)},")
+                )
+            )
+        )
+
+    p_readme = Path(os.path.join(ruleset_dir, "README.md"))
+    if p_readme.exists():
+        logger.warning("README.md already exists.. skipped")
+    else:
+        p_readme.write_text(
+            env.get_template("README.md.j2").render(name=name)
+        )
+
+
 def main():
     global logger
 
@@ -305,42 +443,19 @@ def main():
     if action == "create":
         name = args.get("name")
         ruleset_dir = Path(os.path.join(args.get("path"), name)).resolve()
-        Path(ruleset_dir).mkdir(exist_ok=True)
-        p_deploy = Path(os.path.join(ruleset_dir, "__deploy__.py"))
-        if p_deploy.exists():
-            logger.warning("__deploy__.py already exists.. skipped")
-        else:
-            p_deploy.write_text(
-                env.get_template("__deploy__.py.j2").render(
-                    name=name
-                )
-            )
-        p_ruleset = Path(os.path.join(ruleset_dir, "ruleset.py"))
-        # create empty ruleset function module
-        Path(os.path.join(ruleset_dir, "ruleset_functions")).mkdir(exist_ok=True)
-        p_init_module = Path(os.path.join(ruleset_dir, "ruleset_functions", "__init__.py"))
+        extra_vars = {
+            "name": name
+        }
+        if args.get("extra_vars") is not None:
+            pairs = args.get("extra_vars").split(",")
+            for pair in pairs:
+                try:
+                    k, v = pair.split("=")
+                    extra_vars[k] = v
+                except ValueError:
+                    extra_vars[pair] = True
 
-        if p_init_module.exists():
-            logger.warning("ruleset_functions/__init__.py already exists.. skipped")
-        else:
-            p_init_module.write_text(
-                env.get_template("ruleset_functions/__init__.py.j2").render()
-            )
-
-        if p_ruleset.exists():
-            logger.warning("ruleset.py already exists.. skipped")
-        else:
-            p_ruleset.write_text(
-                env.get_template("ruleset.py.j2").render()
-            )
-
-        p_readme = Path(os.path.join(ruleset_dir, "README.md"))
-        if p_readme.exists():
-            logger.warning("README.md already exists.. skipped")
-        else:
-            p_readme.write_text(
-                env.get_template("README.md.j2").render(name=name)
-            )
+        cmd_create(name, ruleset_dir, extra_vars)
 
     elif action == "deploy":
         path = Path(args.get("path")).resolve()

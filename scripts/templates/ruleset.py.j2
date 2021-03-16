@@ -1,6 +1,8 @@
 from krules_core.base_functions import *
 from krules_core import RuleConst as Const
 
+{{ init_code }}
+
 try:
     from ruleset_functions import *
 except ImportError:
@@ -13,6 +15,7 @@ subscribe_to = Const.SUBSCRIBE_TO
 ruledata = Const.RULEDATA
 filters = Const.FILTERS
 processing = Const.PROCESSING
+
 
 
 rulesdata = [
