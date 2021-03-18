@@ -14,11 +14,7 @@ spec:
       serviceAccountName: krules-controller
       containers:
       - name: ruleset
-        image: localhost:5000/apiserversource-subscriber@sha256:1818bfb26132f09685aa7141ebf4eaaeddf700703c64ad016feda0a592d0a083
-        # for development only
-#        env:
-#          - name: K_PROCEVENTS_SINK
-#            value: http://broker-ingress.knative-eventing.svc.cluster.local/krules-system/procevents
+        image: gcr.io/airspot/apiserversource-subscriber:0.8.2
 ---
 apiVersion: sources.knative.dev/v1beta1
 kind: SinkBinding

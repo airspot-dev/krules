@@ -37,10 +37,10 @@ from functions import (
 )
 
 from krules_core.providers import proc_events_rx_factory
-import pprint
-proc_events_rx_factory().subscribe(
-    on_next=pprint.pprint
-)
+# import pprint
+# proc_events_rx_factory().subscribe(
+#     on_next=pprint.pprint
+# )
 # proc_events_rx_factory().subscribe(
 #     on_next=publish_proc_events_all,
 # )
@@ -71,12 +71,13 @@ create_configuration_rulesdata = [
                         self.subject.get_ext("name"),
                         self.payload["object"]["spec"].get("data", {}),
                         self.payload["object"]["spec"].get("container", {}),
+                        self.payload["object"]["spec"].get("volumes", {}),
                     )
                 ), use_cache=False),
                 SetSubjectProperty("cm_name", lambda self: (
                     _hashed(
                         self.subject.get_ext("name"),
-                        self.payload["object"]["spec"]["data"],
+                        self.payload["object"]["spec"].get("data", {}),
                     )
                 ), use_cache=False),
                 K8sObjectUpdate(lambda payload: {
@@ -178,14 +179,6 @@ apply_confugaration_rulesdata = [
                     configuration=lambda payload: payload["object"],
                     prepare_status_out="_preparedStatus"
                 ),
-                # K8sObjectUpdate(
-                #     lambda payload: {
-                #         "status": {
-                #             "services": payload["_preparedStatus"],
-                #         }
-                #     },
-                #     subresource="status"
-                # )
             ]
         }
     },
@@ -261,16 +254,7 @@ apply_confugaration_rulesdata = [
                 PatchService(
                     prepare_status_out="_preparedStatus"
                 ),
-                # K8sObjectUpdate(
-                #     lambda payload: {
-                #         "status": {
-                #             "services": payload["_preparedStatus"],
-                #         }
-                #     },
-                #     subresource="status"
-                # )
-            ]
-            ,
+            ],
         }
     },
 ]

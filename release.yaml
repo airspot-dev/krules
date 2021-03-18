@@ -35,6 +35,19 @@ spec:
           metadata:
             type: object
           spec:
+            anyOf:
+            - required:
+              - key
+              - appliesTo
+              - data
+            - required:
+              - key
+              - appliesTo
+              - container
+            - required:
+              - key
+              - appliesTo
+              - extraVolumes
             properties:
               appliesTo:
                 type: object
@@ -45,12 +58,33 @@ spec:
               data:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
+              extraVolumes:
+                items:
+                  oneOf:
+                  - required:
+                    - name
+                    - secret
+                  - required:
+                    - name
+                    - configMap
+                  properties:
+                    configMap:
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                    name:
+                      type: string
+                    secret:
+                      properties:
+                        secretName:
+                          type: string
+                      type: object
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                type: array
               key:
                 type: string
-            required:
-            - key
-            - appliesTo
-            - data
             type: object
           status:
             properties:
@@ -205,7 +239,7 @@ spec:
         autoscaling.knative.dev/minScale: "0"
     spec:
       containers:
-      - image: gcr.io/airspot/apiserversource-subscriber:0.8.1
+      - image: gcr.io/airspot/apiserversource-subscriber:0.8.2
         name: ruleset
       serviceAccountName: krules-controller
 ---
@@ -243,7 +277,7 @@ spec:
         autoscaling.knative.dev/minScale: "0"
     spec:
       containers:
-      - image: gcr.io/airspot/krules-ns-injector:0.8.1
+      - image: gcr.io/airspot/krules-ns-injector:0.8.2
         name: ruleset
       serviceAccountName: krules-controller
 ---

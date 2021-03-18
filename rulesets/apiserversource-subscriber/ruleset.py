@@ -18,9 +18,10 @@ import pprint
 # proc_events_rx_factory().subscribe(
 #     on_next=publish_proc_events_all,
 # )
-#proc_events_rx_factory().subscribe(
-#    on_next=pprint.pprint
-#)
+# import pprint
+# proc_events_rx_factory().subscribe(
+#     on_next=pprint.pprint
+# )
 
 proc_events_rx_factory().subscribe(
     on_next=pprint.pprint
@@ -32,9 +33,12 @@ class _RouteToLabeledK8sSubject(Route):
     def execute(self, **kwargs):
 
         event_type = "k8s.resource.{}".format(self.event_type.split(".")[-1])
-        subject = k8s_subject(self.payload, resource_path="/api/v1/namespaces/{}".format(
-                                self.payload.get("metadata").get("name"))
-                              )
+        # the apiserversource uses the api resource path as the subject
+        # with an issue for namespace resources
+        subject = k8s_subject(self.payload,
+                              resource_path=self.payload.get("kind") == "Namespace" and "/api/v1/namespaces/{}".format(
+                                    self.payload.get("metadata").get("name")
+                              ) or str(self.subject))
         if event_type != "k8s.resource.delete":
             # injected resources
             if self.payload.get("metadata", {}).get("labels", {}).get("krules.airspot.dev/injected") == "injected":

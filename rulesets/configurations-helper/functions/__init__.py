@@ -23,7 +23,7 @@ class CreateConfigMap(K8sObjectCreate):
 
         if provider is None:
             provider = self.payload["object"]
-        data = provider["spec"]["data"]
+        data = provider["spec"].get("data", {})
         provider_name = provider["metadata"]["name"]
         namespace = provider["metadata"]["namespace"]
         cm_name = k8s_subject(provider).get("cm_name")
@@ -65,7 +65,7 @@ def _update_configuration(instance, configuration, obj,
 
     cm_name = _hashed(
         configuration["metadata"]["name"],
-        configuration["spec"]["data"],
+        configuration["spec"].get("data", {}),
     )
     mount_path = "/krules/config/" + "/".join(configuration.get("spec").get("key").split("."))
     _obj = copy.deepcopy(obj.obj)
@@ -160,6 +160,9 @@ def _update_configuration(instance, configuration, obj,
             break
     if not found:
         volumes.append(cm_volume)
+
+    extra_volumes = configuration["spec"].get("extraVolumes", [])
+    volumes.extend(extra_volumes)
 
     applied_patches_dest.append(patch)
 
