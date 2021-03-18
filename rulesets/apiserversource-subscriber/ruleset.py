@@ -13,7 +13,7 @@ filters = Const.FILTERS
 processing = Const.PROCESSING
 
 
-
+import pprint
 
 # proc_events_rx_factory().subscribe(
 #     on_next=publish_proc_events_all,
@@ -22,6 +22,10 @@ processing = Const.PROCESSING
 # proc_events_rx_factory().subscribe(
 #     on_next=pprint.pprint
 # )
+
+proc_events_rx_factory().subscribe(
+    on_next=pprint.pprint
+)
 
 
 class _RouteToLabeledK8sSubject(Route):

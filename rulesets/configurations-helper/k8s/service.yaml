@@ -14,7 +14,7 @@ spec:
       serviceAccountName: krules-controller
       containers:
       - name: ruleset
-        image: gcr.io/airspot/configurations-helper:0.8.1
+        image: localhost:5000/configurations-helper@sha256:cfe74dc10615c00b1b597eabc9922c9f046ba1f458ad32e54a586acfb1fc9770
         # for development only
 #        env:
 #          - name: K_SINK

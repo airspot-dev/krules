@@ -15,10 +15,6 @@ spec:
       containers:
       - name: ruleset
         image: gcr.io/airspot/apiserversource-subscriber:0.8.2
-        # for development only
-#        env:
-#          - name: K_PROCEVENTS_SINK
-#            value: http://broker-ingress.knative-eventing.svc.cluster.local/krules-system/procevents
 ---
 apiVersion: sources.knative.dev/v1beta1
 kind: SinkBinding
