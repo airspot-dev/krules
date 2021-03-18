@@ -22,9 +22,9 @@
 [submodule "Subjects storage/krules-subjects-storage-k8s"]
 	path = Subjects storage/krules-subjects-storage-k8s
 	url = https://github.com/airspot-dev/krules-subjects-storage-k8s
-[submodule "Miscellaneous/rulesset-image-base"]
-	path = Miscellaneous/rulesset-image-base
-	url = https://github.com/airspot-dev/rulesset-image-base
+[submodule "Miscellaneous/ruleset-image-base"]
+	path = Miscellaneous/ruleset-image-base
+	url = https://github.com/airspot-dev/ruleset-image-base
 [submodule "Miscellaneous/django-krules-scheduler"]
 	path = Miscellaneous/django-krules-scheduler
 	url = https://github.com/airspot-dev/django-krules-scheduler
