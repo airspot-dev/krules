@@ -11,6 +11,8 @@ Meanwhile.. if you're brave and you do not fear the unknown [get in touch with u
 
 # Repos
 
+Note that this repository has the sole purpose of providing an overall indication of the project which is instead composed of different repos described below:
+
 ## Starting material
 
 - [krules-project-template](https://github.com/airspot-dev/krules-project-template): A KRules empty project sekeleton. Include a a step by step guide with some basic concepts exaplanaition
@@ -39,10 +41,6 @@ It sends [clouevents](https://cloudevents.io/) via http to a configurable url
 - [ruleset-image-base](https://github.com/airspot-dev/ruleset-image-base): Repo to build the Rulesets Docker image base 
 
 - [krules-flask-env](https://github.com/airspot-dev/krules-flask-env): A module mainly intended for setup the KRules environments in a Flask context
-
-## Django support
-
-- [django-krules-extensions](https://github.com/airspot-dev/django-krules-extensions): A set of Django application that allow you to manage KRules environment in your Django site.
 
 ## Code examples
 
