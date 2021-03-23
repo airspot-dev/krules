@@ -81,8 +81,8 @@ def publish_proc_events_filtered(result, jp_expr, expt_value, debug=False):
 
 def _get_dispatch_url(subject, event_type):
     ksink = os.environ.get("K_SINK")
-    if event_type == RULE_PROC_EVENT and "K_PROCEVENTS_SINK" in os.environ:
-        return os.environ.get("K_PROCEVENTS_SINK")
+    if event_type == RULE_PROC_EVENT: 
+        ksink = os.environ.get("K_PROCEVENTS_SINK", ksink)
     if ksink is not None:
         return ksink
     return krules_settings["CLOUDEVENTS"]["send_to"]
