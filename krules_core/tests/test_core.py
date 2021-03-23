@@ -90,7 +90,7 @@ def test_internal_routing(subject, router):
         lambda x: x[RuleConst.RULENAME] == 'test-rule-filters-pass' and
                   _assert(
                       x[RuleConst.PASSED] and
-                      len(x[RuleConst.PROCESSING]) == 1 or print("##### LEN ", x[RuleConst.PROCESSING])
+                      len(x[RuleConst.PROCESSING]) > 0 or print("##### LEN ", x[RuleConst.PROCESSING])
                   )
     )
     proc_events_rx_factory.subscribe(
