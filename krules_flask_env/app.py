@@ -15,7 +15,7 @@ from krules_core.utils import load_rules_from_rulesdata
 
 def g_wrap(current, *args, **kwargs):
     event_info = kwargs.pop("event_info", None)
-    if not getattr(g, "subjects"):
+    if not getattr(g, "subjects", None):
         g.subjects = []
     if event_info is None and len(g.subjects) > 0:
         event_info = g.subjects[0].event_info()
