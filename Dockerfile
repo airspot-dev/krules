@@ -13,3 +13,4 @@ ADD ./app /app
 ENV PYTHONPATH /app
 ENV FLASK_APP /app/main.py
 ENV FLASK_ENV production
+WORKDIR /app
