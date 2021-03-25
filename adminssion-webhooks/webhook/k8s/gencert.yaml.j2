@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ name }}-gencert
+  namespace: {{ namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ name }}-gencert
+rules:
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ name }}-gencert
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ name }}-gencert
+subjects:
+  - kind: ServiceAccount
+    name: {{ name }}-gencert
+    namespace: {{ namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ name }}-gencert
+  namespace: {{ namespace }}
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    verbs:
+      - get
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ name }}-gencert
+  namespace: {{ namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ name }}-gencert
+subjects:
+  - kind: ServiceAccount
+    name: {{ name }}-gencert
+    namespace: {{ namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ name }}-gencert-create
+  namespace: {{ namespace }}
+spec:
+  template:
+    metadata:
+      name: {{ name }}-gencert-create
+    spec:
+      containers:
+        - name: create
+          image: docker.io/jettech/kube-webhook-certgen:v1.5.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - create
+            - --host={{ name }},{{ name }}.{{ namespace }}.svc
+            - --namespace={{ namespace }}
+            - --secret-name={{ name }}-tls
+      restartPolicy: OnFailure
+      serviceAccountName: {{ name }}-gencert
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 8850
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ name }}-gencert-patch
+  namespace: {{ namespace }}
+spec:
+  template:
+    metadata:
+      name: {{ name }}-gencert-patch
+    spec:
+      containers:
+        - name: patch
+          image: docker.io/jettech/kube-webhook-certgen:v1.5.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - patch
+            - --webhook-name={{ name }}
+            - --namespace={{ namespace }}
+            - --secret-name={{ name }}-tls
+            - --patch-failure-policy=Fail
+      restartPolicy: OnFailure
+      serviceAccountName: {{ name }}-gencert
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 8850

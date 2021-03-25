@@ -1,0 +1,63 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ name }}
+webhooks:
+  - name: {{ name }}.{{ namespace }}.svc
+    sideEffects: None
+    matchPolicy: Equivalent
+    failurePolicy: Fail
+    timeoutSeconds: 5
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    namespaceSelector:
+      matchLabels:
+        dev.krules.airspot.dev/injecton: enabled
+    clientConfig:
+      service:
+        name: {{ name }}
+        namespace: {{ namespace }}
+        path: "/mutate"
+      #caBundle: v.CA_PEM_B64
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups: [ "serving.knative.dev" ]
+        apiVersions: [ "v1" ]
+        resources: [ "services" ]
+        scope: Namespaced
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ name }}
+webhooks:
+  - name: {{ name }}.{{ namespace }}.svc
+    sideEffects: None
+    matchPolicy: Equivalent
+    failurePolicy: Fail
+    timeoutSeconds: 5
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    namespaceSelector:
+      matchExpressions:
+        - { key: dev.krules.airspot.dev/injection, operator: In, values: [enabled] }
+    clientConfig:
+      service:
+        name: {{ name }}
+        namespace: {{ namespace }}
+        path: "/validate"
+      #caBundle: v.CA_PEM_B64
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        apiGroups: ["serving.knative.dev"]
+        apiVersions: [ "*" ]
+        resources: ["services"]
+        scope: "Namespaced"
