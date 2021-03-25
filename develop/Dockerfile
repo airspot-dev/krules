@@ -4,6 +4,7 @@ ADD ./.krules-libs /krules-libs
 ADD ./requirements.txt /krules-libs
 
 RUN pip install -r /krules-libs/requirements.txt
+RUN apk del .build-deps
 RUN cd /krules-libs/krules-dispatcher-cloudevents && python3 setup.py develop
 RUN cd /krules-libs/krules-flask-env && python3 setup.py develop
 RUN cd /krules-libs/krules-env && python3 setup.py develop
