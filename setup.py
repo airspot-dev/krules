@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='krules-flask-env',
-    version="0.8.5.2",
+    version="0.8.5.3",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules environment base package",
@@ -21,7 +21,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
-        "krules-env==0.8.5.1",
+        "krules-env==0.8.5.2",
         "flask==1.1.2",
         "json-logging==1.2.11"
     ],
