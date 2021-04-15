@@ -132,8 +132,11 @@ def init():
     try:
         m_rules = importlib.import_module("ruleset")
         load_rules_from_rulesdata(m_rules.rulesdata)
-    except ModuleNotFoundError:
-        logger.warning("No rules defined!")
+    except ModuleNotFoundError as ex:
+        if ex.name == "ruleset":
+            logger.warning("No rules defined!")
+        else:
+            raise ex
 
     proc_events_filters = os.environ.get("PUBLISH_PROCEVENTS_MATCHING")
     if proc_events_filters:
