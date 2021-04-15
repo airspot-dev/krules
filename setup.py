@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='krules-env',
-    version="0.8.5.2",
+    version="0.8.5.3",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules environment base package",
@@ -22,7 +22,7 @@ setup(
     ],
     install_requires=[
         "pyyaml",
-        "krules-dispatcher-cloudevents==0.8.5.1",
+        "krules-dispatcher-cloudevents==0.8.5.2",
     ],
     setup_requires=[
         'pytest-runner',
