@@ -31,6 +31,15 @@ from cloudevents.sdk.event import v1
 import requests
 
 
+class _JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if inspect.isfunction(obj):
+            return obj.__name__
+        elif isinstance(obj, object):
+            return str(type(obj))
+        return json.JSONEncoder.default(self, obj)
+
+
 class CloudEventsDispatcher(BaseDispatcher):
 
     def __init__(self, dispatch_url, source, test=False):
@@ -66,7 +75,7 @@ class CloudEventsDispatcher(BaseDispatcher):
 
         m = marshaller.NewHTTPMarshaller([binary.NewBinaryHTTPCloudEventConverter()])
 
-        headers, body = m.ToRequest(event, converters.TypeBinary, json.dumps)
+        headers, body = m.ToRequest(event, converters.TypeBinary, lambda x: json.dumps(x, cls=_JSONEncoder))
         # headers['Ce-Originid'] = str(_event_info.get("Originid", _id))
 
         if callable(self._dispatch_url):
