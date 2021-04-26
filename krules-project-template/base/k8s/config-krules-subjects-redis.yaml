@@ -1,0 +1,15 @@
+apiVersion: krules.airspot.dev/v1alpha1
+kind: ConfigurationProvider
+metadata:
+  name: config-krules-subjects-redis
+spec:
+  key: subjects-backends.redis
+  appliesTo:
+    krules.airspot.dev/type: ruleset
+  data:
+    url: redis://:$REDIS_AUTH@$REDIS_HOST:6379/0
+    key_prefix: my-app  # used to avoid key name confilicts when multiple project share the same database
+  container:
+    envFrom:
+      - secretRef:
+          name: redis-credentials
