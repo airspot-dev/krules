@@ -5,7 +5,7 @@
   <link rel="icon" href="{{ pathto('_static/logo_krules.png', 1)|e }}">
   <link rel="stylesheet" href="{{ pathto('_static/fontawesome/css/all.min.css', 1) }}" type="text/css" />
   <link rel="stylesheet" href="{{ pathto('_static/custom.css', 1) }}" type="text/css" />
-  <link rel="stylesheet" href="{{ pathto('_static/v1.css', 1) }}" type="text/css" />
+  <link rel="stylesheet" href="{{ pathto('_static/v2.css', 1) }}" type="text/css" />
   {% if theme_touch_icon %}
     <link rel="apple-touch-icon" href="{{ pathto('_static/' ~ theme_touch_icon, 1) }}" />
   {% endif %}
@@ -81,7 +81,9 @@
           {% endif %}
     </div>
     <div class="header-wrapper" role="banner">
+        <h1>Documentation</h1>
       <div class="header">
+        <!--{%- include "searchbox.html" %}-->
       </div>
     </div>
 
@@ -89,7 +91,6 @@
 
 
 {%- block sidebarsearch %}
-{%- include "searchbox.html" %}
 {%- endblock %}
 
 {# Nav should appear before content, not after #}

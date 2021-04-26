@@ -22,6 +22,10 @@ div.header-wrapper {
     background-color: #ffb000;
 }
 
+div.header-wrapper h1 {
+    color: #004d63;
+}
+
 div.header h1 {
     color: #004d63;
 }
