@@ -41,10 +41,10 @@ template_annotations = {
 # possible values are:
 # "*" - this is the default and means all metrics are published
 # alternatively you can specify the conditinal part of a json path expression
-# applicable on the metric payload. You can specify more than one by using the "," as a separator
+# applicable on the metric payload. You can specify more than one by using the ";" as a separator
 # examples are:
 #  "got_errors=true" - all metrics related to processed rules having exceptions
-#  "got_errors=true; rule_name='my-rule-name" - all metrics for specified rule and all metrics containing exceptions
+#  "got_errors=true; rule_name='my-rule-name'" - all metrics for specified rule and all metrics containing exceptions
 #  "passed=true" - all metrics reporting the section filters is passed
 environ = {
     {{ environ }}
