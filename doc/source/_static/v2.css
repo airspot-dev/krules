@@ -1,0 +1,73 @@
+div.body h1, h2{
+    color: #03326b;
+}
+
+div.document {
+    background-color: #03326b; /* rgba(48, 107, 255, 0.3);*/
+}
+
+a {
+    color: #03326b;
+}
+
+div.sphinxsidebar a {
+    color: #fff;
+}
+
+dl.py dt, code {
+    color: #03326b;
+}
+
+div.header-wrapper {
+    background-color: #ffb806;
+}
+
+div.header-wrapper h1 {
+    color: #03326b;
+}
+
+div.header h1 {
+    color: #03326b;
+}
+
+p.payoff {
+    color: #03326b;
+}
+
+.searchformwrapper {
+    border: 1px solid #03326b;
+}
+
+.search button[type="submit" i] {
+    color: #03326b;
+}
+
+div.sphinxsidebar h3, div.sphinxsidebar h4 {
+    color: #fff;
+}
+
+div.sphinxsidebar input {
+    color: #03326b;
+}
+
+.logo img {
+    content: url("../_static/krules_light_logo.png");
+}
+
+.dropbtn {
+  background-color: transparent;
+  color: #03326b;
+}
+
+.dropdown-content a {
+  color: #03326b;
+}
+
+.dropdown-content a:hover {background-color: rgba(48, 107, 255, 0.3);}
+
+.dropdown-content a.selected, .dropdown-content a.selected:hover {
+    background: #03326b;
+    color: #fff;
+}
+
+.dropdown:hover .dropbtn {color: rgba(48, 107, 255, 0.3);}
