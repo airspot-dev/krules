@@ -12,31 +12,6 @@ you can find a KRules empty project skeleton, including a step-by-step guide wit
 
 Meanwhile... if you're brave and you do not fear the unknown [get in touch with us](mailto:info@airspot.tech)! 
 
-## Core libraries
-
-- [krules-core](https://github.com/airspot-dev/krules-core): KRules core package containing all base components
-
-- [krules-dispatcher-cloudevents](https://github.com/airspot-dev/krules-dispatcher-cloudevents): KRules's router dispatcher component.
-It sends [clouevents](https://cloudevents.io/) via http to a configurable url
-
-- [krules-env](https://github.com/airspot-dev/krules-env): A module mainly intended for the setup of different environments in the context of a basic image
-
-- [krules-controllers](https://github.com/airspot-dev/krules-controllers): Includes rulesets in krules-system namespace
-
-## Subjects storage backends
-
-- [krules-subjects-storage-redis](https://github.com/airspot-dev/krules-subjects-storage-redis): Redis based subjects storage
-
-- [krules-subjects-storage-mongodb](https://github.com/airspot-dev/krules-subjects-storage-mongodb): MongoDB based subjects storage
-
-- [krules-subjects-storage-k8s](https://github.com/airspot-dev/krules-subjects-storage-k8s): A subjects storage that use Kubernetes resources as subjects storage 
-
-## Miscellaneous
-
-- [ruleset-image-base](https://github.com/airspot-dev/ruleset-image-base): Repo to build the Rulesets Docker image base 
-
-- [krules-flask-env](https://github.com/airspot-dev/krules-flask-env): A module mainly intended for setup the KRules environments in a Flask context
-
 ## Code examples
 
 - [IoT example](https://github.com/airspot-dev/iot-demo)
