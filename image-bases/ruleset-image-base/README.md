@@ -29,7 +29,7 @@ $ cat .digest
 gcr.io/airspot/ruleset-image-base@sha256:8dd409aa649d8e20ae7d388c1d1fe01986d6f0af228be2093ea14cd356cc3a43
 ```
 
-## Build release version
+## Build release image
 
 To build a release version it necessary to set a **RELEASE_VERSION**.
 

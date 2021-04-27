@@ -13,8 +13,8 @@
 import os
 import sys
 # os.environ.get()
-sys.path.insert(0, os.path.abspath('../../krules-libs/krules-core'))
-sys.path.insert(0, os.path.abspath('../../krules-libs/krules-subjects-k8s-storage'))
+sys.path.insert(0, os.path.abspath('../../libs/krules-core'))
+sys.path.insert(0, os.path.abspath('../../libs/krules-subjects-k8s-storage'))
 
 
 # -- Project information -----------------------------------------------------
@@ -26,7 +26,7 @@ logo = 'krules_ext_logo.png'
 html_theme_options = {
     # 'logo': 'krules_ext_logo.png',
     'github_user': 'airspot-dev',
-    'github_repo': 'krules-doc',
+    'github_repo': 'krules',
 }
 
 # The full version, including alpha/beta/rc tags

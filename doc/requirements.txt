@@ -2,3 +2,8 @@ sphinx
 m2r2
 sphinx-multiversion
 sphinx-intl
+
+# krules-core deps
+dependency-injector==4.5.1
+wrapt==1.12.1
+rx==3.1.1
