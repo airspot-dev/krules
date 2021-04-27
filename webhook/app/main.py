@@ -1,4 +1,5 @@
 import base64
+import uuid
 
 import jsonpath_rw_ext as jp
 from flask import request, jsonify, g, json
@@ -8,28 +9,44 @@ from krules_flask_env import KRulesApp
 
 app = KRulesApp("webhook")
 
-def _manage_procevents(event):
-    app.logger.debug("processed {}".format(event["rule_name"]),
-                     extra={
-                         "props": {"event": event}
-                     })
+
+def _manage_rules_errors(event):
     if event.get("got_errors", False):
-        app.logger.error("error processing {}".format(event["rule_name"]),
+        app.logger.error("error processing {}".format(event["name"]),
                          extra={
                              "props": {"exc_info": "\n".join(jp.match1("$..[*].exc_info", event))}
                          })
         g.response["allowed"] = False
 
-        g.response["status"] = {"code": 500, "message": "exception in rule {}".format(event["rule_name"])}
+        g.response["status"] = {"code": 500, "message": "exception in rule {}".format(event["name"])}
 
 
 proc_events_rx_factory.subscribe(
-    on_next=_manage_procevents
+    on_next=_manage_rules_errors
 )
+
+def _get_subject_from_request(request):
+    group = request["requestKind"]["group"]
+    kind = request["requestKind"]["kind"]
+
+    obj = request.get("object")
+    if obj is None:
+        # delete op
+        obj = request.get("oldObject")
+    name = request.get("name", obj["metadata"].get("name",
+                               obj["metadata"].get("generateName", "_")))
+    event_info = {
+        "source": "krules-webhook"
+    }
+    prefix = kind.lower()
+    if kind == "Service" and group == "serving.knative.dev":
+        prefix = "kservice"
+
+    return prefix, subject_factory(f"{prefix}:{name}", event_info=event_info)
 
 
 @app.route("/validate", methods=['POST'])
-def admission_webhook():
+def validating_webhook():
     payload = request.get_json()
 
     app.logger.debug("BeginRequest", extra={"props": {"payload": payload}})
@@ -41,15 +58,11 @@ def admission_webhook():
     }
     payload["response"] = g.response
 
-    # subject = subject_factory("{}.{}.{}".format(
-    #     payload["request"]["requestResource"]["resource"],
-    #     payload["request"].get("name", payload["request"].get("object", {}).get("metadata", {}).get("name")),
-    #     payload["request"].get("namespace", "_")
-    # ))
-    subject = subject_factory("__subject__")
+    prefix, subject = _get_subject_from_request(payload["request"])
+    event_type = f"validate-{prefix}-{payload['request']['operation'].lower()}"
 
     app.router.route(
-        "validating-request", subject, payload,
+        event_type, subject, payload,
         dispatch_policy=DispatchPolicyConst.NEVER
     )
     app.logger.debug("EventProcessed")
@@ -58,12 +71,13 @@ def admission_webhook():
                     extra={'props': {
                         'step': g.step,
                         'subject': subject.name,
+                        'event_type': event_type,
                         'operation': payload["request"]["operation"],
                         'response': g.response
                     }})
 
     return jsonify({
-        "apiVersion": "admission.k8s.io/v1beta1",
+        "apiVersion": "admission.k8s.io/v1",
         "kind": "AdmissionReview",
         "response": g.response
     })
@@ -82,16 +96,10 @@ def mutating_webhook():
     }
     payload["response"] = g.response
 
-    # resource = payload["request"]["requestResource"]["resource"]
-    # ob_name = payload["request"].get("object", {}).get("metadata", {}).get("generateName")
-    # if ob_name is None:
-    #     ob_name = payload["request"].get("object", {}).get("metadata", {}).get("name")
-    # namespace = payload["request"].get("namespace", "_")
-    #
-    # subject = subject_factory("{}.{}.{}".format(resource, ob_name, namespace))
-    subject = subject_factory("__subject__", event_info={"originid": "muatating"})
+    prefix, subject = _get_subject_from_request(payload["request"])
+    event_type = f"mutate-{prefix}-{payload['request']['operation'].lower()}"
     app.router.route(
-        "mutating-request", subject, payload,
+        event_type, subject, payload,
         dispatch_policy=DispatchPolicyConst.NEVER
     )
     app.logger.debug("EventProcessed")
@@ -99,16 +107,17 @@ def mutating_webhook():
     app.logger.info("AdmissionReview",
                     extra={'props': {
                         'step': g.step,
-                        'callables': len(app.router._callables),
                         'subject': subject.name,
+                        'event_type': event_type,
+                        #'__callables': app.router._callables,
                         'operation': payload["request"]["operation"],
                         'response': g.response,
-                        'patch': "patch" in g.response and g.response["patch"] or None
+                        #'patch': "patch" in g.response and g.response["patch"] or None
                     }})
     if "patch" in g.response:
         g.response["patch"] = base64.b64encode(json.dumps(g.response["patch"]).encode("utf8")).decode("utf8")
     return jsonify({
-        "apiVersion": "admission.k8s.io/v1beta1",
+        "apiVersion": "admission.k8s.io/v1",
         "kind": "AdmissionReview",
         "response": g.response
     })

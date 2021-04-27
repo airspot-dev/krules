@@ -10,6 +10,7 @@ RUN apk add --no-cache --virtual .build-deps g++ python3-dev && \
     apk del .build-deps
 
 ADD /app /app
+ADD .common /app
 
 ENV PYTHONPATH /app
 ENV FLASK_APP /app/main.py

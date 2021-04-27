@@ -1,3 +1,4 @@
+
 apiVersion: apps/v1
 kind: Deployment
 metadata: 
@@ -15,31 +16,23 @@ spec:
             labels:
                 app: {{ name }}
         spec:
-            securityContext:
-                runAsNonRoot: true
-                runAsUser: 8850
+            serviceAccountName: krules-system
             containers:
               - name: webhook
                 image: {{ digest }}
                 ports: 
-                  - containerPort: 8443
-                    name: webhook-api
+                  - containerPort: 8080
+                    name: helper
                 env:
                   - name: PUBLISH_PROCEVENTS_LEVEL
                     value: "2"
                   - name: PUBLISH_PROCEVENTS_MATCHING
                     value: "*"
                   - name: K_PROCEVENTS_SINK
-                    value: "http://broker-ingress.knative-eventing.svc.cluster.local/krules-system-dev/default"
-                volumeMounts:
-                  - name: {{ name }}-tls
-                    mountPath: /run/secrets/tls
-                    readOnly: true
+                    value: http://broker-ingress.knative-eventing.svc.cluster.local/dev8850/procevents
+                  - name: LOGGING_LEVEL
+                    value: "20"
 
-            volumes:
-              - name: {{ name }}-tls
-                secret:
-                    secretName: {{ name }}-tls
 ---
 apiVersion: v1
 kind: Service
@@ -50,15 +43,9 @@ spec:
   selector:
     app: {{ name }}
   ports:
-    - port: 443
-      targetPort: webhook-api
+    - port: 80
+      targetPort: helper
 
----
-apiVersion: eventing.knative.dev/v1
-kind: Broker
-metadata:
-  name: default
-  namespace: {{ namespace }}
 ---
 apiVersion: sources.knative.dev/v1alpha2
 kind: SinkBinding
@@ -79,4 +66,16 @@ spec:
      namespace: {{ namespace }}
      name: default
 
-
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+ name: default-to-{{ name }}
+ namespace: {{ namespace }}
+spec:
+  broker: default
+  subscriber:
+    ref:
+      apiVersion: v1
+      kind: Service
+      name: {{ name }}

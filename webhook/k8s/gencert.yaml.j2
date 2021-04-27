@@ -90,6 +90,7 @@ metadata:
   name: {{ name }}-gencert-patch
   namespace: {{ namespace }}
 spec:
+  ttlSecondsAfterFinished: 100
   template:
     metadata:
       name: {{ name }}-gencert-patch
