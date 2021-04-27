@@ -7,15 +7,10 @@ KRules is build on top of [Knative](https://knative.dev/) and specifically, on i
 
 Extended documentation is not yet available, but you can take a look at [our introductionary material](https://intro.krules.io).
 
-Meanwhile.. if you're brave and you do not fear the unknown [get in touch with us](mailto:info@airspot.tech)! 
+If you want to start to create your own ruleset, in [krules-project-template](https://github.com/airspot-dev/krules/tree/develop/support/krules-project-template) 
+you can find a KRules empty project skeleton, including a step-by-step guide with some basic concepts' explanation
 
-# Repos
-
-Note that this repository has the sole purpose of providing an overall indication of the project which is instead composed of different repos described below:
-
-## Starting material
-
-- [krules-project-template](https://github.com/airspot-dev/krules-project-template): A KRules empty project sekeleton. Include a a step by step guide with some basic concepts exaplanaition
+Meanwhile... if you're brave and you do not fear the unknown [get in touch with us](mailto:info@airspot.tech)! 
 
 ## Core libraries
 

@@ -1,6 +1,6 @@
 # KRules project template
 
-This repo provides the base structure to easily start to create your own project using the [KRules framework](https://github.com/airspot-dev/krules).
+This repo provides the base structure to easily start to create your own project using the KRules framework.
 
 This is not just a step by step guide showing you how to create a new project starting from the provided base structure 
 and how to customize and adapt it to your own environment. It also wants to introduce you to some basic KRules concepts. 
@@ -113,12 +113,12 @@ First, create an empty repository wherever you want.
 
 Then clone the template repository:
 ```
-$ git clone https://github.com/airspot-dev/krules-project-template.git my_project
+$ git clone https://github.com/airspot-dev/krules.git 
 ```
 
 Finally replace origin with own repository url and push to your new repository:
 ```
-$ cd my_project
+$ cd krules/krules-project-template
 $ git remote set-url origin <your repository>
 $ git push -u
 ```
