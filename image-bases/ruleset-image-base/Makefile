@@ -4,10 +4,10 @@ release: check_release_env common app/*.py release/Dockerfile
 	docker push ${DOCKER_REGISTRY}/ruleset-image-base:${RELEASE_VERSION} && docker push ${DOCKER_REGISTRY}/ruleset-image-base:latest
 
 develop: check_env common app/*.py develop/Dockerfile
-	rsync ../libs/* ./develop/.krules-libs/
+	rsync -r ../../libs/* ./develop/.krules-libs/
 	docker build -t ${DOCKER_REGISTRY}/ruleset-image-base develop && \
 	docker push ${DOCKER_REGISTRY}/ruleset-image-base && \
-	docker inspect --format='{{index .RepoDigests 0}}' ruleset-image-base > .digest
+	docker inspect --format='{{index .RepoDigests 0}}' ${DOCKER_REGISTRY}/ruleset-image-base > .digest
 	rm -rf ./develop/.krules-libs
 
 common: Dockerfile
