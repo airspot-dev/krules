@@ -1,6 +1,6 @@
 # Documentation generator
 
-With this packet you can generate 
+With this packet you can generate KRules documentation in your local machine.
 
 ## Setup environment
 
