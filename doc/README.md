@@ -24,5 +24,5 @@ After this you can finally build your doc running:
 $ make multiversion
 ```
 
-This command will create a site subdirectory inside **build/html** for each tag in this repository
+This command will create a site subdirectory inside **build/html/en** for each tag in this repository
 and one for the develop branch.
