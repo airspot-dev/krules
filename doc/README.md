@@ -12,7 +12,13 @@ $ pip install -r requirements.txt
 
 ## Build documentation site
 
-To build documentation site run:
+To start to build documentation first you have to synchronize your local git with the remote one:
+
+```
+$ git fetch --all
+```
+
+After this you can finally build your doc running:
 
 ```
 $ make multiversion
@@ -20,14 +26,3 @@ $ make multiversion
 
 This command will create a site subdirectory inside **build/html** for each tag in this repository
 and one for the develop branch.
-
-Each file which compose documentations is located in **source** folder.
-
-**NOTE**
-
-If, after building, some release folder is missing ensure that your local git is synchronized with
-the remote one running:
-
-```
-$ git fetch --all
-```
