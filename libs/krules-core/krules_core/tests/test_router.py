@@ -10,7 +10,6 @@ from krules_core import RuleConst
 from datetime import datetime
 import logging
 
-
 def _assert(expr, msg="test failed"):
     assert expr, msg
     return True
@@ -21,17 +20,17 @@ def _assert(expr, msg="test failed"):
 
 def test_router():
     subject = "test-subject"
-    proc_events_rx_factory.queue.clear()
 
     start_time = datetime.now()
     router = event_router_factory()
     router.unregister_all()
+    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
 
     RuleFactory.create('test-empty-rule',
                        subscribe_to="some-type",
                        data={})
 
-    proc_events_rx_factory.subscribe(
+    proc_events_rx_factory().subscribe(
         lambda x: _assert(
                     x[RuleConst.TYPE] == "some-type" and
                     "key1" in x[RuleConst.PAYLOAD] and

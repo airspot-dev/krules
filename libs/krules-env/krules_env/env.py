@@ -140,11 +140,11 @@ def init():
 
     proc_events_filters = os.environ.get("PUBLISH_PROCEVENTS_MATCHING")
     if proc_events_filters:
-        proc_events_rx_factory.subscribe(
+        proc_events_rx_factory().subscribe(
             on_next=lambda x: publish_proc_events_filtered(x, proc_events_filters.split(";"),
                                                            lambda match: match is not None)
         )
     else:
-        proc_events_rx_factory.subscribe(
+        proc_events_rx_factory().subscribe(
             on_next=lambda x: publish_proc_events_all(x)
         )

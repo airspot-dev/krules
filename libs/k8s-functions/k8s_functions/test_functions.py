@@ -3,7 +3,7 @@ import operator
 import os
 import pykube
 import pytest
-import rx
+from rx import subject as rx_subject
 from dependency_injector import providers
 from k8s_subjects_storage import storage_impl as k8s_storage_impl
 from krules_core.base_functions import Filter, Process
@@ -40,7 +40,7 @@ def setup_module(_):
         )
     )
 
-    proc_events_rx_factory.override(providers.Singleton(rx.subjects.ReplaySubject))
+    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
 
 
 def teardown_module(_):

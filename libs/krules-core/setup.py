@@ -22,7 +22,7 @@ setup(
     ],
     python_requires='>3.7',
     install_requires=[
-        'dependency-injector==4.5.1',
+        'dependency-injector==4.32.2',
         'wrapt==1.12.1',
         'rx==3.1.1',
         'jsonpatch==1.26',

@@ -27,7 +27,7 @@ def subject():
 def router():
     router = event_router_factory()
     router.unregister_all()
-    proc_events_rx_factory.queue.clear()
+    proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
 
     return event_router_factory()
 
@@ -43,7 +43,7 @@ def test_filtered(router, subject):
     os.environ["PUBLISH_PROCEVENTS_LEVEL"] = str(ProcEventsLevel.FULL)
     os.environ["PUBLISH_PROCEVENTS_MATCHING"] = "passed=true"
 
-    proc_events_rx_factory.subscribe(
+    proc_events_rx_factory().subscribe(
         on_next=lambda x: publish_proc_events_filtered(x, "passed=true", lambda match: match is not None,
                                                        debug=True))
 
