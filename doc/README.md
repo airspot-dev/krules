@@ -22,3 +22,12 @@ This command will create a site subdirectory inside **build/html** for each tag 
 and one for the develop branch.
 
 Each file which compose documentations is located in **source** folder.
+
+**NOTE**
+
+If, after building, some release folder is missing ensure that your local git is synchronized with
+the remote one running:
+
+```
+$ git fetch --all
+```

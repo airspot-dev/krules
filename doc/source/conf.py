@@ -14,7 +14,7 @@ import os
 import sys
 # os.environ.get()
 sys.path.insert(0, os.path.abspath('../../libs/krules-core'))
-sys.path.insert(0, os.path.abspath('../../libs/krules-subjects-k8s-storage'))
+sys.path.insert(0, os.path.abspath('../../libs/k8s-functions'))
 
 
 # -- Project information -----------------------------------------------------
