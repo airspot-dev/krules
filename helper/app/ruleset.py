@@ -1,11 +1,13 @@
 import copy
+import os
+import time
 import typing
+from socket import gethostname
 
 import yaml
-from krules_core.base_functions import *
-from krules_core import RuleConst as Const
-
 from k8s_functions import *
+from krules_core import RuleConst as Const
+from krules_core.base_functions import *
 from krules_core.event_types import SUBJECT_PROPERTY_CHANGED
 
 from cfgp import _hashed, apply_configuration
@@ -113,6 +115,38 @@ class CreateConfigMap(K8sObjectCreate):
 
 class ApplyConfigurationToExistingResources(K8sObjectsQuery):
 
+    def _apply_configuration_wrapper(self, configuration, obj, root_expr, preserve_name):
+
+        apply_configuration(configuration, obj.obj, root_expr=root_expr, preserve_name=preserve_name)
+
+        try:
+            obj.update()
+        except pykube.exceptions.HTTPError as ex:
+
+            k8s_event_create(
+                api=self.payload.get("_k8s_api_client"),
+                producer=configuration["metadata"]["name"],
+                involved_object={
+                    "apiVersion": obj.api_kwargs()["version"],
+                    "kind": obj.kind,
+                    "metadata": {
+                        "namespace": obj.namespace,
+                        "name": obj.name,
+                        "resourceVersion": obj.obj["metadata"]["resourceVersion"],
+                        "uid": obj.obj["metadata"]["uid"]
+                    }
+                },
+                action="ApplyConfiguration",
+                message=str(ex),
+                reason="FailedToApplyConfigurationProvider",
+                type="Warning",
+                reporting_component=os.environ.get("CE_SOURCE", gethostname()),
+                reporting_instance=self.rule_name,
+                source_component=configuration["metadata"]["name"],
+            )
+
+            raise ex
+
     def execute(self,
                 configuration: typing.Union[dict, typing.Callable],
                 apiversion: str,
@@ -120,8 +154,9 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
                 root_expr: str,
                 preserve_name: bool,
                 filter_function: typing.Callable,
-                with_configured_object: typing.Callable,
                 **kwargs):
+
+        configuration = copy.deepcopy(configuration)
 
         selector = {}
         for k, v in configuration["spec"].get("appliesTo", {}).items():
@@ -130,15 +165,15 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
             else:
                 selector[k] = v
 
-        self.payload["_log"] = []
         super().execute(
             apiversion=apiversion, kind=kind,
             namespace=configuration["metadata"]["namespace"],
             selector=selector,
             foreach=lambda obj: (
                 filter_function(obj) and (
-                    apply_configuration(configuration, obj.obj, root_expr=root_expr, preserve_name=preserve_name),
-                    obj.update()
+                    self._apply_configuration_wrapper(
+                        configuration, obj, root_expr=root_expr, preserve_name=preserve_name
+                    ),
                 )
             )
         )
@@ -146,10 +181,10 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
 
 apply_configuration_rulesdata = [
     """
-    On configuration change inject configuration to existing services
+    On configuration change inject configuration to existing deployments
     """,
     {
-        rulename: "cfgp-on-change-dispose-update",
+        rulename: "cfgp-on-change-update-deployments",
         subscribe_to: SUBJECT_PROPERTY_CHANGED,
         ruledata: {
             filters: [
@@ -167,16 +202,38 @@ apply_configuration_rulesdata = [
             ]
         }
     },
+    """
+    On configuration change inject configuration to existing knative services
+    """,
+    {
+        rulename: "cfgp-on-change-update-kservices",
+        subscribe_to: SUBJECT_PROPERTY_CHANGED,
+        ruledata: {
+            filters: [
+                OnSubjectPropertyChanged("cfgp_hash"),
+            ],
+            processing: [
+                ApplyConfigurationToExistingResources(
+                    configuration=lambda payload: payload["object"],
+                    apiversion="serving.knative.dev/v1",
+                    kind="Service",
+                    root_expr="$.spec.template",
+                    preserve_name=False,
+                    filter_function=lambda obj: True,
+                ),
+            ]
+        }
+    },
 
 ]
 
 
 create_configuration_rulesdata = [
     """
-    
+    Annotate properties to react
     """,
     {
-        rulename: "cfgp-helper",
+        rulename: "cfgp-annotate",
         subscribe_to: [
             "validate-configurationprovider-create",
             "validate-configurationprovider-update",
@@ -262,20 +319,49 @@ create_configuration_rulesdata = [
         ruledata: {
             filters: [
                 PayloadMatchOne('request.oldObject.metadata.labels."config.krules.airspot.dev/provider"',
-                                payload_dest="provider_name")
-            ],
-            processing: [
+                                payload_dest="provider_name"),
+                Filter(
+                    # ensure we have an updated version
+                    lambda: time.sleep(1) or True
+                ),
                 K8sObjectsQuery(
                     apiversion="krules.airspot.dev/v1alpha1",
                     kind="ConfigurationProvider",
                     namespace=lambda payload: payload["request"]["namespace"],
                     returns=lambda payload: lambda qobjs: (
                         payload.setdefault("provider_object", qobjs.get(name=payload["provider_name"]).obj)
+                        and yaml.load(
+                            payload["provider_object"]["metadata"]["annotations"]["airspot.krules.dev/props"],
+                            Loader=yaml.SafeLoader,
+                        )["cm_name"] == payload["request"]["oldObject"]["metadata"]["name"]
                     )
                 ),
+            ],
+            processing: [
                 CreateConfigMap(
                     name=lambda payload: payload["request"]["oldObject"]["metadata"]["name"],
                     provider=lambda payload: payload.get("provider_object"),
+                )
+            ]
+        }
+    },
+    """
+    On delete cfgp remove cm
+    """,
+    {
+        rulename: "cfgp-on-delete-remove-cm",
+        subscribe_to: "validate-configurationprovider-delete",
+        ruledata: {
+            processing: [
+                K8sObjectDelete(
+                    apiversion="v1", kind="ConfigMap",
+                    namespace=lambda payload: payload["request"]["namespace"],
+                    name=lambda payload: (
+                        yaml.load(
+                            payload["request"]["oldObject"]["metadata"].get("annotations", {}).get("airspot.krules.dev/props"),
+                            Loader=yaml.SafeLoader,
+                        )["cm_name"]
+                    )
                 )
             ]
         }

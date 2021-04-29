@@ -1,4 +1,6 @@
+import copy
 import pprint
+import re
 import typing
 from typing import Any
 
@@ -16,6 +18,7 @@ def _hashed(*args, length=10):
 
 
 def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserve_name: bool, _log=[]):
+
 
     configuration_name = configuration.get("metadata").get("name")
     configuration_key = configuration.get("spec").get("key")

@@ -111,11 +111,11 @@ spec:
             - metadata
             - spec
 
-      subresources:
-        status: {}
+#       subresources:
+#         status: {}
 
       additionalPrinterColumns:
-      - jsonPath: .status.applied_to
+      - jsonPath: .spec.appliesTo
         name: APPLIES
         type: string
 #      - jsonPath: .status.services[?(@.applied==false)].reason

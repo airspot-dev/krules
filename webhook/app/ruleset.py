@@ -1,4 +1,5 @@
 from krules_core import RuleConst as Const
+from krules_core.base_functions import Process
 
 from mutating.cfgp import rulesdata as mutating_configurations_rulesdata
 from mutating.podenv import rulesdata as mutating_podenv_rulesdata
@@ -11,6 +12,22 @@ ruledata = Const.RULEDATA
 filters = Const.FILTERS
 processing = Const.PROCESSING
 
+rulesdata = [
+    """
+    For debug purpose
+    """,
+    {
+        rulename: "catch-all",
+        subscribe_to: "*",
+        ruledata: {
+            processing: [
+                Process(
+                    lambda: True
+                )
+            ]
+        }
+    }
+]
 
 rulesdata = \
     mutating_podenv_rulesdata \

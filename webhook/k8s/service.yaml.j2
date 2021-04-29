@@ -53,7 +53,7 @@ rules:
     - delete
 #    - watch
 #    - update
-#    - patch
+    - patch
 - apiGroups:
     - apps
   resources:
@@ -62,12 +62,19 @@ rules:
     - list
     - get
     - patch
-
-#- apiGroups: [""]
-#  resources:
-#    - events
-#  verbs:
-#    - create
+- apiGroups:
+    - serving.knative.dev
+  resources:
+    - services
+  verbs:
+    - list
+    - get
+    - patch
+- apiGroups: [""]
+  resources:
+    - events
+  verbs:
+    - create
 #- apiGroups: [""]
 #  resources:
 #    - namespaces
