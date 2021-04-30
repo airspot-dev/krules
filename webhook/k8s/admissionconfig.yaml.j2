@@ -13,13 +13,12 @@ webhooks:
       - v1beta1
     namespaceSelector:
       matchExpressions:
-        - { key: dev.krules.airspot.dev/injection, operator: In, values: [enabled] }
+        - { key: {{ ns_injection_lbl }}/injection, operator: In, values: [enabled] }
     clientConfig:
       service:
         name: {{ name }}
         namespace: {{ namespace }}
         path: "/mutate"
-      #caBundle: v.CA_PEM_B64
     rules:
       - apiGroups: [""]
         apiVersions: ["v1"]
@@ -27,7 +26,6 @@ webhooks:
         scope: "Namespaced"
         operations:
           - CREATE
-        #- UPDATE
       - apiGroups: ["apps"]
         apiVersions: ["v1"]
         resources: ["deployments"]
@@ -40,21 +38,6 @@ webhooks:
         scope: Namespaced
         operations:
           - CREATE
-        #- UPDATE
-#      - apiGroups: ["krules.airspot.dev"]
-#        apiVersions: ["*"]
-#        resources: ["configurationproviders"]
-#        scope: "Namespaced"
-#        operations:
-#          - CREATE
-#          #- UPDATE
-#      - apiGroups: [""]
-#        apiVersions: ["v1"]
-#        resources: ["namespaces"]
-#        scope: "Cluster"
-#        operations:
-#          - CREATE
-#          - UPDATE
 
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -72,22 +55,13 @@ webhooks:
       - v1beta1
     namespaceSelector:
       matchExpressions:
-        - { key: dev.krules.airspot.dev/injection, operator: In, values: [enabled] }
+        - { key: {{ ns_injection_lbl }}/injection, operator: In, values: [enabled] }
     clientConfig:
       service:
         name: {{ name }}
         namespace: {{ namespace }}
         path: "/validate"
-      #caBundle: v.CA_PEM_B64
     rules:
-#      - apiGroups: ["serving.knative.dev"]
-#        apiVersions: [ "*" ]
-#        resources: ["services"]
-#        scope: "Namespaced"
-#        operations:
-#          - CREATE
-#          - UPDATE
-#          - DELETE
       - apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["pods"]
@@ -95,7 +69,6 @@ webhooks:
         operations:
           - CREATE
           - UPDATE
-#          - DELETE
       - apiGroups: ["krules.airspot.dev"]
         apiVersions: ["*"]
         resources: ["configurationproviders"]
@@ -109,25 +82,17 @@ webhooks:
         resources: ["configmaps"]
         operations:
           - DELETE
-#      - apiGroups: ["apps"]
-#        apiVersions: ["v1"]
-#        resources: ["deployments"]
-#        scope: "Namespaced"
-#        operations:
-#          - UPDATE
-#          - DELETE
-#      - apiGroups: [ "serving.knative.dev" ]
-#        apiVersions: [ "v1" ]
-#        resources: [ "services" ]
-#        scope: Namespaced
-#        operations:
-#          - UPDATE
-#          - DELETE
-#      - apiGroups: [""]
-#        apiVersions: ["v1"]
-#        resources: ["namespaces"]
-#        scope: "Cluster"
-#        operations:
-#          - CREATE
-#          - UPDATE
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["namespaces"]
+        scope: "Cluster"
+        operations:
+          - CREATE
+          - UPDATE
+      - apiGroups: ["eventing.knative.dev"]
+        apiVersions: ["*"]
+        resources: ["brokers"]
+        scope: "Namespaced"
+        operations:
+          - DELETE
 

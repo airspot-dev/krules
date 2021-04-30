@@ -12,11 +12,14 @@ rulesdata = [
     Send out the event when validation passes
     """,
     {
-        rulename: "on-cfgp-validated-sendout",
+        rulename: "on-validated-sendout",
         subscribe_to: [
             "validate-configurationprovider-create",
             "validate-configurationprovider-update",
             "validate-configurationprovider-delete",
+            "validate-namespace-create",
+            "validate-namespace-update",
+            "validate-broker-delete",
         ],
         ruledata: {
             filters: [

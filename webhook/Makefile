@@ -1,6 +1,7 @@
 SHELL=/bin/bash
 SERVICE_NAME=krules-webhook
 NAMESPACE=krules-system-dev
+NS_INJECTION_LBL=dev.krules.airspot.dev
 WORKING_TARGET_IMAGE:=${DOCKER_REGISTRY}/${SERVICE_NAME}
 WORKING_TARGET_IMAGE_GENCERT:=${DOCKER_REGISTRY}/${SERVICE_NAME}-gencert
 BASE_RELEASE_TARGET_IMAGE=gcr.io/airspot/${SERVICE_NAME}
@@ -23,6 +24,7 @@ admissionconfig:
 	jinja2 \
 		-D name=${SERVICE_NAME} \
 		-D namespace=${NAMESPACE} \
+		-D ns_injection_lbl=${NS_INJECTION_LBL} \
 		k8s/admissionconfig.yaml.j2 -o k8s/admissionconfig.yaml
 	kubectl apply -f k8s/admissionconfig.yaml
 

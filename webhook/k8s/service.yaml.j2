@@ -9,40 +9,20 @@ kind: ClusterRole
 metadata:
   name: krules-system
 rules:
-- apiGroups: ["eventing.knative.dev",] # "serving.knative.dev", "sources.knative.dev"]
+- apiGroups: ["eventing.knative.dev",]
   resources:
     - brokers
-    #- triggers
-    #- services
-    #- apiserversources
   verbs:
     - list
     - get
-#    - create
-#    - delete
-#    - patch
-#    - watch
-#- apiGroups: ["", "rbac.authorization.k8s.io"]
-#  resources:
-#    - serviceaccounts
-#    - roles
-#    - rolebindings
-#  verbs:
-#    - list
-#    - get
-#    - create
-#    - delete
+    - create
 - apiGroups: ["krules.airspot.dev"]
   resources:
    - configurationproviders
-#    - configurationproviders/status
   verbs:
   - list
   - get
   - patch
-#    - watch
-#    - update
-#    - patch
 - apiGroups: [""]
   resources:
     - configmaps
@@ -51,8 +31,6 @@ rules:
     - get
     - create
     - delete
-#    - watch
-#    - update
     - patch
 - apiGroups:
     - apps
@@ -75,12 +53,6 @@ rules:
     - events
   verbs:
     - create
-#- apiGroups: [""]
-#  resources:
-#    - namespaces
-#  verbs:
-#    - list
-#    - get
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
