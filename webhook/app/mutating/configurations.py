@@ -41,10 +41,10 @@ class ApplyConfiguration(K8sObjectsQuery):
                                 root_expr=root_expr, preserve_name=preserve_name, _log=_log)
 
 
-    def execute(self, root_expr, payload_dest, preserve_name, **kwargs):
+    def execute(self, root_expr, preserve_name, **kwargs):
 
-        src = self.payload["request"]["object"]
-        self.payload[payload_dest] = copy.deepcopy(src)
+        # src = self.payload["request"]["object"]
+        # self.payload["__mutated_object"] = copy.deepcopy(src)
         self.payload["_log"] = []
 
         super().execute(
@@ -52,7 +52,7 @@ class ApplyConfiguration(K8sObjectsQuery):
             namespace=self.payload["request"]["namespace"],
             foreach=lambda obj: self._update_configuration_if_match(
                 configuration=obj.obj,
-                dest=self.payload[payload_dest],
+                dest=self.payload["__mutated_object"],
                 root_expr=root_expr,
                 preserve_name=preserve_name,
                 _log=self.payload["_log"]
@@ -77,12 +77,7 @@ rulesdata = [
             processing: [
                 ApplyConfiguration(
                     root_expr="$",
-                    payload_dest="__cfgp_mutated_object",
                     preserve_name=True,
-                ),
-                MakePatch(
-                    src=lambda payload: payload["request"]["object"],
-                    dst=lambda payload: payload["__cfgp_mutated_object"]
                 )
             ]
         }
@@ -103,12 +98,7 @@ rulesdata = [
             processing: [
                 ApplyConfiguration(
                     root_expr="$.spec.template",
-                    payload_dest="__cfgp_mutated_object",
                     preserve_name=True,
-                ),
-                MakePatch(
-                    src=lambda payload: payload["request"]["object"],
-                    dst=lambda payload: payload["__cfgp_mutated_object"]
                 )
             ]
         }
@@ -123,12 +113,7 @@ rulesdata = [
             processing: [
                 ApplyConfiguration(
                     root_expr="$.spec.template",
-                    payload_dest="__cfgp_mutated_object",
                     preserve_name=True,
-                ),
-                MakePatch(
-                    src=lambda payload: payload["request"]["object"],
-                    dst=lambda payload: payload["__cfgp_mutated_object"]
                 )
             ]
         }

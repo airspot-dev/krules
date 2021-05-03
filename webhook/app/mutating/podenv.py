@@ -5,6 +5,7 @@ from krules_core.base_functions import *
 from k8s_functions import K8sObjectsQuery
 
 from . import MakePatch
+import jsonpath_rw_ext as jp
 
 rulename = Const.RULENAME
 subscribe_to = Const.SUBSCRIBE_TO
@@ -13,21 +14,15 @@ filters = Const.FILTERS
 processing = Const.PROCESSING
 
 
-class MakePodEnvVarPatch(MakePatch):
+class SetPodEnvVar(RuleFunctionBase):
 
-    def execute(self, name, value, update_existing=False, **kwargs):
-        if len(self.payload["request"]["object"]["spec"]["containers"]) == 0:
+    def execute(self, name, value, containers_path="$.spec.containers", update_existing=False, **kwargs):
+        if len(jp.match1(containers_path, self.payload["request"]["object"])) == 0:
             return
 
         # we don't want to deep copy the whole object, just the containers[0] part
-        src = {
-            "spec": {
-                "containers": self.payload["request"]["object"]["spec"]["containers"]
-            }
-        }
-
-        dst = copy.deepcopy(src)
-        env = dst["spec"]["containers"][0].setdefault("env", [])
+        dst = self.payload["__mutated_object"]
+        env = jp.match1(containers_path, dst)[0].setdefault("env", [])
         found = False
         for i in env:
             if i.get("name") == name:
@@ -40,10 +35,9 @@ class MakePodEnvVarPatch(MakePatch):
                 "name": name,
                 "value": value
             })
-        super().execute(src, dst)
 
 
-rulesdata = [
+rulesdata_sinks = [
     """
     Ensure K_SINK for all pods
     """,
@@ -66,7 +60,7 @@ rulesdata = [
                 Filter(lambda payload: payload["__broker_ref"] is not None),
             ],
             processing: [
-                MakePodEnvVarPatch(
+                SetPodEnvVar(
                     "K_SINK",
                     lambda payload: payload["__broker_ref"].obj["status"].get("address", {}).get("url")
                 )
@@ -97,12 +91,12 @@ rulesdata = [
                 Filter(lambda payload: payload["__broker_procevents_ref"] is not None),
             ],
             processing: [
-                MakePodEnvVarPatch(
+                SetPodEnvVar(
                     "K_PROCEVENTS_SINK",
                     lambda payload: payload["__broker_procevents_ref"].obj["status"].get("address", {}).get("url"),
                     update_existing=False
                 ),
-                MakePodEnvVarPatch(
+                SetPodEnvVar(
                     "PUBLISH_PROCEVENTS_MATCH",
                     lambda payload: str(payload["__procevents_match_level"]) == "1" and "got_errors=true" or "*",
                     update_existing=False
@@ -111,3 +105,79 @@ rulesdata = [
         }
     }
 ]
+
+rulesdata_ce_source = [
+    """
+    for unowned pods we get the pod's name
+    """,
+    {
+        rulename: "mutate-pod-env-ce-source-unowned",
+        subscribe_to: ["mutate-pod-create"],
+        ruledata: {
+            filters: [
+                PayloadMatchOne(
+                    "$.request.object.metadata.ownerReferences",
+                    match_value=lambda v: v is None or len(v) == 0
+                ),
+                PayloadMatchOne("$.request.object.spec.containers[0].env[?@.name='CE_SOURCE']",
+                                match_value=None),
+            ],
+            processing: [
+                SetPodEnvVar(
+                    "CE_SOURCE",
+                    lambda payload: payload["request"]["object"]["metadata"]["name"],
+                ),
+            ]
+        }
+    },
+    """
+    for unowned pods we get the pod's name
+    """,
+    {
+        rulename: "mutate-pod-env-ce-source-kservice",
+        subscribe_to: ["mutate-pod-create"],
+        ruledata: {
+            filters: [
+                PayloadMatchOne(
+                    "$.request.object.metadata.labels",
+                    match_value=lambda labels: "serving.knative.dev/revision" in labels
+                ),
+                PayloadMatchOne("$.request.object.spec.containers[0].env[?@.name='CE_SOURCE']",
+                                match_value=None),
+            ],
+            processing: [
+                SetPodEnvVar(
+                    "CE_SOURCE",
+                    lambda payload: payload["request"]["object"]["metadata"]["labels"]["serving.knative.dev/revision"],
+                ),
+            ]
+        }
+    },
+    """
+    for unowned pods we get the pod's name
+    """,
+    {
+        rulename: "mutate-pod-env-ce-source-deployment",
+        subscribe_to: ["mutate-deployment-create"],
+        ruledata: {
+            filters: [
+                PayloadMatchOne(
+                    "$.request.object.metadata.ownerReferences",
+                    match_value=lambda v: v is None or len(v) == 0
+                ),
+                PayloadMatchOne("$.request.object.spec.template.spec.containers[0].env[?@.name='CE_SOURCE']",
+                                match_value=None),
+            ],
+            processing: [
+                SetPodEnvVar(
+                    "CE_SOURCE",
+                    lambda payload: payload["request"]["object"]["metadata"]["name"],
+                    containers_path="spec.template.spec.containers",
+                ),
+            ]
+        }
+    }
+
+]
+
+rulesdata = rulesdata_sinks + rulesdata_ce_source

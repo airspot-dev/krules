@@ -117,7 +117,10 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
 
     def _apply_configuration_wrapper(self, configuration, obj, root_expr, preserve_name):
 
-        apply_configuration(configuration, obj.obj, root_expr=root_expr, preserve_name=preserve_name)
+        self.payload["__log"] = []
+
+        apply_configuration(configuration, obj.obj, root_expr=root_expr, preserve_name=preserve_name,
+                            _log=self.payload["__log"])
 
         try:
             obj.update()
@@ -165,6 +168,7 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
             else:
                 selector[k] = v
 
+
         super().execute(
             apiversion=apiversion, kind=kind,
             namespace=configuration["metadata"]["namespace"],
@@ -172,7 +176,7 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
             foreach=lambda obj: (
                 filter_function(obj) and (
                     self._apply_configuration_wrapper(
-                        configuration, obj, root_expr=root_expr, preserve_name=preserve_name
+                        configuration, obj, root_expr=root_expr, preserve_name=preserve_name,
                     ),
                 )
             )
@@ -322,7 +326,7 @@ create_configuration_rulesdata = [
                                 payload_dest="provider_name"),
                 Filter(
                     # ensure we have an updated version
-                    lambda: time.sleep(1) or True
+                    lambda: time.sleep(10) or True
                 ),
                 K8sObjectsQuery(
                     apiversion="krules.airspot.dev/v1alpha1",
