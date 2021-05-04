@@ -1,4 +1,6 @@
 *-kubeconfig
 .digest
 .idea/
+**/k8s/*.yaml
+**/sane.py
 

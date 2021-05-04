@@ -1,6 +1,0 @@
-namespace: krules-system
-resources:
-  - namespace.yaml
-  - brokers.yaml
-  - serviceaccounts.yaml
-  - configprovidercrd.yaml

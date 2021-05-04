@@ -1,72 +1,3 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: krules-system
-  namespace: {{ namespace }}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: krules-system
-rules:
-- apiGroups: ["eventing.knative.dev",]
-  resources:
-    - brokers
-  verbs:
-    - list
-    - get
-    - create
-- apiGroups: ["krules.airspot.dev"]
-  resources:
-   - configurationproviders
-  verbs:
-  - list
-  - get
-  - patch
-- apiGroups: [""]
-  resources:
-    - configmaps
-  verbs:
-    - list
-    - get
-    - create
-    - delete
-    - patch
-- apiGroups:
-    - apps
-  resources:
-    - deployments
-  verbs:
-    - list
-    - get
-    - patch
-- apiGroups:
-    - serving.knative.dev
-  resources:
-    - services
-  verbs:
-    - list
-    - get
-    - patch
-- apiGroups: [""]
-  resources:
-    - events
-  verbs:
-    - create
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: krules-system
-subjects:
-- kind: ServiceAccount
-  name: krules-system
-  namespace: {{ namespace }}
-roleRef:
-  kind: ClusterRole
-  name: krules-system
-  apiGroup: rbac.authorization.k8s.io
----
 
 apiVersion: apps/v1
 kind: Deployment
@@ -148,5 +79,5 @@ spec:
      kind: Broker
      namespace: {{ namespace }}
      name: default
-
+---
 

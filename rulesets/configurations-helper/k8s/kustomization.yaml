@@ -1,4 +1,0 @@
-namespace: krules-system
-resources:
-  - service.yaml
-  - trigger.yaml

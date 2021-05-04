@@ -69,10 +69,6 @@ spec:
 
                     x-kubernetes-preserve-unknown-fields: true
 
-#              required:
-#                - key
-#                - appliesTo
-#                #- data
               anyOf:
                 - required:
                   - key
@@ -90,19 +86,6 @@ spec:
             status:
               type: object
               properties:
-#                services:
-#                  type: object
-#                  x-kubernetes-preserve-unknown-fields: true
-#                  properties:
-#                    lastTransitionTime:
-#                      type: string
-#                    applied:
-#                      type: boolean
-#                    reason:
-#                      type: string
-#                  required:
-#                    - applied
-#                    - lastTransitionTime
                 applied_to:
                   type: string
           required:
@@ -111,13 +94,8 @@ spec:
             - metadata
             - spec
 
-#       subresources:
-#         status: {}
-
       additionalPrinterColumns:
       - jsonPath: .spec.appliesTo
         name: APPLIES
         type: string
-#      - jsonPath: .status.services[?(@.applied==false)].reason
-#        name: FAILURES
-#        type: string
+---
