@@ -3,4 +3,6 @@
 .idea/
 **/k8s/*.yaml
 **/sane.py
+**/.common
+**/__pycache__
 
