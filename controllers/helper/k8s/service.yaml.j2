@@ -1,0 +1,83 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+    name: {{ name }}
+    namespace: {{ namespace }}
+    labels: 
+        app: {{ name }}
+spec:
+    replicas: 1
+    selector:
+        matchLabels: 
+            app: {{ name }}
+    template:
+        metadata:
+            labels:
+                app: {{ name }}
+        spec:
+            serviceAccountName: krules-system
+            containers:
+              - name: webhook
+                image: {{ digest }}
+                ports: 
+                  - containerPort: 8080
+                    name: helper
+                env:
+                  - name: CE_SOURCE
+                    value: {{ name }}
+                  - name: PUBLISH_PROCEVENTS_LEVEL
+                    value: "2"
+                  - name: PUBLISH_PROCEVENTS_MATCHING
+                    value: "*"
+                  - name: K_PROCEVENTS_SINK
+                    value: http://broker-ingress.knative-eventing.svc.cluster.local/dev8850/procevents
+                  - name: LOGGING_LEVEL
+                    value: "20"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace}}
+spec:
+  selector:
+    app: {{ name }}
+  ports:
+    - port: 80
+      targetPort: helper
+
+---
+apiVersion: sources.knative.dev/v1alpha2
+kind: SinkBinding
+metadata:
+ name: {{ name }}
+ namespace: {{ namespace }}
+spec:
+ subject:
+   apiVersion: apps/v1
+   kind: Deployment
+   selector:
+     matchLabels:
+       app: {{ name }}
+ sink:
+   ref:
+     apiVersion: eventing.knative.dev/v1beta1
+     kind: Broker
+     namespace: {{ namespace }}
+     name: default
+
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+ name: default-to-{{ name }}
+ namespace: {{ namespace }}
+spec:
+  broker: default
+  subscriber:
+    ref:
+      apiVersion: v1
+      kind: Service
+      name: {{ name }}

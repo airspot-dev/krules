@@ -1,0 +1,101 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: configurationproviders.krules.airspot.dev
+spec:
+  group: krules.airspot.dev
+  scope: Namespaced
+  names:
+    plural: configurationproviders
+    singular: configurationprovider
+    kind: ConfigurationProvider
+    shortNames:
+      - configprovider
+      - cfgprovider
+      - cfgprov
+      - cfgp
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              properties:
+                key:
+                  type: string
+                appliesTo:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                data:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                container:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                extraVolumes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      secret:
+                        type: object
+                        properties:
+                          secretName:
+                            type: string
+                      configMap:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                    oneOf:
+                      - required:
+                          - name
+                          - secret
+                      - required:
+                          - name
+                          - configMap
+
+                    x-kubernetes-preserve-unknown-fields: true
+
+              anyOf:
+                - required:
+                  - key
+                  - appliesTo
+                  - data
+                - required:
+                  - key
+                  - appliesTo
+                  - container
+                - required:
+                  - key
+                  - appliesTo
+                  - extraVolumes
+
+            status:
+              type: object
+              properties:
+                applied_to:
+                  type: string
+          required:
+            - apiVersion
+            - kind
+            - metadata
+            - spec
+
+      additionalPrinterColumns:
+      - jsonPath: .spec.appliesTo
+        name: APPLIES
+        type: string
+---
