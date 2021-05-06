@@ -1,15 +1,14 @@
-
 apiVersion: apps/v1
 kind: Deployment
-metadata: 
+metadata:
     name: {{ name }}
     namespace: {{ namespace }}
-    labels: 
+    labels:
         app: {{ name }}
 spec:
     replicas: 1
     selector:
-        matchLabels: 
+        matchLabels:
             app: {{ name }}
     template:
         metadata:
@@ -20,7 +19,7 @@ spec:
             containers:
               - name: webhook
                 image: {{ digest }}
-                ports: 
+                ports:
                   - containerPort: 8443
                     name: webhook-api
                 env:
@@ -80,4 +79,3 @@ spec:
      namespace: {{ namespace }}
      name: default
 ---
-
