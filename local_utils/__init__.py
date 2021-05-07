@@ -45,7 +45,32 @@ def check_cmd(cmd):
     return False
 
 
-def make_render_resource_recipe(root_dir, j2_template, context_vars, hooks=("render_resource",), extra_conditions=()):
+def make_render_resource_recipes(root_dir, globs, context_vars, hooks=("render_resource",), extra_conditions=()):
+    with pushd(root_dir):
+
+        k8s_templates = []
+        parsed_context_vars = parse_context_vars(context_vars)
+
+        for file in globs:
+            k8s_templates.extend(glob(file))
+
+        for j2_template in k8s_templates:
+            _make_render_resource_recipe(
+                root_dir, j2_template, extra_conditions, hooks, parsed_context_vars
+            )
+
+
+def parse_context_vars(context_vars):
+    parsed_vars = {}
+    for k, v in context_vars.items():
+        if callable(v):
+            parsed_vars[k] = v()
+        else:
+            parsed_vars[k] = v
+    return parsed_vars
+
+
+def _make_render_resource_recipe(root_dir, j2_template, extra_conditions, hooks, context_vars):
 
     resource_file = j2_template.split(".j2")[0]
     resource_older_than_template = (
@@ -67,7 +92,9 @@ def make_render_resource_recipe(root_dir, j2_template, context_vars, hooks=("ren
         with pushd(root_dir):
             from jinja2 import Template
             Help.log(f"Rendering {resource_file}")
-            tmpl = Template(open(j2_template).read(), trim_blocks=True, lstrip_blocks=True,).render(**context_vars)
+            tmpl = Template(open(j2_template).read(), trim_blocks=True, lstrip_blocks=True, ).render(
+                **parse_context_vars(context_vars)
+            )
             open(resource_file, 'w').write(tmpl)
 
 

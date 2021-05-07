@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os
 import shutil
-from glob import glob
 from importlib.machinery import SourceFileLoader
 
 KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -45,7 +44,7 @@ DEP_LIBS = [
     "gunicorn==20.0.4"
 ]
 
-local_utils.make_render_resource_recipe(ROOT_DIR, "Dockerfile.j2", {
+local_utils.make_render_resource_recipes(ROOT_DIR, ["Dockerfile.j2"], {
     "release_version": RELEASE_VERSION,
     "krules_dep_libs": KRULES_DEP_LIBS,
     "dep_libs": DEP_LIBS,
@@ -90,28 +89,23 @@ local_utils.make_push_recipe(
     recipe_deps=["build"],
 )
 
-with local_utils.pushd(ROOT_DIR):
-    k8s_templates = (
-        *glob(f'k8s/*.yaml.j2'),
-    )
-    digest = open(".digest", "r").read()
 
-for template in k8s_templates:
-        local_utils.make_render_resource_recipe(ROOT_DIR, template, {
-            "namespace": NAMESPACE,
-            "ns_injection_lbl": os.environ.get('NS_INJECTION_LBL'),
-            "name": SERVICE_NAME,
-            "digest": digest,
-        }, hooks=['render_resource'], extra_conditions=[
-            lambda: local_utils.check_envvar_exists('NAMESPACE'),
-            lambda: local_utils.check_envvar_exists('NS_INJECTION_LBL')
-        ])
+local_utils.make_render_resource_recipes(ROOT_DIR, [f'k8s/*.yaml.j2'], {
+    "namespace": NAMESPACE,
+    "ns_injection_lbl": os.environ.get('NS_INJECTION_LBL'),
+    "name": SERVICE_NAME,
+    "digest": lambda: open(".digest", "r").read(),
+}, hooks=['render_resource'], extra_conditions=[
+    lambda: local_utils.check_envvar_exists('NAMESPACE'),
+    lambda: local_utils.check_envvar_exists('NS_INJECTION_LBL')
+])
+
 
 @recipe(info="Push the last built docker image", conditions=[
         lambda: local_utils.check_envvar_exists('NAMESPACE'),
         lambda: local_utils.check_envvar_exists('NS_INJECTION_LBL'),
         lambda: local_utils.check_cmd(KUBECTL_CMD),
-    ], recipe_deps="push"
+    ], recipe_deps=["push"], hook_deps=["render_resource"]
 )
 def deploy():
     pass
