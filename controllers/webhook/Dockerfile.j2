@@ -25,7 +25,6 @@ RUN apk del .build-deps
 {% if not release_version %}
 ADD .krules-libs /krules-libs
 {% for lib in krules_dep_libs %}
-#ADD .deps/{{ lib }} /krules-libs
 RUN cd /krules-libs/{{ lib }} && python3 setup.py develop
 {% endfor %}
 {% endif %}

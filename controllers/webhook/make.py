@@ -29,6 +29,7 @@ SERVICE_NAME = os.environ.get("WEBHOOK_SERVICE_NAME", "krules-webhook")
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
 DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
+
 NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
 
 
@@ -85,30 +86,35 @@ local_utils.make_push_recipe(
         )()
     ],
     digest_file=".digest",
-    release_version=RELEASE_VERSION,
+    tag=RELEASE_VERSION,
     recipe_deps=["build"],
 )
 
 
-local_utils.make_render_resource_recipes(ROOT_DIR, [f'k8s/*.yaml.j2'], {
+local_utils.make_render_resource_recipes(ROOT_DIR, [f'k8s/*.yaml.j2'], lambda: {
     "namespace": NAMESPACE,
     "ns_injection_lbl": os.environ.get('NS_INJECTION_LBL'),
     "name": SERVICE_NAME,
-    "digest": lambda: open(".digest", "r").read(),
+    "digest": open(".digest", "r").read(),
+    "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
 }, hooks=['render_resource'], extra_conditions=[
     lambda: local_utils.check_envvar_exists('NAMESPACE'),
     lambda: local_utils.check_envvar_exists('NS_INJECTION_LBL')
 ])
 
 
-@recipe(info="Push the last built docker image", conditions=[
+local_utils.make_apply_recipe(
+    name="apply",
+    root_dir=ROOT_DIR,
+    globs=["k8s/*.yaml"],
+    kubectl_cmd=KUBECTL_CMD,
+    extra_conditions=[
         lambda: local_utils.check_envvar_exists('NAMESPACE'),
         lambda: local_utils.check_envvar_exists('NS_INJECTION_LBL'),
-        lambda: local_utils.check_cmd(KUBECTL_CMD),
-    ], recipe_deps=["push"], hook_deps=["render_resource"]
+    ],
+    recipe_deps=["push"],
+    hook_deps=["render_resource"]
 )
-def deploy():
-    pass
 
 
 local_utils.make_clean_recipe(
@@ -119,6 +125,7 @@ local_utils.make_clean_recipe(
         ".krules-libs",
         "Dockerfile",
         ".build*",
+        ".digest"
     ]
 )
 

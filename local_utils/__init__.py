@@ -46,56 +46,50 @@ def check_cmd(cmd):
 
 
 def make_render_resource_recipes(root_dir, globs, context_vars, hooks=("render_resource",), extra_conditions=()):
+
+    def _context_vars():
+        if callable(context_vars):
+            return context_vars()
+        return context_vars
+
+    def _make_render_resource_recipe(j2_template):
+
+        resource_file = j2_template.split(".j2")[0]
+        resource_older_than_template = (
+            Help.file_condition(
+                sources=[os.path.join(root_dir, j2_template)],
+                targets=[os.path.join(root_dir, resource_file)]
+            )
+        )
+
+        @recipe(name=resource_file,
+                conditions=[
+                    resource_older_than_template,
+                    check_jinja2,
+                    *extra_conditions
+                ],
+                hooks=hooks,
+                info=f'Process \'{j2_template}\'')
+        def render_resource():
+            with pushd(root_dir):
+                from jinja2 import Template
+                Help.log(f"Rendering {resource_file}")
+                tmpl = Template(open(j2_template).read(), trim_blocks=True, lstrip_blocks=True, ).render(
+                    _context_vars()
+                )
+                open(resource_file, 'w').write(tmpl)
+
     with pushd(root_dir):
 
         k8s_templates = []
-        parsed_context_vars = parse_context_vars(context_vars)
 
         for file in globs:
             k8s_templates.extend(glob(file))
 
-        for j2_template in k8s_templates:
+        for template in k8s_templates:
             _make_render_resource_recipe(
-                root_dir, j2_template, extra_conditions, hooks, parsed_context_vars
+                template
             )
-
-
-def parse_context_vars(context_vars):
-    parsed_vars = {}
-    for k, v in context_vars.items():
-        if callable(v):
-            parsed_vars[k] = v()
-        else:
-            parsed_vars[k] = v
-    return parsed_vars
-
-
-def _make_render_resource_recipe(root_dir, j2_template, extra_conditions, hooks, context_vars):
-
-    resource_file = j2_template.split(".j2")[0]
-    resource_older_than_template = (
-        Help.file_condition(
-            sources=[os.path.join(root_dir, j2_template)],
-            targets=[os.path.join(root_dir, resource_file)]
-        )
-    )
-
-    @recipe(name=resource_file,
-            conditions=[
-                resource_older_than_template,
-                check_jinja2,
-                *extra_conditions
-            ],
-            hooks=hooks,
-            info=f'Process \'{j2_template}\'')
-    def render_resource():
-        with pushd(root_dir):
-            from jinja2 import Template
-            Help.log(f"Rendering {resource_file}")
-            tmpl = Template(open(j2_template).read(), trim_blocks=True, lstrip_blocks=True, ).render(
-                **parse_context_vars(context_vars)
-            )
-            open(resource_file, 'w').write(tmpl)
 
 
 def make_build_recipe(name, root_dir, docker_cmd, target, extra_conditions, success_file, out_file, hook_deps):
@@ -122,9 +116,9 @@ def make_build_recipe(name, root_dir, docker_cmd, target, extra_conditions, succ
                 Help.error(open(out_file, "r").read())
 
 
-def make_push_recipe(name, root_dir, docker_cmd, target, extra_conditions, digest_file, release_version,
+def make_push_recipe(name, root_dir, docker_cmd, target, extra_conditions, digest_file, tag,
                      recipe_deps):
-    @recipe(name=name, info="Push the last built docker image", conditions=[
+    @recipe(name=name, info="Push the latest built docker image", conditions=[
         lambda: check_envvar_exists('DOCKER_REGISTRY'),
         lambda: check_cmd(docker_cmd),
         *extra_conditions
@@ -132,36 +126,63 @@ def make_push_recipe(name, root_dir, docker_cmd, target, extra_conditions, diges
             )
     def push():
         target_image = f'{os.environ.get("DOCKER_REGISTRY")}/{target}'
-        if release_version:
-            tag = f'{target_image}:{release_version}'
+        if tag:
+            _tag = f'{target_image}:{tag}'
         else:
-            tag = target_image
+            _tag = target_image
 
-        Help.log(f'Pushing {tag}')
+        Help.log(f'Pushing {_tag}')
 
         with pushd(root_dir):
-            if release_version:
+            if tag:
                 response = run(
-                    f'{docker_cmd} tag {target_image} {tag}',
+                    f'{docker_cmd} tag {target_image} {_tag}',
                     shell=True, capture_output=True
                 )
                 if response.returncode != 0:
                     Help.error(response.stderr.decode("utf-8"))
             response = run(
-                f'{docker_cmd} push {tag}',
+                f'{docker_cmd} push {_tag}',
                 shell=True, capture_output=True
             )
             if response.returncode != 0:
                 Help.error(response.stderr.decode("utf-8"))
             response = run(
-                f'{docker_cmd} inspect --format="{{{{index .RepoDigests 0}}}}" {tag}',
+                f'{docker_cmd} inspect --format="{{{{index .RepoDigests 0}}}}" {_tag}',
                 shell=True, capture_output=True
             )
             if response.returncode != 0:
-                Help.log(tag)
+                Help.log(_tag)
                 Help.error(response.stderr.decode("utf-8"))
             with open(digest_file, "wb") as f:
                 f.write(response.stdout)
+
+
+def make_apply_recipe(name, root_dir, globs, kubectl_cmd, extra_conditions, recipe_deps, hook_deps):
+    @recipe(
+        name=name,
+        info="Apply all",
+        conditions=[
+            lambda: check_cmd(kubectl_cmd),
+            *extra_conditions
+        ],
+        recipe_deps=recipe_deps,
+        hook_deps=hook_deps
+    )
+    def apply():
+        with pushd(root_dir):
+            k8s_files = []
+            for file in globs:
+                k8s_files.extend(glob(file))
+            for file in k8s_files:
+                Help.log(f"Applying {file}..")
+                response = run(
+                    f'{kubectl_cmd} apply -f {file}',
+                    shell=True, capture_output=True
+                )
+                if response.returncode != 0:
+                    Help.error(response.stderr.decode("utf-8"))
+                Help.log(response.stdout.decode("utf-8"))
 
 
 def make_clean_recipe(root_dir, globs):
