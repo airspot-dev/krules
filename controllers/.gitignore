@@ -1,0 +1,7 @@
+**/k8s/*.yaml
+**/.digest*
+**/requirements.txt
+**/Dockerfile
+**/.common
+**/.krules-libs
+**/.build*

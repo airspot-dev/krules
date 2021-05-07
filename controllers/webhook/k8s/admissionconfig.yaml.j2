@@ -1,0 +1,97 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ name }}
+webhooks:
+  - name: {{ name }}.{{ namespace }}.svc
+    sideEffects: None
+    matchPolicy: Equivalent
+    failurePolicy: Fail
+    timeoutSeconds: 5
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    namespaceSelector:
+      matchExpressions:
+        - { key: {{ ns_injection_lbl }}/injection, operator: In, values: [enabled] }
+    clientConfig:
+      service:
+        name: {{ name }}
+        namespace: {{ namespace }}
+        path: "/mutate"
+    rules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        scope: "Namespaced"
+        operations:
+          - CREATE
+      - apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        resources: ["deployments"]
+        scope: "Namespaced"
+        operations:
+          - CREATE
+      - apiGroups: [ "serving.knative.dev" ]
+        apiVersions: [ "v1" ]
+        resources: [ "services" ]
+        scope: Namespaced
+        operations:
+          - CREATE
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ name }}
+webhooks:
+  - name: {{ name }}.{{ namespace }}.svc
+    sideEffects: None
+    matchPolicy: Equivalent
+    failurePolicy: Fail
+    timeoutSeconds: 5
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    namespaceSelector:
+      matchExpressions:
+        - { key: {{ ns_injection_lbl }}/injection, operator: In, values: [enabled] }
+    clientConfig:
+      service:
+        name: {{ name }}
+        namespace: {{ namespace }}
+        path: "/validate"
+    rules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        scope: "Namespaced"
+        operations:
+          - CREATE
+          - UPDATE
+      - apiGroups: ["krules.airspot.dev"]
+        apiVersions: ["*"]
+        resources: ["configurationproviders"]
+        scope: "Namespaced"
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["configmaps"]
+        operations:
+          - DELETE
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["namespaces"]
+        scope: "Cluster"
+        operations:
+          - CREATE
+          - UPDATE
+      - apiGroups: ["eventing.knative.dev"]
+        apiVersions: ["*"]
+        resources: ["brokers"]
+        scope: "Namespaced"
+        operations:
+          - DELETE

@@ -1,0 +1,2 @@
+sane-build==7.1
+Jinja2==2.11.3

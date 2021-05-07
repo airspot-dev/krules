@@ -1,0 +1,5 @@
+*-kubeconfig
+.idea/
+**/sane.py
+**/__pycache__
+
