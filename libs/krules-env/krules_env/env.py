@@ -93,8 +93,6 @@ def init():
         providers.Singleton(lambda: krules_settings)
     )
 
-    proc_events_rx_factory.queue.clear()
-
     event_router_factory.override(
         providers.Singleton(lambda: EventRouter())
     )

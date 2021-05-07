@@ -33,7 +33,7 @@ setup(
     ],
     install_requires=[
         'krules-core==0.8.5.1',
-        'pykube-ng==20.10.0',
+        'pykube-ng==21.3.0',
     ],
     setup_requires=[
         'pytest-runner',
