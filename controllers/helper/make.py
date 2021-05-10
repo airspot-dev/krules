@@ -22,7 +22,7 @@ KUBECTL_CMD = os.environ.get("KUBECTL_CMD", shutil.which("kubectl"))
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 APP_DIR = "app"
 
-SERVICE_NAME = os.environ.get("HELPER_SERVICE_NAME", "krules-helper")
+SERVICE_NAME = os.environ.get("CONTROLLERS_HELPER_SERVICE_NAME", "krules-helper")
 DOCKER_REGISTRY = os.environ.get("DOCKER_REGISTRY")
 #TARGET_IMAGE = f"{DOCKER_REGISTRY}/{SERVICE_NAME}"
 
@@ -34,9 +34,9 @@ DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
 
 NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
 
-local_utils.make_render_resource_recipes(ROOT_DIR, ['Dockerfile.j2'], lambda: {
+local_utils.make_render_resource_recipes(ROOT_DIR, globs=['Dockerfile.j2'], context_vars=lambda: {
     "ruleset_image_base": RULESET_IMAGE_BASE,
-}, hooks=['prepare_build'], extra_conditions=[
+}, hooks=['prepare_build'], run_before=[
     lambda: local_utils.check_envvar_exists('RULESET_IMAGE_BASE')
 ])
 
@@ -45,7 +45,7 @@ local_utils.make_build_recipe(
     root_dir=ROOT_DIR,
     docker_cmd=DOCKER_CMD,
     target=SERVICE_NAME,
-    extra_conditions=[
+    run_before=[
         lambda: local_utils.copy_dirs(
             dirs=[
                 os.path.join(ROOT_DIR, os.path.pardir, "common")
@@ -81,7 +81,7 @@ local_utils.make_render_resource_recipes(ROOT_DIR, [f'k8s/*.yaml.j2'], lambda: {
     "name": SERVICE_NAME,
     "digest": open(".digest", "r").read(),
     "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
-}, hooks=['render_resource'], extra_conditions=[
+}, hooks=['render_resource'], run_before=[
     lambda: local_utils.check_envvar_exists('NAMESPACE')
 ])
 
@@ -91,7 +91,7 @@ local_utils.make_apply_recipe(
     root_dir=ROOT_DIR,
     globs=["k8s/*.yaml"],
     kubectl_cmd=KUBECTL_CMD,
-    extra_conditions=[
+    run_before=[
         lambda: local_utils.check_envvar_exists('NAMESPACE')
     ],
     recipe_deps=["push"],

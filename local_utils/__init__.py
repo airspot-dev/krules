@@ -26,14 +26,10 @@ def check_jinja2():
     except ImportError:
         Help.error('Jinja2 is not installed... run "pip install jinja2"  (>=2.11.3)')
 
-    return False
-
 
 def check_envvar_exists(name):
     if name not in os.environ:
         Help.error(f'Environment variable {name} does not exists')
-
-    return False
 
 
 def check_cmd(cmd):
@@ -41,10 +37,9 @@ def check_cmd(cmd):
     if shutil.which(cmd) is None:
         Help.error(f'Command {cmd} not found in PATH')
 
-    return False
 
-
-def make_render_resource_recipes(root_dir, globs, context_vars, hooks=("render_resource",), extra_conditions=()):
+def make_render_resource_recipes(root_dir, globs, context_vars, hooks=("render_resource",), extra_conditions=(),
+                                 run_before=()):
 
     def _context_vars():
         if callable(context_vars):
@@ -63,7 +58,6 @@ def make_render_resource_recipes(root_dir, globs, context_vars, hooks=("render_r
 
         @recipe(name=resource_file,
                 conditions=[
-                    check_jinja2,
                     *extra_conditions,
                     resource_older_than_template,
                 ],
@@ -71,6 +65,9 @@ def make_render_resource_recipes(root_dir, globs, context_vars, hooks=("render_r
                 info=f'Process \'{j2_template}\'')
         def render_resource():
             with pushd(root_dir):
+                check_jinja2()
+                for func in run_before:
+                    func()
                 from jinja2 import Template
                 Help.log(f"Rendering {resource_file}")
                 tmpl = Template(open(j2_template).read(), trim_blocks=True, lstrip_blocks=True, ).render(
@@ -91,13 +88,18 @@ def make_render_resource_recipes(root_dir, globs, context_vars, hooks=("render_r
             )
 
 
-def make_build_recipe(name, root_dir, docker_cmd, target, extra_conditions, success_file, out_file, hook_deps):
+def make_build_recipe(name, root_dir, docker_cmd, target, extra_conditions, success_file, out_file, hook_deps,
+                      run_before=()):
     @recipe(name=name, info=f"Build the docker image for target {target}", conditions=[
-        lambda: check_envvar_exists('DOCKER_REGISTRY'),
-        lambda: check_cmd(docker_cmd),
         *extra_conditions,
     ], hook_deps=hook_deps)
     def build():
+
+        check_envvar_exists('DOCKER_REGISTRY')
+        check_cmd(docker_cmd)
+        for func in run_before:
+            func()
+
         target_image = f'{os.environ.get("DOCKER_REGISTRY")}/{target}'
         Help.log(f'Building {target_image} from Dockerfile')
         with pushd(root_dir):
@@ -116,14 +118,18 @@ def make_build_recipe(name, root_dir, docker_cmd, target, extra_conditions, succ
 
 
 def make_push_recipe(name, root_dir, docker_cmd, target, extra_conditions, digest_file, tag,
-                     recipe_deps):
+                     recipe_deps, run_before=()):
     @recipe(name=name, info="Push the latest built docker image", conditions=[
-        lambda: check_envvar_exists('DOCKER_REGISTRY'),
-        lambda: check_cmd(docker_cmd),
         *extra_conditions
     ], recipe_deps=recipe_deps
             )
     def push():
+        check_envvar_exists('DOCKER_REGISTRY')
+        check_cmd(docker_cmd)
+
+        for func in run_before:
+            func()
+
         target_image = f'{os.environ.get("DOCKER_REGISTRY")}/{target}'
         if tag:
             _tag = f'{target_image}:{tag}'
@@ -157,18 +163,22 @@ def make_push_recipe(name, root_dir, docker_cmd, target, extra_conditions, diges
                 f.write(response.stdout)
 
 
-def make_apply_recipe(name, root_dir, globs, kubectl_cmd, extra_conditions, recipe_deps, hook_deps):
+def make_apply_recipe(name, root_dir, globs, kubectl_cmd, extra_conditions, recipe_deps, hook_deps, run_before=()):
     @recipe(
         name=name,
         info="Apply all",
         conditions=[
-            lambda: check_cmd(kubectl_cmd),
             *extra_conditions
         ],
         recipe_deps=recipe_deps,
         hook_deps=hook_deps
     )
     def apply():
+
+        check_cmd(kubectl_cmd)
+        for func in run_before:
+            func()
+
         with pushd(root_dir):
             k8s_files = []
             for file in globs:
@@ -217,5 +227,3 @@ def copy_dirs(dirs, dst):
         if os.path.exists(to_path):
             shutil.rmtree(to_path)
         shutil.copytree(p, to_path)
-
-    return False

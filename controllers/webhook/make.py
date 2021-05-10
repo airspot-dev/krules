@@ -56,7 +56,7 @@ local_utils.make_build_recipe(
     root_dir=ROOT_DIR,
     docker_cmd=DOCKER_CMD,
     target=SERVICE_NAME,
-    extra_conditions=[
+    run_before=[
         lambda: local_utils.copy_dirs(
             dirs=[
                 os.path.join(ROOT_DIR, os.path.pardir, "common")
@@ -97,7 +97,7 @@ local_utils.make_render_resource_recipes(ROOT_DIR, [f'k8s/*.yaml.j2'], lambda: {
     "name": SERVICE_NAME,
     "digest": open(".digest", "r").read(),
     "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
-}, hooks=['render_resource'], extra_conditions=[
+}, hooks=['render_resource'], run_before=[
     lambda: local_utils.check_envvar_exists('NAMESPACE'),
     lambda: local_utils.check_envvar_exists('NS_INJECTION_LBL')
 ])
@@ -108,7 +108,7 @@ local_utils.make_apply_recipe(
     root_dir=ROOT_DIR,
     globs=["k8s/*.yaml"],
     kubectl_cmd=KUBECTL_CMD,
-    extra_conditions=[
+    run_before=[
         lambda: local_utils.check_envvar_exists('NAMESPACE'),
         lambda: local_utils.check_envvar_exists('NS_INJECTION_LBL'),
     ],
