@@ -23,8 +23,8 @@ K8S_RESOURCES_DIR = 'k8s'
 NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
 DOCKER_REGISTRY = os.environ.get("DOCKER_REGISTRY")
 
-CONTROLLERS_HELPER_SERVICE_NAME = os.environ.get("CONTROLLERS_HELPER_SERVICE_NAME", "krules-helper")
-CONTROLLERS_WEBHOOK_SERVICE_NAME = os.environ.get("CONTROLLERS_WEBHOOK_SERVICE_NAME", "krules-webhook")
+CONTROLLERS_HELPER_SERVICE_NAME = os.environ.get("CONTROLLERS_HELPER_SERVICE_NAME", "krules-helper-inj")
+CONTROLLERS_WEBHOOK_SERVICE_NAME = os.environ.get("CONTROLLERS_WEBHOOK_SERVICE_NAME", "krules-webhook-inj")
 
 local_utils.make_render_resource_recipes(ROOT_DIR, [f'{K8S_RESOURCES_DIR}/*.yaml.j2'], {
     "namespace": NAMESPACE
@@ -35,14 +35,16 @@ local_utils.make_render_resource_recipes(ROOT_DIR, [f'{K8S_RESOURCES_DIR}/*.yaml
 def webhook():
     Help.log("Applying webhook..")
     with local_utils.pushd(ROOT_DIR):
-        subprocess.run(["./webhook/make.py", "apply"])
+        webhook_env = os.environ.update({"SERVICE_NAME": CONTROLLERS_WEBHOOK_SERVICE_NAME})
+        subprocess.run(["./webhook/make.py", "apply"], env=webhook_env)
 
 
 @recipe(info="Build and deploy the helper controller", hook_deps=['render_resource'])
 def helper():
     Help.log("Applying helper..")
     with local_utils.pushd(ROOT_DIR):
-        subprocess.run(["./helper/make.py", "apply"])#, env={"SERVICE_NAME": CONTROLLERS_HELPER_SERVICE_NAME})
+        helper_env = os.environ.update({"SERVICE_NAME": CONTROLLERS_HELPER_SERVICE_NAME})
+        subprocess.run(["./helper/make.py", "apply"], env=helper_env)
 
 
 @recipe(info="Build and deploy all controllers", recipe_deps=[webhook, helper])

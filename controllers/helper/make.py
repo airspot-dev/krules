@@ -22,7 +22,7 @@ KUBECTL_CMD = os.environ.get("KUBECTL_CMD", shutil.which("kubectl"))
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 APP_DIR = "app"
 
-SERVICE_NAME = os.environ.get("CONTROLLERS_HELPER_SERVICE_NAME", "krules-helper")
+SERVICE_NAME = os.environ.get("SERVICE_NAME", "krules-helper")
 DOCKER_REGISTRY = os.environ.get("DOCKER_REGISTRY")
 #TARGET_IMAGE = f"{DOCKER_REGISTRY}/{SERVICE_NAME}"
 
@@ -76,7 +76,7 @@ local_utils.make_push_recipe(
 )
 
 
-local_utils.make_render_resource_recipes(ROOT_DIR, [f'k8s/*.yaml.j2'], lambda: {
+local_utils.make_render_resource_recipes(ROOT_DIR, globs=['k8s/*.yaml.j2'], context_vars=lambda: {
     "namespace": NAMESPACE,
     "name": SERVICE_NAME,
     "digest": open(".digest", "r").read(),

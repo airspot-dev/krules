@@ -22,7 +22,7 @@ KUBECTL_CMD = os.environ.get("KUBECTL_CMD", shutil.which("kubectl"))
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 APP_DIR = "app"
 
-SERVICE_NAME = os.environ.get("WEBHOOK_SERVICE_NAME", "krules-webhook")
+SERVICE_NAME = os.environ.get("SERVICE_NAME", "krules-webhook")
 #DOCKER_REGISTRY = os.environ.get("DOCKER_REGISTRY")
 #TARGET_IMAGE = f"{DOCKER_REGISTRY}/{SERVICE_NAME}"
 
@@ -45,7 +45,7 @@ DEP_LIBS = [
     "gunicorn==20.0.4"
 ]
 
-local_utils.make_render_resource_recipes(ROOT_DIR, ["Dockerfile.j2"], {
+local_utils.make_render_resource_recipes(ROOT_DIR, globs=["Dockerfile.j2"], context_vars={
     "release_version": RELEASE_VERSION,
     "krules_dep_libs": KRULES_DEP_LIBS,
     "dep_libs": DEP_LIBS,
@@ -91,7 +91,7 @@ local_utils.make_push_recipe(
 )
 
 
-local_utils.make_render_resource_recipes(ROOT_DIR, [f'k8s/*.yaml.j2'], lambda: {
+local_utils.make_render_resource_recipes(ROOT_DIR, globs=[f'k8s/*.yaml.j2'], context_vars=lambda: {
     "namespace": NAMESPACE,
     "ns_injection_lbl": os.environ.get('NS_INJECTION_LBL'),
     "name": SERVICE_NAME,
