@@ -30,7 +30,6 @@ def check_jinja2():
 
 
 def check_envvar_exists(name):
-
     if name not in os.environ:
         Help.error(f'Environment variable {name} does not exists')
 
@@ -64,9 +63,9 @@ def make_render_resource_recipes(root_dir, globs, context_vars, hooks=("render_r
 
         @recipe(name=resource_file,
                 conditions=[
-                    resource_older_than_template,
                     check_jinja2,
-                    *extra_conditions
+                    *extra_conditions,
+                    resource_older_than_template,
                 ],
                 hooks=hooks,
                 info=f'Process \'{j2_template}\'')
@@ -185,7 +184,7 @@ def make_apply_recipe(name, root_dir, globs, kubectl_cmd, extra_conditions, reci
                 Help.log(response.stdout.decode("utf-8"))
 
 
-def make_clean_recipe(root_dir, globs):
+def make_clean_recipe(root_dir, globs, on_completed=lambda: None):
     @recipe(info="Clean up project")
     def clean():
         with pushd(root_dir):
@@ -198,6 +197,7 @@ def make_clean_recipe(root_dir, globs):
                     shutil.rmtree(f)
                 else:
                     os.unlink(f)
+            on_completed()
 
 
 @contextlib.contextmanager
