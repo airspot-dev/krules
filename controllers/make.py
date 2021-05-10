@@ -42,7 +42,7 @@ def webhook():
 def helper():
     Help.log("Applying helper..")
     with local_utils.pushd(ROOT_DIR):
-        subprocess.run(["./helper/make.py", "apply"], env={"SERVICE_NAME": CONTROLLERS_HELPER_SERVICE_NAME})
+        subprocess.run(["./helper/make.py", "apply"])#, env={"SERVICE_NAME": CONTROLLERS_HELPER_SERVICE_NAME})
 
 
 @recipe(info="Build and deploy all controllers", recipe_deps=[webhook, helper])

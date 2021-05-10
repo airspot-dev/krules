@@ -88,7 +88,7 @@ def make_render_resource_recipes(root_dir, globs, context_vars, hooks=("render_r
             )
 
 
-def make_build_recipe(name, root_dir, docker_cmd, target, extra_conditions, success_file, out_file, hook_deps,
+def make_build_recipe(name, root_dir, docker_cmd, target, success_file, out_file, hook_deps, extra_conditions=(),
                       run_before=()):
     @recipe(name=name, info=f"Build the docker image for target {target}", conditions=[
         *extra_conditions,
@@ -117,8 +117,8 @@ def make_build_recipe(name, root_dir, docker_cmd, target, extra_conditions, succ
                 Help.error(open(out_file, "r").read())
 
 
-def make_push_recipe(name, root_dir, docker_cmd, target, extra_conditions, digest_file, tag,
-                     recipe_deps, run_before=()):
+def make_push_recipe(name, root_dir, docker_cmd, target, digest_file, tag, recipe_deps, extra_conditions=(),
+                     run_before=()):
     @recipe(name=name, info="Push the latest built docker image", conditions=[
         *extra_conditions
     ], recipe_deps=recipe_deps
@@ -163,7 +163,7 @@ def make_push_recipe(name, root_dir, docker_cmd, target, extra_conditions, diges
                 f.write(response.stdout)
 
 
-def make_apply_recipe(name, root_dir, globs, kubectl_cmd, extra_conditions, recipe_deps, hook_deps, run_before=()):
+def make_apply_recipe(name, root_dir, globs, kubectl_cmd, recipe_deps, hook_deps, extra_conditions=(), run_before=()):
     @recipe(
         name=name,
         info="Apply all",
