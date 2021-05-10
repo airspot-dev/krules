@@ -57,11 +57,9 @@ def html():
         Help.error("sphinx-multiversion not found! Pleas run \"pip install sphinx-multiversion\"")
 
 
-@recipe(info="Clean build folder")
-def clean():
-    if os.path.exists(BUILD_DIR):
-        Help.log("Cleaning folders..")
-        shutil.rmtree(BUILD_DIR)
-
+local_utils.make_clean_recipe(
+    root_dir=ROOT_DIR,
+    globs=["build"]
+)
 
 sane_run(default=html)
