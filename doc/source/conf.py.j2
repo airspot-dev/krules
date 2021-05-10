@@ -13,8 +13,9 @@
 import os
 import sys
 # os.environ.get()
-sys.path.insert(0, "/Users/lorenzobtz/Documents/KRules/krules/doc/../libs/krules-core")
-sys.path.insert(0, "/Users/lorenzobtz/Documents/KRules/krules/doc/../libs/krules-k8s-functions")
+{% for lib in doc_libs %}
+sys.path.insert(0, "{{ lib }}")
+{% endfor %}
 
 
 # -- Project information -----------------------------------------------------
@@ -30,7 +31,7 @@ html_theme_options = {
 }
 
 # The full version, including alpha/beta/rc tags
-release = "0.8.5"
+release = "{{ release_version }}"
 
 
 # -- General configuration ---------------------------------------------------

@@ -23,8 +23,10 @@ spec:
                 ports: 
                   - containerPort: 8080
                     name: helper
-                {% if debug_procevents_sink %}
                 env:
+                  - name: CE_SOURCE
+                    value: {{ name }}
+                {% if debug_procevents_sink %}
                   - name: PUBLISH_PROCEVENTS_LEVEL
                     value: "2"
                   - name: PUBLISH_PROCEVENTS_MATCHING

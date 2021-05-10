@@ -23,8 +23,8 @@ K8S_RESOURCES_DIR = 'k8s'
 NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
 DOCKER_REGISTRY = os.environ.get("DOCKER_REGISTRY")
 
-CONTROLLERS_HELPER_SERVICE_NAME = os.environ.get("CONTROLLERS_HELPER_SERVICE_NAME", "krules-helper-inj")
-CONTROLLERS_WEBHOOK_SERVICE_NAME = os.environ.get("CONTROLLERS_WEBHOOK_SERVICE_NAME", "krules-webhook-inj")
+CONTROLLERS_HELPER_SERVICE_NAME = os.environ.get("CONTROLLERS_HELPER_SERVICE_NAME", "krules-helper")
+CONTROLLERS_WEBHOOK_SERVICE_NAME = os.environ.get("CONTROLLERS_WEBHOOK_SERVICE_NAME", "krules-webhook")
 
 local_utils.make_render_resource_recipes(ROOT_DIR, [f'{K8S_RESOURCES_DIR}/*.yaml.j2'], {
     "namespace": NAMESPACE
