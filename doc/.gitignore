@@ -66,6 +66,4 @@ node_modules/
 
 build/*
 
-source/conf.py
-
 .firebaserc
