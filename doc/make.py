@@ -50,7 +50,6 @@ sane_utils.make_render_resource_recipes(
     hook_deps=["source_config"]
 )
 def html():
-    Help.log("Building documentation..")
     if shutil.which("sphinx-multiversion"):
         Help.log("Running Sphinx.." + SOURCE_DIR)
         subprocess.run(["sphinx-multiversion", SOURCE_DIR, os.path.join(BUILD_DIR, "html", "en")])
