@@ -25,11 +25,7 @@ RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 sane_utils.make_render_resource_recipes(
     root_dir=ROOT_DIR,
     globs=[os.path.join("source", "conf.py.j2")],
-    context_vars= {
-        "doc_libs": [
-            os.path.join(KRULES_ROOT_DIR, "libs", "krules-core"),
-            os.path.join(KRULES_ROOT_DIR, "libs", "krules-k8s-functions"),
-        ],
+    context_vars={
         "release_version": RELEASE_VERSION
     },
     run_before=[

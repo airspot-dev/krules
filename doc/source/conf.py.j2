@@ -12,16 +12,15 @@
 #
 import os
 import sys
-# os.environ.get()
-{% for lib in doc_libs %}
-sys.path.insert(0, "{{ lib }}")
-{% endfor %}
+
+sys.path.insert(0, "../../libs/krules-core")
+sys.path.insert(0, "../../libs/krules-k8s-functions")
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'KRules documentation'
-copyright = '2021, Airspot s.r.l. Sede Legale:Via Ormea 33 10125 Torino, TO Italy C.F. e P. IVA: 12141910013'
+copyright = '2021, Airspot s.r.l.'
 author = 'Airspot s.r.l.'
 logo = 'krules_ext_logo.png'
 html_theme_options = {
