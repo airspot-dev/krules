@@ -18,22 +18,26 @@ sane_utils.make_render_resource_recipes(
     },
     hooks=["prepare_setup"],
     run_before=[
-        sane_utils.check_envvar_exists("RELEASE_VERSION")
+        lambda: sane_utils.check_envvar_exists("RELEASE_VERSION")
     ],
 )
 
-@recipe(info="Make develop installation", hook_deps="prepare_setup")
+
+@recipe(info="Make develop installation", hook_deps=["prepare_setup"])
 def develop():
     with sane_utils.pushd(ROOT_DIR):
         subprocess.run(["python", "setup.py", "develop"])
 
+
 @recipe(
     info="Publish package to pipy",
-    hook_deps="prepare_setup",
-    conditions=Help.file_condition(
-        sources=glob(os.path.join(ROOT_DIR, "krules_dev")),
-        targets=[os.path.join(ROOT_DIR, "build")]
-    ),
+    hook_deps=["prepare_setup"],
+    conditions=[
+            Help.file_condition(
+                sources=glob(os.path.join(ROOT_DIR, "krules_dev")),
+                targets=[os.path.join(ROOT_DIR, "build")]
+            )
+    ],
 )
 def release():
     sane_utils.check_cmd("twine")
@@ -45,3 +49,5 @@ sane_utils.make_clean_recipe(
     root_dir=ROOT_DIR,
     globs=["setup.py", "dist", "*.eggs", "*.egg-info"]
 )
+
+sane_run()
