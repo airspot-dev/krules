@@ -1,0 +1,5 @@
+.krules-libs
+.build.out
+.build.success
+.digest
+Dockerfile
