@@ -7,7 +7,7 @@ import os
 try:
     from krules_dev import sane_utils
 except ImportError:
-    print('\033[91mkrules-dev is not installed... run "pip install krules-dev"\033[0m')
+    print('\033[91mkrules local development support is not installed... run "pip install krules-dev-support"\033[0m')
     exit(-1)
 
 from sane import *
