@@ -22,10 +22,11 @@ KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname
 KRULES_LIBS_DIR = os.path.join(KRULES_ROOT_DIR, "libs")
 
 KRULES_DEP_LIBS = ["krules-core", "krules-dispatcher-cloudevents", "krules-env"]
+DEV_REQUIREMENTS = ["dependency-injector==4.32.2"]
 
 
 sane_utils.make_render_resource_recipes(ROOT_DIR, globs=["Dockerfile.j2"], context_vars={
-    "release_version": RELEASE_VERSION
+    "release_version": RELEASE_VERSION, "dev_requirements": DEV_REQUIREMENTS
 }, hooks=['prepare_build'])
 
 

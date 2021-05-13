@@ -10,10 +10,15 @@ RUN apk add --no-cache --virtual .build-deps g++ python3-dev && \
 {% if release_version %}
 RUN pip3 install --no-cache-dir krules-env=={{ release_version }}
 {% else %}
+{% for lib in dev_requirements %}
+RUN pip3 install {{ lib }} {% if not loop.last %}\{%  endif %}
+{% endfor %}
+
 ADD .krules-libs krules-libs
 RUN cd /krules-libs/krules-core && python3 setup.py develop
 RUN cd /krules-libs/krules-dispatcher-cloudevents && python3 setup.py develop
 RUN cd /krules-libs/krules-env && python3 setup.py develop
+# ENV PYTHONPATH /krules-libs/krules-core:/krules-libs/krules-dispatcher-cloudevents:/krules-libs/krules-env
 {% endif %}
 
 RUN apk del .build-deps
