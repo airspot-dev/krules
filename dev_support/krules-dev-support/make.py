@@ -1,9 +1,11 @@
-import os
+#!/usr/bin/env python
 import subprocess
 from glob import glob
-from krules_dev import sane_utils
+
 from sane import *
 from sane import _Help as Help
+
+from krules_dev import sane_utils
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
