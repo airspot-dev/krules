@@ -7,7 +7,7 @@ import os
 try:
     from krules_dev import sane_utils
 except ImportError:
-    print('\033[91mkrules-dev is not installed... run "pip install krules-dev"\033[0m')
+    print('\033[91mkrules local development support is not installed... run "pip install krules-dev-support"\033[0m')
     exit(-1)
 
 from sane import *
@@ -21,6 +21,7 @@ ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 SOURCE_DIR = os.path.join(ROOT_DIR, "source")
 BUILD_DIR = os.path.join(ROOT_DIR, "build")
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
+
 
 sane_utils.make_render_resource_recipes(
     root_dir=ROOT_DIR,
