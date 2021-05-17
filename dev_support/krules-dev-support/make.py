@@ -8,13 +8,12 @@ from sane import _Help as Help
 from krules_dev import sane_utils
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
-RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
 sane_utils.make_render_resource_recipes(
     root_dir=ROOT_DIR,
     globs=["setup.py.j2"],
     context_vars={
-        "release_version": RELEASE_VERSION,
+        "release_version": os.environ.get("RELEASE_VERSION"),
     },
     hooks=["prepare_setup"],
     run_before=[
@@ -44,6 +43,7 @@ def release():
     with sane_utils.pushd(ROOT_DIR):
         subprocess.run(["python", "setup.py", "sdist"])
         subprocess.run(["twine", "upload", "dist/*"])
+
 
 sane_utils.make_clean_recipe(
     root_dir=ROOT_DIR,

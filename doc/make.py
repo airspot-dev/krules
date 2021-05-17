@@ -22,6 +22,7 @@ SOURCE_DIR = os.path.join(ROOT_DIR, "source")
 BUILD_DIR = os.path.join(ROOT_DIR, "build")
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
+
 sane_utils.make_render_resource_recipes(
     root_dir=ROOT_DIR,
     globs=[os.path.join("source", "conf.py.j2")],
