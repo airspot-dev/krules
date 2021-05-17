@@ -15,7 +15,7 @@ DOCKER_CMD = os.environ.get("DOCKER_CMD", shutil.which("docker"))
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
-IMAGE_NAME = os.environ.get("IMAGE_NAME", "krules-generic-image")
+IMAGE_NAME = os.environ.get("IMAGE_NAME", "krules-generic-image-base")
 
 KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir, os.path.pardir))
