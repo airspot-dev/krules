@@ -47,6 +47,24 @@ sane_utils.make_render_resource_recipes(
     hook_deps=["source_config"]
 )
 def html():
+    if shutil.which("sphinx-build"):
+        Help.log("Running Sphinx.." + SOURCE_DIR)
+        subprocess.run(["sphinx-build", "-M", "html", SOURCE_DIR, os.path.join(BUILD_DIR, "html", "en")])
+    else:
+        Help.error("sphinx-build not found! Pleas run \"pip install sphinx\"")
+
+
+@recipe(
+    info="Build multiversion documentation",
+    conditions=[
+        lambda: not os.path.exists(BUILD_DIR) or Help.file_condition(
+            sources=glob(os.path.join(SOURCE_DIR, "*")),
+            targets=[BUILD_DIR]
+        )
+    ],
+    hook_deps=["source_config"]
+)
+def multiversion():
     if shutil.which("sphinx-multiversion"):
         Help.log("Running Sphinx.." + SOURCE_DIR)
         subprocess.run(["sphinx-multiversion", SOURCE_DIR, os.path.join(BUILD_DIR, "html", "en")])

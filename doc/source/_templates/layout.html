@@ -64,6 +64,7 @@
             </p>
         </p>
     </div>
+    {% if current_version %}
     <div class="versions-wrapper">
         {% if versions %}
             <div class="dropdown">
@@ -80,6 +81,7 @@
             </div>
           {% endif %}
     </div>
+    {% endif %}
     <div class="header-wrapper" role="banner">
         <h1>Documentation</h1>
       <div class="header">
