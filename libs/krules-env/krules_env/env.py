@@ -19,7 +19,7 @@ from krules_core.providers import (
     exceptions_dumpers_factory,
 )
 from krules_core.route.router import DispatchPolicyConst, EventRouter
-from krules_core.utils import load_rules_from_rulesdata
+from krules_core.utils import load_rules_from_rulesdata, get_source
 
 config_base_path = os.environ.get("KRULES_CONFIG_BASE_PATH", "/krules/config")
 
@@ -101,21 +101,12 @@ def init():
     exceptions_dumpers.set(ExceptionDumperBase)
     exceptions_dumpers.set(RequestsHTTPErrorDumper)
 
-    # TODO: do it better
-    source = None
-    if "K_SERVICE" in os.environ:
-        source = os.environ["K_SERVICE"]
-    elif "SERVICE" in os.environ:
-        source = os.environ["SERVICE"]
-    else:
-        source = socket.gethostname()
-
     from krules_cloudevents.route.dispatcher import CloudEventsDispatcher
     event_dispatcher_factory.override(
         providers.Singleton(lambda: CloudEventsDispatcher
             (
                 _get_dispatch_url,
-                source
+                get_source()
             )
         )
     )

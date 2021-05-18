@@ -21,6 +21,9 @@ import traceback
 
 
 import logging
+
+from .utils import get_source
+
 logger = logging.getLogger("__core__")
 
 from .providers import exceptions_dumpers_factory
@@ -136,7 +139,7 @@ class Rule:
                 Const.PROCESSING: [],
                 Const.GOT_ERRORS: False,
                 Const.EVENT_INFO: event_info,
-                Const.SOURCE: os.environ.get("K_SERVICE", os.environ.get("SOURCE")),
+                Const.SOURCE: get_source()
                 # DEPRECATED use event_info.get("source")
             }
             if procevents_level == ProcEventsLevel.FULL:
