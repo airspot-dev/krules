@@ -11,11 +11,12 @@
 import socket
 
 from krules_core import RuleConst
-from krules_core.core import RuleFactory
 import os
 
 
 def load_rules_from_rulesdata(rulesdata):
+
+    from krules_core.core import RuleFactory
 
     description=""
     for el in rulesdata:
