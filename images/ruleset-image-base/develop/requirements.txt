@@ -1,8 +1,0 @@
-dependency-injector==4.32.2
-rx==3.1.1
-cloudstorage==0.10.0
-jsonpatch==1.26
-flask
-
-pytz
-requests

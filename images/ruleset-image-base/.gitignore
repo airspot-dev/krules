@@ -1,1 +1,5 @@
 .idea/
+Dockerfile
+.digest
+.build.out
+.build.success

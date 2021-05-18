@@ -72,7 +72,6 @@ def make_build_recipe(name, root_dir, docker_cmd, target, success_file, out_file
         *extra_conditions,
     ], hook_deps=hook_deps)
     def build():
-
         check_envvar_exists('DOCKER_REGISTRY')
         check_cmd(docker_cmd)
         for func in run_before:
