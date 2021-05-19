@@ -36,6 +36,25 @@ sane_utils.make_render_resource_recipes(
 )
 
 
+def _create_vm():
+    print("creating VM")
+    subprocess.run([
+        "python3", "-m", "venv", ".env"
+    ])
+    subprocess.run([
+        ".env/bin/pip3", "install", "--upgrade", "pip", "setuptools"
+    ])
+    subprocess.run([
+        ".env/bin/pip3", "install", "--no-cache-dir", "-r", "requirements.txt"
+    ])
+    subprocess.run([
+        ".env/bin/python3", f"{KRULES_ROOT_DIR}/libs/krules-core/setup.py", "develop",
+    ])
+    subprocess.run([
+        ".env/bin/python3", f"{KRULES_ROOT_DIR}/libs/krules-k8s-functions/setup.py", "develop"
+    ])
+
+
 @recipe(
     info="Build multiversion documentation",
     conditions=[
@@ -47,11 +66,8 @@ sane_utils.make_render_resource_recipes(
     hook_deps=["source_config"]
 )
 def html():
-    if shutil.which("sphinx-build"):
-        Help.log("Running Sphinx.." + SOURCE_DIR)
-        subprocess.run(["sphinx-build", "-M", "html", SOURCE_DIR, os.path.join(BUILD_DIR, "html", "en")])
-    else:
-        Help.error("sphinx-build not found! Pleas run \"pip install sphinx\"")
+    _create_vm()
+    subprocess.run([".env/bin/sphinx-build", "-M", "html", SOURCE_DIR, os.path.join(BUILD_DIR, "html", "en")])
 
 
 @recipe(
@@ -65,11 +81,8 @@ def html():
     hook_deps=["source_config"]
 )
 def multiversion():
-    if shutil.which("sphinx-multiversion"):
-        Help.log("Running Sphinx.." + SOURCE_DIR)
-        subprocess.run(["sphinx-multiversion", SOURCE_DIR, os.path.join(BUILD_DIR, "html", "en")])
-    else:
-        Help.error("sphinx-multiversion not found! Pleas run \"pip install sphinx-multiversion\"")
+    _create_vm()
+    subprocess.run([".env/bin/sphinx-multiversion", SOURCE_DIR, os.path.join(BUILD_DIR, "html", "en")])
 
 
 sane_utils.make_clean_recipe(

@@ -2,4 +2,3 @@ sphinx
 m2r2
 sphinx-multiversion
 sphinx-intl
-
