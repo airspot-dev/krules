@@ -8,13 +8,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import socket
 
 from krules_core import RuleConst
-from krules_core.core import RuleFactory
 import os
 
+
 def load_rules_from_rulesdata(rulesdata):
+
+    from krules_core.core import RuleFactory
 
     description=""
     for el in rulesdata:
@@ -26,3 +28,13 @@ def load_rules_from_rulesdata(rulesdata):
                 el[RuleConst.SUBSCRIBE_TO] = "*"
             RuleFactory.create(**el)
             description = ""
+
+
+def get_source():
+    source = os.environ.get("CE_SOURCE")
+    if source is None:
+        if "K_SERVICE" in os.environ:
+            source = os.environ["K_SERVICE"]
+        else:
+            source = socket.gethostname()
+    return source

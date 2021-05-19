@@ -18,7 +18,6 @@ from krules_core.base_functions import RuleFunctionBase, Filter
 
 class Process(Filter):
     """
-
     *Like* `Filter <https://intro.krules.io/Filters.html#krules_core.base_functions.filters.Filter>`_ *evaluate a given expression but does not return it.*
     *The best way to exploit it is to use it in combination with* `Argument Processors <https://intro.krules.io/ArgumentProcessors.html>`_.
 
