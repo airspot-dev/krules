@@ -16,10 +16,12 @@ from sane import _Help as Help
 
 KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir))
+KRULES_LIBS_DIR = os.path.join(KRULES_ROOT_DIR, "libs")
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 SOURCE_DIR = os.path.join(ROOT_DIR, "source")
 BUILD_DIR = os.path.join(ROOT_DIR, "build")
+ENV_DIR = os.path.join(ROOT_DIR, ".env")
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
 
@@ -36,22 +38,30 @@ sane_utils.make_render_resource_recipes(
 )
 
 
-def _create_vm():
-    print("creating VM")
+@recipe(
+    info="Prepare virtual environment",
+    conditions=[
+        lambda: not os.path.exists(ENV_DIR)
+    ],
+    hook_deps=["source_config"]
+)
+def env():
+    Help.log("creating virtualenv...")
     subprocess.run([
         "python3", "-m", "venv", ".env"
     ])
     subprocess.run([
-        ".env/bin/pip3", "install", "--upgrade", "pip", "setuptools"
+        os.path.join(ENV_DIR, "bin", "pip3"), "install", "--upgrade", "pip", "setuptools"
     ])
     subprocess.run([
-        ".env/bin/pip3", "install", "--no-cache-dir", "-r", "requirements.txt"
+        os.path.join(ENV_DIR, "bin", "pip3"), "install", "--no-cache-dir", "-r", "requirements.txt"
     ])
     subprocess.run([
-        ".env/bin/python3", f"{KRULES_ROOT_DIR}/libs/krules-core/setup.py", "develop",
+        os.path.join(ENV_DIR, "bin", "python3"), os.path.join(KRULES_LIBS_DIR, "krules-core", "setup.py"), "develop",
     ])
     subprocess.run([
-        ".env/bin/python3", f"{KRULES_ROOT_DIR}/libs/krules-k8s-functions/setup.py", "develop"
+        os.path.join(ENV_DIR, "bin", "python3"), os.path.join(KRULES_LIBS_DIR, "krules-k8s-functions", "setup.py"),
+        "develop"
     ])
 
 
@@ -63,11 +73,12 @@ def _create_vm():
             targets=[BUILD_DIR]
         )
     ],
-    hook_deps=["source_config"]
+    hook_deps=["source_config"],
+    recipe_deps=[env]
 )
 def html():
-    _create_vm()
-    subprocess.run([".env/bin/sphinx-build", "-M", "html", SOURCE_DIR, os.path.join(BUILD_DIR, "html", "en")])
+    subprocess.run([os.path.join(ENV_DIR, "bin", "sphinx-build"), "-M", "html", SOURCE_DIR,
+                    os.path.join(BUILD_DIR, "html", "en")])
 
 
 @recipe(
@@ -78,16 +89,24 @@ def html():
             targets=[BUILD_DIR]
         )
     ],
-    hook_deps=["source_config"]
+    hook_deps=["source_config"],
+    recipe_deps=[env]
 )
 def multiversion():
-    _create_vm()
-    subprocess.run([".env/bin/sphinx-multiversion", SOURCE_DIR, os.path.join(BUILD_DIR, "html", "en")])
+    subprocess.run([os.path.join(ENV_DIR, "bin", "sphinx-multiversion"), SOURCE_DIR,
+                    os.path.join(BUILD_DIR, "html", "en")])
 
 
 sane_utils.make_clean_recipe(
     root_dir=ROOT_DIR,
     globs=["build", os.path.join("source", "conf.py")]
 )
+
+
+@recipe(info="Clean virtualenv")
+def clean_env():
+    if os.path.exists(ENV_DIR):
+        shutil.rmtree(ENV_DIR)
+
 
 sane_run(default=html)
