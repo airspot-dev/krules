@@ -1,0 +1,21 @@
+FROM {{ image_base }}
+
+ADD requirements.txt /app/requirements-django-base.txt
+
+RUN apk add --no-cache --virtual .build-deps g++ python3-dev openssl-dev build-base libffi-dev && \
+    pip3 install --upgrade pip setuptools && \
+    CRYPTOGRAPHY_DONT_BUILD_RUST=1 pip3 install --no-cache-dir -r /app/requirements-django-base.txt && \
+    apk del .build-deps
+
+WORKDIR /app
+
+RUN django-admin startproject {{ site_name }} .
+
+ADD site/asgi.py /app/{{ site_name }}/
+ADD site/settings.py /app/{{ site_name }}
+
+ENV DJANGO_SETTINGS_MODULE {{ site_name }}.settings
+
+RUN python3 manage.py collectstatic --noinput
+
+CMD ["daphne", "-p 8080", "{{ site_name }}.asgi:application"]
