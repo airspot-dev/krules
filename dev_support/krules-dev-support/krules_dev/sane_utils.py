@@ -66,11 +66,9 @@ def make_render_resource_recipes(root_dir, globs, context_vars, hooks=("render_r
             )
 
 
-def make_build_recipe(name, root_dir, docker_cmd, target, success_file, out_file, hook_deps, extra_conditions=(),
+def make_build_recipe(name, root_dir, docker_cmd, target, success_file, out_file, hook_deps, conditions=(),
                       run_before=()):
-    @recipe(name=name, info=f"Build the docker image for target {target}", conditions=[
-        *extra_conditions,
-    ], hook_deps=hook_deps)
+    @recipe(name=name, info=f"Build the docker image for target {target}", conditions=conditions, hook_deps=hook_deps)
     def build():
         check_envvar_exists('DOCKER_REGISTRY')
         check_cmd(docker_cmd)
@@ -94,12 +92,9 @@ def make_build_recipe(name, root_dir, docker_cmd, target, success_file, out_file
                 Help.error(open(out_file, "r").read())
 
 
-def make_push_recipe(name, root_dir, docker_cmd, target, digest_file, tag, recipe_deps, extra_conditions=(),
+def make_push_recipe(name, root_dir, docker_cmd, target, digest_file, tag, recipe_deps, conditions=(),
                      run_before=()):
-    @recipe(name=name, info="Push the latest built docker image", conditions=[
-        *extra_conditions
-    ], recipe_deps=recipe_deps
-            )
+    @recipe(name=name, info="Push the latest built docker image", conditions=conditions, recipe_deps=recipe_deps)
     def push():
         check_envvar_exists('DOCKER_REGISTRY')
         check_cmd(docker_cmd)
@@ -135,7 +130,8 @@ def make_push_recipe(name, root_dir, docker_cmd, target, digest_file, tag, recip
             )
             if response.returncode != 0:
                 Help.log(_tag)
-                Help.error(response.stderr.decode("utf-8"))
+                Help.error(response.stderr.decode())
+            Help.log(f"new digest: {response.stdout.decode()}")
             with open(digest_file, "wb") as f:
                 f.write(response.stdout)
 
@@ -160,7 +156,7 @@ def make_apply_recipe(name, root_dir, globs, kubectl_cmd, recipe_deps, hook_deps
             k8s_files = []
             for file in globs:
                 k8s_files.extend(glob(file))
-            for file in k8s_files:
+            for file in sorted(k8s_files):
                 Help.log(f"Applying {file}..")
                 response = run(
                     f'{kubectl_cmd} apply -f {file}',

@@ -4,7 +4,7 @@ RUN apk add --no-cache --virtual .build-deps g++ python3-dev && \
     apk add --no-cache build-base && \
     apk add --no-cache --update python3 && \
     pip3 install --upgrade pip setuptools
-{% if lib|length %}
+{% if dep_libs|length %}
 RUN pip3 install --no-cache-dir \
 {% for lib in dep_libs %}
     {{ lib }} {% if not loop.last %}\{%  endif %}

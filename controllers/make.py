@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import shutil
 import subprocess
 
 KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -15,6 +16,10 @@ from sane import *
 from sane import _Help as Help
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+WEBHOOK_DIR = os.path.join(ROOT_DIR, "webhook")
+HELPER_DIR = os.path.join(ROOT_DIR, "helper")
+
+KUBECTL_CMD = os.environ.get("KUBECTL_CMD", shutil.which("kubectl"))
 
 K8S_RESOURCES_DIR = 'k8s'
 
@@ -28,21 +33,36 @@ sane_utils.make_render_resource_recipes(ROOT_DIR, [f'{K8S_RESOURCES_DIR}/*.yaml.
     "namespace": NAMESPACE
 }, hooks=['render_resource'])
 
+sane_utils.make_apply_recipe(
+    name="apply",
+    root_dir=ROOT_DIR,
+    globs=["k8s/*.yaml"],
+    kubectl_cmd=KUBECTL_CMD,
+    recipe_deps=[],
+    hook_deps=["render_resource"]
+)
 
-@recipe(info="Build and deploy the webhook controller", hook_deps=['render_resource'])
+
+@recipe(info="Build and deploy the webhook controller", recipe_deps=["apply"])
 def webhook():
     Help.log("Applying webhook..")
     with sane_utils.pushd(ROOT_DIR):
         webhook_env = os.environ.update({"SERVICE_NAME": CONTROLLERS_WEBHOOK_SERVICE_NAME})
-        subprocess.run(["./webhook/make.py", "apply"], env=webhook_env)
+        try:
+            subprocess.run([os.path.join("webhook", "make.py"), "apply"], env=webhook_env).check_returncode()
+        except subprocess.CalledProcessError:
+            Help.error("Cannot apply webhook")
 
 
-@recipe(info="Build and deploy the helper controller", hook_deps=['render_resource'])
+@recipe(info="Build and deploy the helper controller", recipe_deps=['apply'])
 def helper():
     Help.log("Applying helper..")
     with sane_utils.pushd(ROOT_DIR):
         helper_env = os.environ.update({"SERVICE_NAME": CONTROLLERS_HELPER_SERVICE_NAME})
-        subprocess.run(["./helper/make.py", "apply"], env=helper_env)
+        try:
+            subprocess.run([os.path.join("helper", "make.py"), "apply"], env=helper_env).check_returncode()
+        except subprocess.CalledProcessError:
+            Help.error("Cannot apply helper")
 
 
 @recipe(info="Build and deploy all controllers", recipe_deps=[webhook, helper])

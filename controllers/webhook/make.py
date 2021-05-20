@@ -29,7 +29,7 @@ RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
 
 NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
-
+NS_INJECTION_LBL = os.environ.get("NS_INJECTION_LBL", "dev.krules.airspot.dev")
 
 KRULES_DEP_LIBS = [
     "krules-core",
@@ -77,11 +77,11 @@ sane_utils.make_push_recipe(
     root_dir=ROOT_DIR,
     docker_cmd=DOCKER_CMD,
     target=SERVICE_NAME,
-    extra_conditions=[
-        lambda: os.path.exists(os.path.join(ROOT_DIR, ".build.success")) and Help.file_condition(
+    conditions=[
+        Help.file_condition(
             sources=[os.path.join(ROOT_DIR, ".build.success")],
             targets=[os.path.join(ROOT_DIR, ".digest")]
-        )()
+        )
     ],
     digest_file=".digest",
     tag=RELEASE_VERSION,
@@ -89,16 +89,22 @@ sane_utils.make_push_recipe(
 )
 
 
-sane_utils.make_render_resource_recipes(ROOT_DIR, globs=[f'k8s/*.yaml.j2'], context_vars=lambda: {
-    "namespace": NAMESPACE,
-    "ns_injection_lbl": os.environ.get('NS_INJECTION_LBL'),
-    "name": SERVICE_NAME,
-    "digest": open(".digest", "r").read(),
-    "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
-}, hooks=['render_resource'], run_before=[
-    lambda: sane_utils.check_envvar_exists('NAMESPACE'),
-    lambda: sane_utils.check_envvar_exists('NS_INJECTION_LBL')
-])
+sane_utils.make_render_resource_recipes(
+    ROOT_DIR,
+    globs=[f'k8s/*.yaml.j2'],
+    context_vars=lambda: {
+        "namespace": NAMESPACE,
+        "ns_injection_lbl": NS_INJECTION_LBL,
+        "name": SERVICE_NAME,
+        "digest": open(".digest", "r").read(),
+        "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
+    },
+    hooks=['render_resource'],
+    # run_before=[
+    #     lambda: sane_utils.check_envvar_exists('NAMESPACE'),
+    #     lambda: sane_utils.check_envvar_exists('NS_INJECTION_LBL')
+    # ]
+)
 
 
 sane_utils.make_apply_recipe(
@@ -106,10 +112,10 @@ sane_utils.make_apply_recipe(
     root_dir=ROOT_DIR,
     globs=["k8s/*.yaml"],
     kubectl_cmd=KUBECTL_CMD,
-    run_before=[
-        lambda: sane_utils.check_envvar_exists('NAMESPACE'),
-        lambda: sane_utils.check_envvar_exists('NS_INJECTION_LBL'),
-    ],
+    # run_before=[
+    #     lambda: sane_utils.check_envvar_exists('NAMESPACE'),
+    #     lambda: sane_utils.check_envvar_exists('NS_INJECTION_LBL'),
+    # ],
     recipe_deps=["push"],
     hook_deps=["render_resource"]
 )
@@ -128,4 +134,4 @@ sane_utils.make_clean_recipe(
 )
 
 
-sane_run()
+sane_run('apply')
