@@ -21,7 +21,7 @@ KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname
                                                                  os.path.pardir, os.path.pardir))
 KRULES_LIBS_DIR = os.path.join(KRULES_ROOT_DIR, "libs")
 
-KRULES_DEP_LIBS = ["krules-flask-env", "krules-k8s-functions"]
+KRULES_DEP_LIBS = ["krules-core", "krules-dispatcher-cloudevents", "krules-env", "krules-flask-env", "krules-k8s-functions"]
 DEV_REQUIREMENTS = ["dependency-injector==4.32.2"]
 
 sane_utils.make_render_resource_recipes(ROOT_DIR, globs=["Dockerfile.j2"], context_vars={
