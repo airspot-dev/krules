@@ -21,11 +21,10 @@ RUN pip3 install --no-cache-dir {{ lib }} {% if not loop.last %}\{%  endif %}
 {% endfor %}
 
 ADD .krules-libs krules-libs
-RUN cd /krules-libs/krules-core && python3 setup.py develop
-RUN cd /krules-libs/krules-dispatcher-cloudevents && python3 setup.py develop
-RUN cd /krules-libs/krules-env && python3 setup.py develop
-RUN cd /krules-libs/krules-flask-env && python3 setup.py develop
-RUN cd /krules-libs/k8s-functions && python3 setup.py develop
+{% for lib in krules_libs %}
+RUN cd {{ lib }} && python3 setup.py develop
+
+{% endfor %}
 {% endif %}
 
 ADD ./app /app
