@@ -53,10 +53,10 @@ sane_utils.make_push_recipe(
     docker_cmd=DOCKER_CMD,
     target=IMAGE_NAME,
     conditions=[
-        lambda: os.path.exists(os.path.join(ROOT_DIR, ".build.success")) and Help.file_condition(
+        Help.file_condition(
             sources=[os.path.join(ROOT_DIR, ".build.success")],
             targets=[os.path.join(ROOT_DIR, ".digest")]
-        )()
+        )
     ],
     digest_file=".digest",
     tag=RELEASE_VERSION,

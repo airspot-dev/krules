@@ -22,7 +22,7 @@ RUN pip3 install --no-cache-dir {{ lib }} {% if not loop.last %}\{%  endif %}
 
 ADD .krules-libs krules-libs
 {% for lib in krules_libs %}
-RUN cd {{ lib }} && python3 setup.py develop
+RUN cd krules-libs/{{ lib }} && python3 setup.py develop
 
 {% endfor %}
 {% endif %}

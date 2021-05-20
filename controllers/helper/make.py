@@ -48,10 +48,8 @@ def _get_image_base():
 
 
 sane_utils.make_render_resource_recipes(ROOT_DIR, globs=['Dockerfile.j2'], context_vars=lambda: {
-    "ruleset_image_base": RULESET_IMAGE_BASE,
-}, hooks=['prepare_build'], run_before=[
-    lambda: sane_utils.check_envvar_exists('RULESET_IMAGE_BASE')
-])
+    "ruleset_image_base": _get_image_base(),
+}, hooks=['prepare_build'])
 
 sane_utils.make_build_recipe(
     name="build",
@@ -94,9 +92,7 @@ sane_utils.make_render_resource_recipes(ROOT_DIR, globs=['k8s/*.yaml.j2'], conte
     "name": SERVICE_NAME,
     "digest": open(".digest", "r").read(),
     "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
-}, hooks=['render_resource'], run_before=[
-    lambda: sane_utils.check_envvar_exists('NAMESPACE')
-])
+}, hooks=['render_resource'])
 
 
 sane_utils.make_apply_recipe(
@@ -104,9 +100,6 @@ sane_utils.make_apply_recipe(
     root_dir=ROOT_DIR,
     globs=["k8s/*.yaml"],
     kubectl_cmd=KUBECTL_CMD,
-    run_before=[
-        lambda: sane_utils.check_envvar_exists('NAMESPACE')
-    ],
     recipe_deps=["push"],
     hook_deps=["render_resource"]
 )
