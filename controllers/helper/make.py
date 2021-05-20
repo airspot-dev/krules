@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 import shutil
-
+import subprocess
 
 try:
     from krules_dev import sane_utils
@@ -33,6 +33,19 @@ RULESET_IMAGE_BASE = os.environ.get("RULESET_IMAGE_BASE")
 DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
 
 NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
+
+def _get_image_base():
+    global RULESET_IMAGE_BASE, RELEASE_VERSION
+    if RULESET_IMAGE_BASE is not None:
+        return RULESET_IMAGE_BASE
+    if RULESET_IMAGE_BASE is None and RELEASE_VERSION is not None:
+        RULESET_IMAGE_BASE = f"krules-ruleset-image-base:{RELEASE_VERSION}"
+    else:
+        subprocess.run([os.path.join(KRULES_ROOT_DIR, "images", "ruleset-image-base", "make.py")])
+        with open(os.path.join(KRULES_ROOT_DIR, "images", "ruleset-image-base", ".digest"), "r") as f:
+            RULESET_IMAGE_BASE = f.read()
+    return RULESET_IMAGE_BASE
+
 
 sane_utils.make_render_resource_recipes(ROOT_DIR, globs=['Dockerfile.j2'], context_vars=lambda: {
     "ruleset_image_base": RULESET_IMAGE_BASE,
