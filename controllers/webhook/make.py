@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import shutil
+import subprocess
 
 try:
     from krules_dev import sane_utils
@@ -32,9 +33,6 @@ NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
 NS_INJECTION_LBL = os.environ.get("NS_INJECTION_LBL", "dev.krules.airspot.dev")
 
 KRULES_DEP_LIBS = [
-    "krules-core",
-    "krules-dispatcher-cloudevents",
-    "krules-env",
     "krules-flask-env",
     "krules-k8s-functions",
 ]
@@ -43,11 +41,29 @@ DEP_LIBS = [
     "gunicorn==20.0.4"
 ]
 
+IMAGE_BASE = os.environ.get("IMAGE_BASE")
+
+
+def _get_image_base():
+    global IMAGE_BASE, RELEASE_VERSION
+    if IMAGE_BASE is not None:
+        return IMAGE_BASE
+    if IMAGE_BASE is None and RELEASE_VERSION is not None:
+        IMAGE_BASE = f"krules-generic-image-base:{RELEASE_VERSION}"
+    else:
+        subprocess.run([os.path.join(KRULES_ROOT_DIR, "images", "generic-image-base", "make.py")])
+        with open(os.path.join(KRULES_ROOT_DIR, "images", "generic-image-base", ".digest"), "r") as f:
+            IMAGE_BASE = f.read()
+    return IMAGE_BASE
+
+
 sane_utils.make_render_resource_recipes(ROOT_DIR, globs=["Dockerfile.j2"], context_vars={
     "release_version": RELEASE_VERSION,
+    "image_base": _get_image_base(),
     "krules_dep_libs": KRULES_DEP_LIBS,
     "dep_libs": DEP_LIBS,
 }, hooks=['prepare_build'])
+
 
 sane_utils.make_build_recipe(
     name="build",
@@ -56,9 +72,7 @@ sane_utils.make_build_recipe(
     target=SERVICE_NAME,
     run_before=[
         lambda: sane_utils.copy_dirs(
-            dirs=[
-                os.path.join(ROOT_DIR, os.path.pardir, "common")
-            ],
+            dirs=[os.path.join(ROOT_DIR, os.path.pardir, "common", "cfgp")],
             dst=os.path.join(ROOT_DIR, ".common")
         ),
         lambda: not RELEASE_VERSION and sane_utils.copy_dirs(

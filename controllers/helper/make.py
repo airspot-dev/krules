@@ -59,7 +59,7 @@ sane_utils.make_build_recipe(
     run_before=[
         lambda: sane_utils.copy_dirs(
             dirs=[
-                os.path.join(ROOT_DIR, os.path.pardir, "common")
+                os.path.join(ROOT_DIR, os.path.pardir, "common", "cfgp")
             ],
             dst=os.path.join(ROOT_DIR, ".common")
         )

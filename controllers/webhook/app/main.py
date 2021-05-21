@@ -1,5 +1,4 @@
 import base64
-import uuid
 
 import jsonpath_rw_ext as jp
 from flask import request, jsonify, g, json
@@ -21,7 +20,7 @@ def _manage_rules_errors(event):
         g.response["status"] = {"code": 500, "message": "exception in rule {}".format(event["name"])}
 
 
-proc_events_rx_factory.subscribe(
+proc_events_rx_factory().subscribe(
     on_next=_manage_rules_errors
 )
 

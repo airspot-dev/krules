@@ -1,13 +1,15 @@
-FROM alpine:3.11.6
+FROM {{ image_base }}
 
-RUN apk add --no-cache --virtual .build-deps g++ python3-dev && \
-    apk add --no-cache build-base && \
-    apk add --no-cache --update python3 && \
-    pip3 install --upgrade pip setuptools
+# RUN apk add --no-cache --virtual .build-deps g++ python3-dev && \
+#     apk add --no-cache build-base && \
+#     apk add --no-cache --update python3 && \
+#     pip3 install --upgrade pip setuptools
+
 {% if dep_libs|length %}
 RUN pip3 install --no-cache-dir \
 {% for lib in dep_libs %}
     {{ lib }} {% if not loop.last %}\{%  endif %}
+
 {% endfor %}
 {% endif %}
 
@@ -19,10 +21,15 @@ RUN pip3 install --no-cache-dir \
 {% endif %}
 
 {% if release_version %}
-RUN apk del .build-deps
+{% if krules_dep_libs|length %}
+RUN pip3 install --no-cache-dir \
+{% for lib in krules_dep_libs %}
+    {{ lib }}=={{ release_version }} {% if not loop.last %}\{%  endif %}
+{% endfor %}
 {% endif %}
+RUN apk del .build-deps
 
-{% if not release_version %}
+{% else %}
 ADD .krules-libs /krules-libs
 {% for lib in krules_dep_libs %}
 RUN cd /krules-libs/{{ lib }} && python3 setup.py develop
@@ -31,9 +38,11 @@ RUN cd /krules-libs/{{ lib }} && python3 setup.py develop
 
 ADD /app /app
 ADD .common /app
+
 ENV PYTHONPATH /app
 ENV FLASK_APP /app/main.py
 ENV FLASK_ENV production
+WORKDIR /app
 
 CMD exec gunicorn \
     --certfile /run/secrets/tls/cert --keyfile /run/secrets/tls/key \
