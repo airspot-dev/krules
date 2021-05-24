@@ -5,8 +5,7 @@ import pykube
 import pytest
 from rx import subject as rx_subject
 from dependency_injector import providers
-from k8s_subjects_storage import storage_impl as k8s_storage_impl
-from krules_core.base_functions import Filter, Process
+# from krules_core.base_functions import Filter, Process
 
 from krules_core.core import RuleFactory
 from krules_core import RuleConst
@@ -17,12 +16,11 @@ from .functions import (
     K8sObjectCreate,
     K8sObjectUpdate,
     K8sObjectsQuery,
-    K8sObjectDelete, k8s_subject
+    K8sObjectDelete,
 )
 
 
 def setup_module(_):
-
     extra_kwargs = {}
     if os.environ.get("API_URL", False):
         extra_kwargs.update({
@@ -30,14 +28,7 @@ def setup_module(_):
         })
 
     subject_storage_factory.override(
-        providers.Factory(
-            lambda name, event_info, event_data: (
-                name.startswith("k8s:") and k8s_storage_impl.SubjectsK8sStorage(
-                    resource_path=name[4:],
-                    resource_body=event_data.get("k8s_object"))
-                or providers.Factory(lambda *args, **kwargs: SQLLiteSubjectStorage(args[0], ":memory:"))
-            )
-        )
+        providers.Factory(lambda *args, **kwargs: SQLLiteSubjectStorage(args[0], ":memory:"))
     )
 
     proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
@@ -45,6 +36,7 @@ def setup_module(_):
 
 def teardown_module(_):
     subject_storage_factory.reset_last_overriding()
+
 
 @pytest.fixture
 def api():
@@ -54,19 +46,21 @@ def api():
         config = pykube.KubeConfig.from_env()
     return pykube.HTTPClient(config)
 
+
 @pytest.fixture
 def namespace(api):
     if os.environ.get("NAMESPACE", False):
         return os.environ.get("NAMESPACE")
     return api.config.namespace
 
+
 def _assert(expr, msg="test failed"):
+    print("################ ", expr)
     assert expr, msg
     return True
 
+
 def test_create(api, namespace):
-
-
     RuleFactory.create(
         'test-k8s-create',
         subscribe_to="test-create",
@@ -118,25 +112,23 @@ def test_create(api, namespace):
 
     event_router_factory().route("test-create", "some", {})
 
-
     pykube.Pod.objects(api).filter(namespace=namespace)
     objs = pykube.Pod.objects(api).filter(namespace=namespace, selector={"app": "pytest-temp"})
     # wait for pods ready
-    # watch = objs.watch()
-    # ready = 0
-    # for ev in watch:
-    #     print(ev.type, ev.object.name, ev.object.ready)
-    #     if ev.object.ready:
-    #         ready += 1
-    #     if ready == 2:
-    #         break
-    # assert len(objs) == 2
+    watch = objs.watch()
+    ready = 0
+    for ev in watch:
+        print(ev.type, ev.object.name, ev.object.ready)
+        if ev.object.ready:
+            ready += 1
+        if ready == 2:
+            break
+    assert len(objs) == 2
 
     event_router_factory().unregister_all()
 
 
 def test_update(api, namespace):
-
     RuleFactory.create(
         'test-k8s-update-in-context',
         subscribe_to="test-update-in-context",
@@ -144,11 +136,15 @@ def test_update(api, namespace):
             RuleConst.PROCESSING: [
                 # update from subject
                 K8sObjectUpdate(
-                    lambda obj: (
+                    patch=lambda obj: (
                         obj["metadata"]["labels"].update({
                             "updated": "pod-1"
                         })
-                    )
+                    ),
+                    name="test-pod-1",
+                    kind="Pod",
+                    apiversion="v1",
+                    namespace=namespace
                 ),
             ]
         }
@@ -223,7 +219,6 @@ def test_update(api, namespace):
 
 
 def tests_query_foreach(api, namespace):
-
     RuleFactory.create(
         'test-k8s-query-foreach',
         subscribe_to="test-query-foreach",
@@ -275,71 +270,25 @@ def tests_query_foreach(api, namespace):
 
     event_router_factory().unregister_all()
 
-#@pytest.mark.skip
-def test_k8s_subject(api, namespace):
-
-    RuleFactory.create(
-        'test-k8s-subject',
-        subscribe_to='test-k8s-subject',
-        data={
-            RuleConst.FILTERS: [
-                Filter(
-                    lambda: (
-                        k8s_subject(resource_path=f"/api/v1/namespaces/{namespace}/pods/test-pod-1").ext_name == "test-pod-1"
-                    )
-                ),
-                Filter(
-                    K8sObjectsQuery(
-                        returns=lambda obj: (
-                            k8s_subject(obj).ext_name == "test-pod-1"
-                        )
-                    )
-                ),
-                Filter(
-                    K8sObjectsQuery(
-                        returns=lambda obj: (
-                                k8s_subject(obj.obj).ext_name == "test-pod-1"
-                        )
-                    )
-                )
-            ],
-            RuleConst.PROCESSING: [
-                Process(True)
-            ]
-        }
-    )
-
-    proc_events_rx_factory().subscribe(
-        lambda x: x[RuleConst.RULENAME] == 'test-k8s-subject' and
-                  _assert(
-                      x[RuleConst.GOT_ERRORS] is False and x[RuleConst.PASSED],
-                      "test-k8s-subject proc failed"
-                  )
-    )
-
-    event_router_factory().route(
-        "test-k8s-subject",
-        f"k8s:/api/v1/namespaces/{namespace}/pods/test-pod-1", {}
-    )
-
-
 
 # NOTE: delete tests K8SObjectsQuery#returns indirectly
 def test_delete(api, namespace):
-
     RuleFactory.create(
         'test-k8s-delete-in-context',
         subscribe_to="test-delete-in-context",
         data={
             RuleConst.PROCESSING: [
-                # update from subject
-                K8sObjectDelete()
+                K8sObjectDelete(
+                    name="test-pod-1",
+                    apiversion="v1",
+                    kind="Pod",
+                    namespace=namespace)
             ]
         }
     )
 
     objs = pykube.Pod.objects(api).filter(namespace=namespace, selector={"app": "pytest-temp"})
-    #watch = objs.watch().filter(field_selector={"metadata.name": "test-pod-1"})
+    watch = objs.watch().filter(field_selector={"metadata.name": "test-pod-1"})
     proc_events_rx_factory().subscribe(
         lambda x: x[RuleConst.RULENAME] == 'test-k8s-delete-in-context' and
                   _assert(
@@ -352,10 +301,10 @@ def test_delete(api, namespace):
         f"k8s:/api/v1/namespaces/{namespace}/pods/test-pod-1", {}
     )
 
-    # for ev in watch:
-    #     if ev.type == "DELETED":
-    #         break
-    # assert len(objs) == 1
+    for ev in watch:
+        if ev.type == "DELETED":
+            break
+    assert len(objs) == 1
 
     RuleFactory.create(
         'test-k8s-delete-off-context',
@@ -387,12 +336,9 @@ def test_delete(api, namespace):
         f"k8s:/api/v1/namespaces/{namespace}", {}
     )
 
-    # for ev in watch:
-    #     if ev.type == "DELETED":
-    #         break
-    # assert len(objs) == 0
+    for ev in watch:
+        if ev.type == "DELETED":
+            break
+    assert len(objs) == 0
 
     event_router_factory().unregister_all()
-
-
-

@@ -18,84 +18,6 @@ from krules_core.base_functions import RuleFunctionBase
 from krules_core.providers import subject_factory
 
 
-def k8s_subject(obj=None, resource_path=None, prefix="k8s:"):
-    """
-    *Returns a k8s subject instance providing a kubernetes resource.*
-
-    ::
-
-        rulesdata = [
-            {
-                rulename: "...",
-                subscibre_to: "...",
-                ruledata: {
-                    filters: [
-                        Filter(
-                            K8sObjectsQuery(
-                                returns=lambda obj: (
-                                    k8s_subject(obj).ext_name == "my-pod"
-                                )
-                            )
-                        )
-                    ]
-                    processing: [
-                        ...
-                    ]
-                }
-            }
-        ]
-
-    Args:
-
-        obj: K8s object from which the subject will be created
-        resource_path: If is None is equal to object selfLink. BE CAREFUL from Kubernetes 1.20 selfLink is deprecated![default None]
-        prefix: [default k8s:]
-    """
-    if hasattr(obj, 'obj'):
-        obj = obj.obj
-    if obj is None:
-        obj = {}
-    if resource_path is None:
-        resource_path = obj["metadata"]["selfLink"]
-    return subject_factory(f"{prefix}{resource_path}", event_data=obj)
-
-
-def k8s_object(subject, renew=False):
-    """
-    *Returns the k8s resource providing a subject instance.*
-
-    ::
-
-        rulesdata = [
-            {
-                rulename: "...",
-                subscibre_to: "...",
-                ruledata: {
-                    filters: [
-                        Filter(
-                            lambda subject: "my-label" in k8s_object(subject).get("metadata", {}).get("labels", {})
-                        )
-                    ]
-                    processing: [
-                        ...
-                    ]
-                }
-            }
-        ]
-
-    Args:
-
-        subject: Subject from which will be get the K8s object
-        renew: If True reset subject property to the corresponding resource[default False]
-    """
-    try:
-        if renew:
-            subject._storage._reset()
-        return subject._storage._get_resource()
-    except AttributeError:
-        raise TypeError("not a k8s storaged subject")
-
-
 def k8s_event_create(api, producer, action, message, reason, type,
                      reporting_component=None, reporting_instance=None, involved_object=None, namespace=None,
                      source_component=None, first_timestamp=None, last_timestamp=None):
@@ -228,15 +150,6 @@ class K8sObjectsQuery(K8sRuleFunctionBase):
 
         obj = self._get_object(apiversion, kind)
 
-        # we are implicitly referring to the resource in the subject
-        if kind is None and apiversion is None \
-                and "namespace" not in filters \
-                and "namespace" in self.subject.get_ext_props() \
-                and self.subject.ext_namespace is not None:
-            filters.update({
-                "namespace": self.subject.get_ext("namespace")
-            })
-
         qobjs = obj.objects(self.payload.get("_k8s_api_client")).filter(**filters)
 
         if foreach is not None:
@@ -296,7 +209,7 @@ class K8sObjectUpdate(K8sRuleFunctionBase):
         ]
     """
 
-    def execute(self, patch, name=None, apiversion=None, kind=None, subresource=None, is_strategic=True, **filters):
+    def execute(self, patch, name, apiversion, kind, subresource=None, is_strategic=True, **filters):
 
         """
         Args:
@@ -309,20 +222,7 @@ class K8sObjectUpdate(K8sRuleFunctionBase):
             **filters: query kwargs
         """
 
-        if name is None:
-            name = self.subject.get_ext("name")
-
         obj = self._get_object(apiversion, kind)
-
-        # we are implicitly referring to the resource in the subject
-        if kind is None and apiversion is None \
-                and "namespace" not in filters \
-                and "namespace" in self.subject.get_ext_props() \
-                and self.subject.ext_namespace is not None:
-            filters.update({
-                "namespace": self.subject.get_ext("namespace")
-            })
-
         obj = obj.objects(self.payload.get("_k8s_api_client")).filter(**filters).get(name=name)
 
         # retrocompatibility
@@ -460,7 +360,7 @@ class K8sObjectDelete(K8sObjectsQuery):
         ]
     """
 
-    def execute(self, name=None, apiversion=None, kind=None, **filters):
+    def execute(self, name, apiversion=None, kind=None, **filters):
         """
         Args:
             name: resource name, if None get this value from subject extended properties[default None]
@@ -468,8 +368,6 @@ class K8sObjectDelete(K8sObjectsQuery):
             kind: resource kind version, if None get this value from subject extended properties[default None]
             **filters: query kwargs
         """
-        if name is None:
-            name = self.subject.get_ext("name")
 
         super().execute(apiversion=apiversion, kind=kind, returns=lambda qobjs: (
             qobjs.get(name=name).delete()

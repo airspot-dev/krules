@@ -16,8 +16,9 @@ from setuptools import setup, find_packages
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
 setup(
-    name='krules-subjects-storage-k8s',
+    name='krules-k8s-functions',
     version="0.8.5.1",
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
