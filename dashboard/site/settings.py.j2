@@ -56,7 +56,7 @@ MIDDLEWARE = site_config.get(
     ]
 )
 
-ROOT_URLCONF = '{{ site_name }}.urls'
+ROOT_URLCONF = os.environ.get("ROOT_URLCONF", site_config.get("root_urlconf", '{{ site_name }}.urls'))
 
 TEMPLATES = [
     {
