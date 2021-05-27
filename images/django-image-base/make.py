@@ -3,14 +3,18 @@
 import shutil
 import subprocess
 
+from dotenv import load_dotenv
+
 try:
     from krules_dev import sane_utils
 except ImportError:
-    print('\033[91mkrules-dev is not installed... run "pip install krules-dev"\033[0m')
+    print('\033[91mcannot import sane_utils... run "pip install krules-dev-support"\033[0m')
     exit(-1)
 
 from sane import *
 from sane import _Help as Help
+
+load_dotenv()
 
 DOCKER_CMD = os.environ.get("DOCKER_CMD", shutil.which("docker"))
 
@@ -24,6 +28,10 @@ IMAGE_BASE = os.environ.get("IMAGE_BASE")
 
 SITE_NAME = os.environ.get("SITE_NAME", "sitebase")
 CONFIGURATION_KEY = os.environ.get("CONFIGURATION_KEY", "django")
+
+DJANGO_BACKEND_POSTGRES = int(os.environ.get("DJANGO_BACKEND_POSTGRES", "0"))
+DJANGO_BACKEND_MYSQL = int(os.environ.get("DJANGO_BACKEND_MYSQL", "0"))
+SUPPORTS_REDIS = int(os.environ.get("SUPPORTS_REDIS", "0"))
 
 def _get_image_base():
     global IMAGE_BASE, RELEASE_VERSION
@@ -48,6 +56,10 @@ sane_utils.make_render_resource_recipes(
         "image_base": _get_image_base(),
         "site_name": SITE_NAME,
         "configuration_key": CONFIGURATION_KEY,
+        "supports_postgres": bool(DJANGO_BACKEND_POSTGRES),
+        "supports_mysql": bool(DJANGO_BACKEND_MYSQL),
+        "supports_redis": bool(SUPPORTS_REDIS),
+
     },
     hooks=['prepare_build'])
 
@@ -85,7 +97,7 @@ sane_utils.make_push_recipe(
     run_before=[
         lambda: sane_run("build")
     ],
-    recipe_deps=[]
+    recipe_deps=["build"]
 )
 
 sane_utils.make_clean_recipe(

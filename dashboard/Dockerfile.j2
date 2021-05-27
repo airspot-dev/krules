@@ -1,19 +1,8 @@
 FROM {{ image_base }}
 
-{% if supports_postgres %}
-RUN apk add --no-cache --virtual .build-deps g++ python3-dev postgresql-dev build-base libffi-dev && \
-    apk add --no-cache --update python3 libpq && \
-    pip3 install --upgrade pip setuptools && \
-    pip3 install --no-cache-dir psycopg2==2.8.6 && \
-    apk del .build-deps
-{% endif %}
+ENV CONFIGURATION_KEY {{ configuration_key }}
 
-{% if supports_mysql %}
-{# TODO #}
-{% endif %}
-
-ADD site/asgi.py /app/{{ site_name }}/
-ADD site/settings.py /app/{{ site_name }}
-
-ENV DJANGO_SETTINGS_MODULE {{ site_name }}.settings
-
+RUN pip install --no-cache-dir \
+  django-jsoneditor>=0.1.6 \
+  django-prettyjson>=0.4.1 \
+  djangorestframework>=3.12.4

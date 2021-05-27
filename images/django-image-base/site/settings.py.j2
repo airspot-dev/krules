@@ -6,7 +6,9 @@ from krules_core.providers import configs_factory
 
 krules_env.init()
 
-site_config = configs_factory().get("{{ configuration_key }}", {}).get("site_settings", {})
+configuration_key = os.environ.get("CONFIGURATION_KEY", "django")
+
+site_config = configs_factory().get(configuration_key, {}).get("site_settings", {})
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,7 +29,7 @@ if isinstance(ALLOWED_HOSTS, type("")):
 INSTALLED_APPS = site_config.get(
     "installed_apps",
     [
-        'channels',
+        #'channels',
         'django.contrib.admin',
         'django.contrib.auth',
         'django.contrib.contenttypes',
@@ -36,8 +38,8 @@ INSTALLED_APPS = site_config.get(
         'django.contrib.staticfiles',
         #'django_json_widget',
         #'prettyjson',
-        'rest_framework',
-        'djangochannelsrestframework',
+        #'rest_framework',
+        #'djangochannelsrestframework',
         #'jsoneditor',
     ]
 )
@@ -56,7 +58,7 @@ MIDDLEWARE = site_config.get(
     ]
 )
 
-ROOT_URLCONF = '{{ site_name }}.urls'
+ROOT_URLCONF = os.environ.get("ROOT_URLCONF", site_config.get("root_urlconf", '{{ site_name }}.urls'))
 
 TEMPLATES = [
     {
@@ -79,7 +81,7 @@ ASGI_APPLICATION = '{{ site_name }}.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
-DATABASES = configs_factory().get("{{ configuration_key }}", {}).get("databases", {
+DATABASES = configs_factory().get(configuration_key, {}).get("databases", {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': 'db.sqlite3',
@@ -130,7 +132,7 @@ LOGGING_CONFIG = None
 # Get loglevel from env
 LOGLEVEL = os.environ.get("DJANGO_LOGLEVEL", site_config.get('loglevel', 'info')).upper()
 
-logging.config.dictConfig({
+logging.config.dictConfig(site_config.get('logging_config', {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
@@ -150,5 +152,5 @@ logging.config.dictConfig({
             'handlers': ['console', ],
         },
     },
-})
+}))
 
