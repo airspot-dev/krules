@@ -7,13 +7,33 @@ RUN apk add --no-cache --virtual .build-deps g++ python3-dev openssl-dev build-b
     CRYPTOGRAPHY_DONT_BUILD_RUST=1 pip3 install --no-cache-dir -r /app/requirements-django-base.txt && \
     apk del .build-deps
 
+{% if supports_postgres %}
+RUN apk add --no-cache --virtual .build-deps g++ python3-dev postgresql-dev build-base libffi-dev && \
+    apk add --no-cache --update python3 libpq && \
+    pip3 install --upgrade pip setuptools && \
+    pip3 install --no-cache-dir psycopg2==2.8.6 && \
+    apk del .build-deps
+{% endif %}
+
+{% if supports_mysql %}
+RUN apk add py3-mysqlclient
+RUN pip3 install --no-cache-dir mysqlclient>=2.0.3 django-mysql>=3.11.1
+{% endif %}
+
+{%  if supports_redis %}
+RUN pip3 install --no-cache-dir redis>=3.5.3
+{%  endif %}
+
+
 WORKDIR /app
 
 RUN django-admin startproject {{ site_name }} .
 
 ADD site/asgi.py /app/{{ site_name }}/
 ADD site/settings.py /app/{{ site_name }}
+ADD site/urls.py /app/{{ site_name }}
 
+ENV CONFIGURATION_KEY {{ configuration_key }}
 ENV DJANGO_SETTINGS_MODULE {{ site_name }}.settings
 
 RUN python3 manage.py collectstatic --noinput

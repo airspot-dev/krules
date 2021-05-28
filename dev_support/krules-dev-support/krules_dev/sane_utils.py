@@ -9,6 +9,7 @@ from sane import _Help as Help
 def check_envvar_exists(name):
     if name not in os.environ:
         Help.error(f'Environment variable {name} does not exists')
+    return os.environ[name]
 
 
 def check_cmd(cmd):
@@ -131,7 +132,7 @@ def make_push_recipe(name, root_dir, docker_cmd, target, digest_file, tag, recip
             if response.returncode != 0:
                 Help.log(_tag)
                 Help.error(response.stderr.decode())
-            Help.log(f"new digest: {response.stdout.decode()}")
+            Help.log(f"new digest: {response.stdout.decode().rstrip()}")
             with open(digest_file, "wb") as f:
                 f.write(response.stdout)
 
@@ -164,7 +165,7 @@ def make_apply_recipe(name, root_dir, globs, kubectl_cmd, recipe_deps, hook_deps
                 )
                 if response.returncode != 0:
                     Help.error(response.stderr.decode("utf-8"))
-                Help.log(response.stdout.decode("utf-8"))
+                Help.log(response.stdout.decode("utf-8").rstrip())
 
 
 def make_clean_recipe(root_dir, globs, on_completed=lambda: None):

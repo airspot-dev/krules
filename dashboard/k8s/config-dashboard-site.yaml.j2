@@ -1,0 +1,61 @@
+apiVersion: krules.airspot.dev/v1alpha1
+kind: ConfigurationProvider
+metadata:
+  name: config-{{ app_name }}-site
+spec:
+  key: {{ app_name }}
+  appliesTo:
+    krules.airspot.dev/app: {{ app_name }}
+  data:
+    url_settings:
+      enable_admin: True
+      root_redirect: admin:index
+    site_settings:
+      nonce: 3
+      secret_key: $DJANGO_SECRET_KEY
+#      allowed_hosts:
+#        - .svc.cluster.local
+#        - localhost
+#        - 127.0.0.1
+      installed_apps:
+        #- channels
+        - django.contrib.admin
+        - django.contrib.auth
+        - django.contrib.contenttypes
+        - django.contrib.sessions
+        - django.contrib.messages
+        - django.contrib.staticfiles
+        - jsoneditor
+        - prettyjson
+        - rest_framework
+        #- djangochannelsrestframework
+        #- krules
+        #- krules.scheduler
+        #- krules.procevents
+        #- krules.cron
+        #- krules.eventdisplay
+        #- krules.kubernetes_events
+#      middleware:
+#        - django.middleware.security.SecurityMiddleware
+#        - whitenoise.middleware.WhiteNoiseMiddleware
+#        - django.contrib.sessions.middleware.SessionMiddleware
+#        - django.middleware.common.CommonMiddleware
+#        - django.middleware.csrf.CsrfViewMiddleware
+#        - django.contrib.auth.middleware.AuthenticationMiddleware
+#        - django.contrib.messages.middleware.MessageMiddleware
+#        - django.middleware.clickjacking.XFrameOptionsMiddleware
+#
+#      loglevel: "info"
+#      debug: "False"
+#      language_code: "en-us"
+#      time_zone: "UTC"
+  container:
+    env:
+      - name: DJANGO_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: {{ app_name }}-secrets
+            key: secret-key
+    envFrom:
+      - configMapRef:
+          name: {{ app_name }}-vars
