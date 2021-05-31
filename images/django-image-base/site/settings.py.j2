@@ -81,7 +81,7 @@ ASGI_APPLICATION = '{{ site_name }}.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
-DATABASES = configs_factory().get(configuration_key, {}).get("databases", {
+DATABASES = site_config.get("databases", {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': 'db.sqlite3',

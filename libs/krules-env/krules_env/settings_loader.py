@@ -29,7 +29,7 @@ def load_from_path(base_path):
                 for p in Path(root).relative_to(base_path).parts:
                     if p not in pos:
                         pos[p] = {}
-                        pos = pos[p]
+                    pos = pos[p]
                 if os.path.splitext(f)[-1] in (".yaml", ".yml"):
                     pos.update(
                         _expand_vars(

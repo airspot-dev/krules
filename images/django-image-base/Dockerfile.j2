@@ -16,8 +16,21 @@ RUN apk add --no-cache --virtual .build-deps g++ python3-dev postgresql-dev buil
 {% endif %}
 
 {% if supports_mysql %}
-RUN apk add py3-mysqlclient
-RUN pip3 install --no-cache-dir mysqlclient>=2.0.3 django-mysql>=3.11.1
+{#(1/11) Installing pkgconf (1.6.3-r0)
+(2/11) Installing openssl-dev (1.1.1k-r0)
+(3/11) Installing zlib-dev (1.2.11-r3)
+(4/11) Installing mariadb-connector-c (3.1.6-r1)
+(5/11) Installing mariadb-connector-c-dev (3.1.6-r1)
+(6/11) Installing mariadb-common (10.4.18-r0)
+(7/11) Installing libaio (0.3.112-r1)
+(8/11) Installing pcre (8.43-r1)
+(9/11) Installing mariadb-embedded (10.4.18-r0)
+(10/11) Installing mariadb-dev (10.4.18-r0)
+(11/11) Installing python3-dev (3.8.10-r0)#}
+
+RUN apk add --virtual .build-deps mariadb-dev build-base python3-dev && \
+    pip3 install --no-cache-dir mysqlclient>=2.0.3 django-mysql>=3.11.1 && \
+    apk del .build-deps && apk add --no-cache mariadb-connector-c
 {% endif %}
 
 {%  if supports_redis %}
