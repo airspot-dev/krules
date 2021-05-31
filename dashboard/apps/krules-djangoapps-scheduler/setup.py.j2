@@ -1,0 +1,26 @@
+from setuptools import setup, find_packages
+
+setup(
+    name='krules-djangoapps-scheduler',
+    version="{{ release_version }}",
+    author="Airspot",
+    author_email="info@arispot.tech",
+    license="Apache Licence 2.0",
+    keywords="krules knative",
+    url="https://github.com/airspot-dev/krules",
+    packages=find_packages(),
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "License :: OSI Approved :: Apache Software License",
+    ],
+    python_requires='>3.8',
+    install_requires=[
+        'django-jsoneditor>=0.1.6',
+    ],
+    setup_requires=[
+        'pytest-runner',
+    ],
+    tests_require=[
+        'pytest',
+    ],
+)

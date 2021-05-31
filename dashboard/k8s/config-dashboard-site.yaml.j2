@@ -29,7 +29,9 @@ spec:
         - prettyjson
         - rest_framework
         #- djangochannelsrestframework
-        #- krules
+        {% for app in djangoapps_sources %}
+        - {{ app | replace("-", "_") }}
+        {% endfor %}
         #- krules.scheduler
         #- krules.procevents
         #- krules.cron

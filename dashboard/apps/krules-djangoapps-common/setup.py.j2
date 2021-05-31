@@ -1,0 +1,27 @@
+from setuptools import setup, find_packages
+
+setup(
+    name='krules-djangoapps-common',
+    {% if release_version %}version="{{ release_version }}",{% endif %}
+    author="Airspot",
+    author_email="info@arispot.tech",
+    license="Apache Licence 2.0",
+    keywords="krules knative",
+    url="https://github.com/airspot-dev/krules",
+    packages=find_packages(),
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "License :: OSI Approved :: Apache Software License",
+    ],
+    python_requires='>3.8',
+    install_requires=[
+        'django-prettyjson==0.4.1',
+        'djangorestframework>=3.12.4',
+    ],
+    setup_requires=[
+        'pytest-runner',
+    ],
+    tests_require=[
+        'pytest',
+    ],
+)

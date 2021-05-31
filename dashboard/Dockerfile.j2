@@ -3,6 +3,9 @@ FROM {{ image_base }}
 ENV CONFIGURATION_KEY {{ configuration_key }}
 
 RUN pip install --no-cache-dir \
-  django-jsoneditor>=0.1.6 \
-  django-prettyjson>=0.4.1 \
-  djangorestframework>=3.12.4
+  django-jsoneditor==0.1.6
+
+{%  for app in djangoapps_sources %}
+ADD apps/{{ app }} /{{ app }}
+RUN cd /{{ app }} && python3 /{{ app }}/setup.py develop && cd -
+{% endfor %}

@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 import os
 import shutil
-import typing
 from glob import glob
-from subprocess import run, CalledProcessError, CompletedProcess
+from subprocess import run, CalledProcessError
 
 from dotenv import load_dotenv
 
@@ -12,7 +11,7 @@ from krules_dev.sane_utils import check_cmd, check_envvar_exists
 try:
     from krules_dev import sane_utils
 except ImportError:
-    print('\033[91mkrules-dev is not installed... run "pip install krules-dev"\033[0m')
+    print('\033[91mkrules-dev is not installed... run "pip install krules-dev-support"\033[0m')
     exit(-1)
 
 from sane import *
@@ -59,6 +58,31 @@ SERVICE_API = os.environ.get("SERVICE_API", "base")
 SERVICE_TYPE = os.environ.get("SERVICE_TYPE", "")  # only for service api base (eg: ClusterIP, if "" service will not be created)
 K_SINK = os.environ.get("K_SINK", "default")
 
+ENABLE_DJANGOAPP_PROCEVENTS = int(os.environ.get("ENABLE_DJANGOAPP_PROCEVENTS", "0"))
+ENABLE_DJANGOAPP_SCHEDULER = int(os.environ.get("ENABLE_DJANGOAPP_SCHEDULER", "0"))
+
+djangoapps_sources = [
+    'krules-djangoapps-common',
+]
+
+if ENABLE_DJANGOAPP_PROCEVENTS:
+    djangoapps_sources.append("krules-djangoapps-procevents")
+
+if ENABLE_DJANGOAPP_SCHEDULER:
+    djangoapps_sources.append("krules-djangoapps-scheduler")
+
+@recipe(info="Do whatever for each deployable django app", hooks=["prepare_build"])
+def djangoapps():
+
+    for app in djangoapps_sources:
+        try:
+            Help.log(f"Entering django app {app}")
+            run([
+                os.path.join(ROOT_DIR, "apps", app, "make.py")
+            ], check=True)
+        except CalledProcessError:
+            Help.error(f"cannot make {app}")
+
 
 def _get_image_base():
     global IMAGE_BASE, RELEASE_VERSION
@@ -72,6 +96,7 @@ def _get_image_base():
             IMAGE_BASE = f.read().rstrip()
     return IMAGE_BASE
 
+
 sane_utils.make_render_resource_recipes(
     ROOT_DIR,
     globs=[
@@ -82,6 +107,7 @@ sane_utils.make_render_resource_recipes(
         "site_name": SITE_NAME,
         "app_name": APP_NAME,
         "configuration_key": CONFIGURATION_KEY,
+        "djangoapps_sources": djangoapps_sources,
     },
     hooks=['prepare_build']
 )
@@ -104,10 +130,10 @@ sane_utils.make_push_recipe(
     docker_cmd=DOCKER_CMD,
     target=IMAGE_NAME,
     conditions=[
-        Help.file_condition(
+        lambda: os.path.exists(os.path.join(ROOT_DIR, ".build.success")) and Help.file_condition(
             sources=[os.path.join(ROOT_DIR, ".build.success")],
             targets=[os.path.join(ROOT_DIR, ".digest")]
-        )
+        )()
     ],
     digest_file=".digest",
     tag=RELEASE_VERSION,
@@ -125,6 +151,7 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "app_name": APP_NAME,
+        "djangoapps_sources": djangoapps_sources,
     },
     hooks=['prepare_deploy']
 )
@@ -191,9 +218,9 @@ def service():
             check_cmd(KN_CMD)
             out = run([
                 KN_CMD, *KN_OPTS.split(), "-n", NAMESPACE, "service", "list",
-                "-o", "jsonpath=\"{{.items[?(@.metadata.name=='{}')]}}\"".format(APP_NAME)
+                "-o", "jsonpath=\"{{.items[?(@.metadata.name=='{}')].metadata.name}}\"".format(APP_NAME)
             ], check=True, capture_output=True).stdout
-            if out.decode() == APP_NAME:  # found
+            if out.decode().rstrip() == f'"{APP_NAME}"':  # found
                 Help.log(f"updating existing knative service '{APP_NAME}'")
                 out = run([
                     KN_CMD, *KN_OPTS.split(), "-n", NAMESPACE, "service", "update", APP_NAME,
@@ -216,7 +243,11 @@ def service():
 
 sane_utils.make_clean_recipe(
     root_dir=ROOT_DIR,
-    globs=["Dockerfile", "k8s/*.yaml", ".build.*", ".digest", ".deploy.out"]
+    globs=["Dockerfile", "k8s/*.yaml", ".build.*", ".digest", ".deploy.out"],
+    on_completed=lambda: (
+        run([os.path.join(ROOT_DIR, "apps", "krules-djangoapps-common", "make.py"), "clean"]),
+        run([os.path.join(ROOT_DIR, "apps", "krules-djangoapps-procevents", "make.py"), "clean"]),
+    )
 )
 
 sane_run("service")
