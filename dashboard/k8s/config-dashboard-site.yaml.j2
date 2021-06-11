@@ -3,7 +3,7 @@ kind: ConfigurationProvider
 metadata:
   name: config-{{ app_name }}-site
 spec:
-  key: {{ app_name }}
+  key: {{ configuration_key }}
   appliesTo:
     krules.airspot.dev/app: {{ app_name }}
   data:

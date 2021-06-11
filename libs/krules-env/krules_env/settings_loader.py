@@ -11,13 +11,27 @@ def load_from_path(base_path):
             if type(v) is str:
                 v = os.path.expandvars(v)
             elif type(v) is list:
-                for i in range(len(v)):
-                    v[i] = os.path.expandvars(v[i])
+                v = _expand_list_vars(v)
+                # for i in range(len(v)):
+                #     if type(v[i]) is str:
+                #         os.path.expandvars(v[i])
+                #     else:
+                #         v[i] = _expand_vars(v[i])
             elif type(v) is dict:
                 v = _expand_vars(v)
             d[k] = v
 
         return d
+
+    def _expand_list_vars(l):
+        for i in range(len(l)):
+            if type(l[i]) is str:
+                l[i] = os.path.expandvars(l[i])
+            elif type(l[i]) is dict:
+                l[i] = _expand_vars(l[i])
+            elif type(l[i]) is list:
+                l[i] = _expand_list_vars(l[i])
+        return l
 
     settings = {}
     for root, dirs, files in os.walk(base_path):

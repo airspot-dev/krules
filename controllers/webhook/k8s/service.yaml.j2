@@ -30,6 +30,8 @@ spec:
                     value: "*"
                   - name: K_PROCEVENTS_SINK
                     value: {{ debug_procevents_sink }}
+                  - name: CE_SOURCE
+                    value: krules-webhook
                 {% endif %}
                 volumeMounts:
                   - name: {{ name }}-tls

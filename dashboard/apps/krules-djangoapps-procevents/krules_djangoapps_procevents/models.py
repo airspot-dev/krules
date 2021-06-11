@@ -14,5 +14,5 @@ class ProcessingEvent(models.Model):
     processing = EmptyObjectJSONField(default=list)
     got_errors = models.BooleanField()
     passed = models.BooleanField()
-    source = models.CharField(max_length=255)
-    origin_id = models.CharField(max_length=255)
+    source = models.CharField(max_length=255, null=True, blank=True)
+    origin_id = models.CharField(max_length=255, null=True, blank=True)

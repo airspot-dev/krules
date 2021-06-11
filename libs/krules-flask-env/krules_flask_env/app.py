@@ -1,16 +1,15 @@
-from flask import Flask, g
-import os
-import json_logging
 import logging
+import os
 import sys
-import importlib
-from krules_env import init
+
+import json_logging
 from dependency_injector import providers
+from flask import Flask, g
 from krules_core.providers import (
     subject_factory,
     event_router_factory
 )
-from krules_core.utils import load_rules_from_rulesdata
+from krules_env import init
 
 
 def g_wrap(current, *args, **kwargs):

@@ -1,11 +1,6 @@
 FROM {{ image_base }}
 
-ADD requirements.txt /app/requirements-django-base.txt
-
-RUN apk add --no-cache --virtual .build-deps g++ python3-dev openssl-dev build-base libffi-dev && \
-    pip3 install --upgrade pip setuptools && \
-    CRYPTOGRAPHY_DONT_BUILD_RUST=1 pip3 install --no-cache-dir -r /app/requirements-django-base.txt && \
-    apk del .build-deps
+RUN pip3 install Django==3.2.3
 
 {% if supports_postgres %}
 RUN apk add --no-cache --virtual .build-deps g++ python3-dev postgresql-dev build-base libffi-dev && \
@@ -20,29 +15,36 @@ RUN apk add --no-cache --virtual .build-deps g++ python3-dev postgresql-dev buil
 RUN apk add --virtual .build-deps mariadb-dev build-base python3-dev && \
     pip3 install --no-cache-dir mysqlclient==2.0.3 django-mysql==3.11.1 && \
     apk del .build-deps && apk add --no-cache mariadb-connector-c
+RUN pip3 install mysql_server_has_gone_away==2.0.0
 {% endif %}
 
 {%  if supports_redis %}
 RUN pip3 install --no-cache-dir redis==3.5.3
 {%  endif %}
 
-WORKDIR /app
-
 RUN django-admin startproject {{ site_name }} .
 
-ADD site/asgi.py /app/{{ site_name }}/
-ADD site/settings.py /app/{{ site_name }}
-ADD site/settings_base.py /app/{{ site_name }}
-ADD site/urls.py /app/{{ site_name }}
+ADD settings.py /app/{{ site_name }}
 
 ENV CONFIGURATION_KEY {{ configuration_key }}
 ENV DJANGO_SETTINGS_MODULE {{ site_name }}.settings
 
-#RUN python3 manage.py collectstatic --noinput
-
 ENV SITE_NAME={{ site_name }}
 
-ADD django_run.sh /app/
-RUN chmod +x django_run.sh
-CMD ["/app/django_run.sh"]
-#CMD ["daphne", "-p 8080", "{{ site_name }}.asgi:application"]
+#ADD .support support
+#ADD build-requirements.txt support/krules-dev-support/build-requirements.txt
+#RUN cd support/krules-dev-support && \
+#    yes | pip3 install -r build-requirements.txt && \
+#    ./make.py develop
+
+ADD app/ruleset.py /app/ruleset.py
+ADD app/env.py /app/env.py
+ADD app/manage.py /app/manage.py
+
+ADD .djangoapps-libs djangoapps-libs
+
+{% for lib in djangoapps_libs %}
+RUN cd djangoapps-libs/{{ lib }} && python3 setup.py install
+{% endfor %}
+
+#RUN rm -rf support
