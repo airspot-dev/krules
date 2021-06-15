@@ -1,0 +1,17 @@
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: {{ app_name }}
+  namespace: {{ namespace }}
+  labels:
+    "krules.airspot.dev/app": {{ app_name }}
+spec:
+  broker: default
+  filter:
+    attributes:
+      type: krules.schedule
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: {{ app_name }}

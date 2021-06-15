@@ -6,6 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 INSTALLED_APPS = [
     'krules_djangoapps_procevents',
+    'krules_djangoapps_scheduler',
 ]
 
 

@@ -118,6 +118,7 @@ sane_utils.make_clean_recipe(
     on_completed=lambda: (
         run([os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", "krules-djangoapps-common", "make.py"), "clean"]),
         run([os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", "krules-djangoapps-procevents", "make.py"), "clean"]),
+        run([os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", "krules-djangoapps-scheduler", "make.py"), "clean"]),
     )
 )
 
