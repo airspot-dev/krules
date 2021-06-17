@@ -187,9 +187,9 @@ def make_push_recipe(digest_file: str,
         recipe_kwargs['name'] = "push"
 
     if target is None:
-        target = check_envvar_exists('IMAGE_NAME')
+        target = os.environ.get('IMAGE_NAME')
 
-    docker_registry = check_envvar_exists('DOCKER_REGISTRY')
+    docker_registry = os.environ.get('DOCKER_REGISTRY')
     target_image = f"{docker_registry}/{target}"
     if tag:
         _tag = f'{target_image}:{tag}'
@@ -215,6 +215,9 @@ def make_push_recipe(digest_file: str,
 
     @recipe(**recipe_kwargs)
     def push():
+        check_envvar_exists("IMAGE_NAME")
+        check_envvar_exists("DOCKER_REGISTRY")
+
         for func in run_before:
             func()
 

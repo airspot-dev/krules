@@ -9,22 +9,19 @@ except ImportError:
     print('\033[91mkrules local development support is not installed... run "pip install krules-dev-support"\033[0m')
     exit(-1)
 
-from sane import *
-from sane import _Help as Help
 
+from sane import sane_run
+
+sane_utils.load_env()
 
 KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir, os.path.pardir))
 KRULES_LIBS_DIR = os.path.join(KRULES_ROOT_DIR, "libs")
 
-DOCKER_CMD = os.environ.get("DOCKER_CMD", shutil.which("docker"))
-KUBECTL_CMD = os.environ.get("KUBECTL_CMD", shutil.which("kubectl"))
-
-ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 APP_DIR = "app"
 
-SERVICE_NAME = os.environ.get("SERVICE_NAME", "krules-webhook")
-
+SERVICE_NAME = os.environ.get("SERVICE_NAME", "webhook")
+IMAGE_NAME = os.environ.get("IMAGE_NAME", SERVICE_NAME)
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
 DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
@@ -41,111 +38,93 @@ DEP_LIBS = [
     "gunicorn==20.0.4"
 ]
 
-IMAGE_BASE = os.environ.get("IMAGE_BASE")
-
 
 def _get_image_base():
-    global IMAGE_BASE, RELEASE_VERSION
-    if IMAGE_BASE is not None:
-        return IMAGE_BASE
-    if IMAGE_BASE is None and RELEASE_VERSION is not None:
-        IMAGE_BASE = f"krules-generic-image-base:{RELEASE_VERSION}"
-    else:
-        subprocess.run([os.path.join(KRULES_ROOT_DIR, "images", "generic-image-base", "make.py")])
-        with open(os.path.join(KRULES_ROOT_DIR, "images", "generic-image-base", ".digest"), "r") as f:
-            IMAGE_BASE = f.read()
-    return IMAGE_BASE
+    return sane_utils.get_buildable_image(
+        location=os.path.join(KRULES_ROOT_DIR, "images"),
+        dir_name="generic-image-base",
+    )
 
 
-sane_utils.make_render_resource_recipes(ROOT_DIR, globs=["Dockerfile.j2"], context_vars={
-    "release_version": RELEASE_VERSION,
-    "image_base": _get_image_base(),
-    "krules_dep_libs": KRULES_DEP_LIBS,
-    "dep_libs": DEP_LIBS,
-}, hooks=['prepare_build'])
+def _prepare_commons():
+    sane_utils.copy_dirs(
+        dirs=[os.path.join(os.path.pardir, "common", "cfgp")],
+        dst=".common"
+    )
+
+
+def _preprare_krules_deps():
+    if not RELEASE_VERSION:
+        sane_utils.copy_dirs(
+            map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
+            dst=".krules-libs",
+        )
+
+
+sane_utils.make_render_resource_recipes(
+    globs=[
+        "Dockerfile.j2"
+    ],
+    context_vars={
+        "release_version": RELEASE_VERSION,
+        "image_base": _get_image_base(),
+        "krules_dep_libs": KRULES_DEP_LIBS,
+        "dep_libs": DEP_LIBS,
+    },
+    hooks=[
+        'prepare_build'
+    ]
+)
 
 
 sane_utils.make_build_recipe(
     name="build",
-    root_dir=ROOT_DIR,
-    docker_cmd=DOCKER_CMD,
-    target=SERVICE_NAME,
+    target=IMAGE_NAME,
     run_before=[
-        lambda: sane_utils.copy_dirs(
-            dirs=[os.path.join(ROOT_DIR, os.path.pardir, "common", "cfgp")],
-            dst=os.path.join(ROOT_DIR, ".common")
-        ),
-        lambda: not RELEASE_VERSION and sane_utils.copy_dirs(
-            map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
-            dst=os.path.join(ROOT_DIR, ".krules-libs")
-        ),
+        _prepare_commons,
+        _preprare_krules_deps,
     ],
-    success_file=".build.success",
-    out_file=".build.out",
     hook_deps=["prepare_build"]
 )
 
-
 sane_utils.make_push_recipe(
     name="push",
-    root_dir=ROOT_DIR,
-    docker_cmd=DOCKER_CMD,
-    target=SERVICE_NAME,
-    conditions=[
-        Help.file_condition(
-            sources=[os.path.join(ROOT_DIR, ".build.success")],
-            targets=[os.path.join(ROOT_DIR, ".digest")]
-        )
-    ],
-    digest_file=".digest",
-    tag=RELEASE_VERSION,
+    target=IMAGE_NAME,
     recipe_deps=["build"],
+    digest_file=".digest"
 )
 
-
 sane_utils.make_render_resource_recipes(
-    ROOT_DIR,
-    globs=[f'k8s/*.yaml.j2'],
+    globs=[
+        'k8s/*.yaml.j2'
+    ],
     context_vars=lambda: {
         "namespace": NAMESPACE,
         "ns_injection_lbl": NS_INJECTION_LBL,
         "name": SERVICE_NAME,
-        "digest": open(".digest", "r").read(),
+        "digest": open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".digest"), "r").read(),
         "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
     },
     hooks=['render_resource'],
-    # run_before=[
-    #     lambda: sane_utils.check_envvar_exists('NAMESPACE'),
-    #     lambda: sane_utils.check_envvar_exists('NS_INJECTION_LBL')
-    # ]
 )
-
 
 sane_utils.make_apply_recipe(
     name="apply",
-    root_dir=ROOT_DIR,
-    globs=["k8s/*.yaml"],
-    kubectl_cmd=KUBECTL_CMD,
-    # run_before=[
-    #     lambda: sane_utils.check_envvar_exists('NAMESPACE'),
-    #     lambda: sane_utils.check_envvar_exists('NS_INJECTION_LBL'),
-    # ],
+    globs=[
+        "k8s/*.yaml"
+    ],
     recipe_deps=["push"],
     hook_deps=["render_resource"]
 )
 
-
 sane_utils.make_clean_recipe(
-    root_dir=ROOT_DIR,
     globs=[
         ".common",
         "k8s/*.yaml",
         ".krules-libs",
         "Dockerfile",
-        ".build*",
         ".digest"
     ]
 )
-
 
 sane_run('apply')
