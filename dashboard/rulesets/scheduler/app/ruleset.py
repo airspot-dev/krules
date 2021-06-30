@@ -38,6 +38,25 @@ class DispatchScheduledEvent(RuleFunctionBase):
             qs.delete()
 
 
+class UnscheduleEvent(RuleFunctionBase):
+
+    def execute(self):
+        subject = subject_factory(self.payload.get("subject"))
+        subject_key = self.payload.get("subject_key")
+        try:
+            event = ScheduledEvent.objects.get(subject=subject, subject_key=subject_key)
+            event_uid = event.uid
+            event.delete()
+
+            self.payload["_log"].append("deleted: {}".format(event_uid))
+
+            return
+        except ScheduledEvent.DoesNotExist:
+            # event will be rescheduled
+            self.payload["_log"].append("NOT FOUND")
+            pass
+
+
 class ScheduleEvent(RuleFunctionBase):
 
     def execute(self):
@@ -107,6 +126,18 @@ rulesdata = [
         ruledata: {
             processing: [
                 ScheduleEvent()
+            ]
+        }
+    },
+    """
+    Receive unscheduled event
+    """,
+    {
+        rulename: "schedule-event",
+        subscribe_to: "krules.unschedule",
+        ruledata: {
+            processing: [
+                UnscheduleEvent()
             ]
         }
     }
