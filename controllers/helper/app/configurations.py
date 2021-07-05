@@ -48,7 +48,8 @@ class SetK8sObjectPropertyAnnotation(RuleFunctionBase):
             value = value(old_value)
 
         if old_value != value:
-            subject = f'k8s:{obj.get("apiVersion")}:{obj.get("kind")}:{obj.get("name")}'
+            subject = f'k8s:{obj.get("apiVersion")}:{obj.get("kind")}:{obj.get("metadata", {}).get("name")}'
+            subject = self.subject
             props[property_name] = value
             annotations["airspot.krules.dev/props"] = yaml.dump(props, Dumper=yaml.SafeDumper)
 
@@ -123,7 +124,10 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
                             _log=self.payload["__log"])
 
         try:
-            obj.update()
+            self.payload["__log"].append(
+                ("before_update", obj.obj)
+            )
+            obj.update(is_strategic=False)
         except pykube.exceptions.HTTPError as ex:
 
             k8s_event_create(

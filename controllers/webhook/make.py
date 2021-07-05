@@ -34,9 +34,18 @@ KRULES_DEP_LIBS = [
     "krules-k8s-functions",
 ]
 
+KRULES_DEV_DEP_LIBS = [
+    "krules-core",
+    "krules-env",
+    "krules-dispatcher-cloudevents"
+]
+
 DEP_LIBS = [
     "gunicorn==20.0.4"
 ]
+
+if "RELEASE_VERSION" not in os.environ:
+    KRULES_DEP_LIBS = KRULES_DEV_DEP_LIBS + KRULES_DEP_LIBS
 
 
 def _get_image_base():
@@ -48,7 +57,7 @@ def _get_image_base():
 
 def _prepare_commons():
     sane_utils.copy_dirs(
-        dirs=[os.path.join(os.path.pardir, "common", "cfgp")],
+        src=[os.path.join(os.path.pardir, "common", "cfgp")],
         dst=".common"
     )
 
@@ -58,6 +67,9 @@ def _preprare_krules_deps():
         sane_utils.copy_dirs(
             map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
             dst=".krules-libs",
+            make_recipes=[
+                "clean", "setup.py"
+            ]
         )
 
 

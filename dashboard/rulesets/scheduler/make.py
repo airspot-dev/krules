@@ -23,19 +23,20 @@ DJANGOAPPS_DEP_LIBS = [
 ]
 
 
-image_base = sane_utils.get_buildable_image(
-    location=os.path.join(KRULES_ROOT_DIR, "images"),
-    dir_name="ruleset-image-base",
-    use_release_version=True,
-    environ_override="SCHEDULER_IMAGE_BASE",
-)
+def get_image_base():
+    return sane_utils.get_buildable_image(
+        location=os.path.join(KRULES_ROOT_DIR, "images"),
+        dir_name="ruleset-image-base",
+        use_release_version=True,
+        environ_override="SCHEDULER_IMAGE_BASE",
+    )
 
 sane_utils.make_render_resource_recipes(
     globs=[
         "*.j2",
     ],
     context_vars=lambda: {
-        "image_base": image_base,
+        "image_base": get_image_base(),
         "site_name": sane_utils.check_envvar_exists("SITE_NAME"),
         "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
         "supports_postgres": bool(sane_utils.check_envvar_exists("DJANGO_BACKEND_POSTGRES")),
@@ -53,16 +54,12 @@ sane_utils.make_build_recipe(
         "prepare_build"
     ],
     run_before=[
-        # lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_dirs(
-        #     [os.path.join(KRULES_ROOT_DIR, "dev_support", "krules-dev-support")],
-        #     dst=".support"
-        # ),
-        lambda: 'RELEASE_VERSION' not in os.environ and map(lambda x: run([
-            os.path.join(DJANGOAPPS_LIBS_DIR, x, "make.py", "setup.py"),
-        ], check=True), DJANGOAPPS_DEP_LIBS),
         lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_dirs(
             map(lambda x: os.path.join(DJANGOAPPS_LIBS_DIR, x), DJANGOAPPS_DEP_LIBS),
-            dst=".djangoapps-libs"
+            dst=".djangoapps-libs",
+            make_recipes=[
+                "setup.py"
+            ]
         ),
     ]
 )
@@ -118,11 +115,10 @@ sane_utils.make_service_recipe(
 sane_utils.make_clean_recipe(
     globs=[
         "Dockerfile",
-        "settings.py",
         "k8s/*.yaml",
         ".digest",
+        ".build.success",
         ".djangoapps-libs",
-        #".support",
     ],
 )
 

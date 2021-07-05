@@ -19,6 +19,9 @@ def _hashed(*args, length=10):
 
 def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserve_name: bool, _log=[]):
 
+    _log.append(
+        ("dest_before", copy.deepcopy(dest))
+    )
 
     configuration_name = configuration.get("metadata").get("name")
     configuration_key = configuration.get("spec").get("key")
@@ -90,7 +93,7 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
                     target_d = {d["name"]: d for d in target[k]}
                     conf_d = {d["name"]: d for d in conf[k]}
                     env = []
-                    all_names = set(list(target_d.keys())+list(conf_d.keys()))
+                    all_names = set(list(target_d.keys()) + list(conf_d.keys()))
                     for name in all_names:
                         if name in conf_d:
                             env.append(conf_d[name])
@@ -129,5 +132,4 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
 
     prev_applied[configuration_name] = configuration_hash
     annotations["config.krules.airspot.dev/applied"] = yaml.dump(prev_applied, Dumper=yaml.SafeDumper)
-
 

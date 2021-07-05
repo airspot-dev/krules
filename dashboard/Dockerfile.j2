@@ -5,7 +5,8 @@ ENV CONFIGURATION_KEY {{ configuration_key }}
 RUN pip install --no-cache-dir \
   django-jsoneditor==0.1.6
 
+ADD .djangoapps-libs /.djangoapps-libs
 {%  for app in djangoapps_sources %}
-ADD apps/{{ app }} /{{ app }}
-RUN cd /{{ app }} && python3 /{{ app }}/setup.py develop && cd -
+RUN cd /.djangoapps-libs/{{ app }} && python3 /.djangoapps-libs/{{ app }}/setup.py develop
 {% endfor %}
+

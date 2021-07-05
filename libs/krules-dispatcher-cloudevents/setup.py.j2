@@ -9,7 +9,9 @@ def read(fname):
 
 setup(
     name='krules-dispatcher-cloudevents',
-    version="0.8.5.2",
+{% if release_version %}
+    version="{{ release_version }}",
+{%  endif %}
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules cloudevents dispatcher",
@@ -23,7 +25,9 @@ setup(
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
-        'krules-core==0.8.5.1',
+{% if release_version %}
+        'krules-core={{ release_version }}',
+{% endif %}
         'cloudevents==1.2.0',
         'pytz==2020.5',
         'requests==2.25.1'

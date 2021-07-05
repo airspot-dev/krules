@@ -16,24 +16,29 @@ from setuptools import setup, find_packages
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
 setup(
-    name='krules-subjects-storage-mongodb',
-    version="0.8.5.1",
+    name='krules-k8s-functions',
+{% if release_version %}
+    version="{{ release_version }}",
+{% endif %}
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
-    description="KRules mongodb subjects storage implementation",
+    description="KRules k8s subjects storage implementation",
     licence="Apache Licence 2.0",
-    keywords="krules mongodb",
-    url="https://github.com/airspot-dev/krules-subjects-storage-mongodb.git",
+    keywords="krules kubernetes k8s python python knative",
+    url="https://github.com/airspot-dev/krules-subjects-storage-k8s.git",
     packages=find_packages(),
-    long_description=read('README.rst'),
+    long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
-        'pymongo==3.10.1',
-        'krules-core==0.8.5.1',
+{% if release_version %}
+        'krules-core=={{ release_version }}',
+{% endif %}
+        'pykube-ng==21.3.0',
     ],
     setup_requires=[
         'pytest-runner',

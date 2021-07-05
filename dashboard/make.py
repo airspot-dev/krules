@@ -30,20 +30,20 @@ if ENABLE_DJANGOAPP_SCHEDULER:
     djangoapps_sources.append("krules-djangoapps-scheduler")
 
 
-@recipe(info="Do whatever for each deployable django app", hooks=["prepare_build"])
-def djangoapps():
+# @recipe(info="Do whatever for each deployable django app", hooks=["prepare_build"])
+# def djangoapps():
+#
+#     for app in djangoapps_sources:
+#         try:
+#             Help.log(f"Entering django app {app}")
+#             run([
+#                 os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", app, "make.py")
+#             ], check=True)
+#         except CalledProcessError:
+#             Help.error(f"cannot make {app}")
 
-    for app in djangoapps_sources:
-        try:
-            Help.log(f"Entering django app {app}")
-            run([
-                os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", app, "make.py")
-            ], check=True)
-        except CalledProcessError:
-            Help.error(f"cannot make {app}")
 
-
-image_base = sane_utils.get_buildable_image(
+image_base = lambda: sane_utils.get_buildable_image(
     location=os.path.join(KRULES_ROOT_DIR, "images"),
     dir_name="django-image-base",
     use_release_version=True,
@@ -56,12 +56,22 @@ sane_utils.make_render_resource_recipes(
         "*.j2",
     ],
     context_vars=lambda: {
-        "image_base": image_base,
+        "image_base": image_base(),
         "site_name": sane_utils.check_envvar_exists("SITE_NAME"),
         "app_name": sane_utils.check_envvar_exists("APP_NAME"),
         "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
         "djangoapps_sources": djangoapps_sources,
     },
+    run_before=[
+        lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_dirs(
+            map(lambda x: os.path.join("apps", x), djangoapps_sources),
+            dst=".djangoapps-libs",
+            make_recipes=[
+                "setup.py"
+            ]
+        ),
+
+    ],
     hooks=['prepare_build']
 )
 
@@ -86,6 +96,7 @@ sane_utils.make_render_resource_recipes(
         "app_name": sane_utils.check_envvar_exists("APP_NAME"),
         "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
         "djangoapps_sources": djangoapps_sources,
+        "namespace": sane_utils.check_envvar_exists("NAMESPACE")
     },
     hooks=['prepare_deploy']
 )
@@ -105,8 +116,8 @@ sane_utils.make_service_recipe(
     },
     kn_extra=(
       "--scale", "1",
-      "--wait-timeout", "10",
-      "--cluster-local",
+      "--wait-timeout", "20",
+      #"--cluster-local",
     ),
     info="deploy service",
     recipe_deps=["push", "apply"],
@@ -114,12 +125,17 @@ sane_utils.make_service_recipe(
 
 
 sane_utils.make_clean_recipe(
-    globs=["Dockerfile", "k8s/*.yaml", ".build.*", ".digest", ".deploy.out"],
-    on_completed=lambda: (
-        run([os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", "krules-djangoapps-common", "make.py"), "clean"]),
-        run([os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", "krules-djangoapps-procevents", "make.py"), "clean"]),
-        run([os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", "krules-djangoapps-scheduler", "make.py"), "clean"]),
-    )
+    globs=[
+        "Dockerfile",
+        "k8s/*.yaml",
+        ".digest",
+        ".djangoapps-libs/"
+    ],
+    # on_completed=lambda: (
+    #     run([os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", "krules-djangoapps-common", "make.py"), "clean"]),
+    #     run([os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", "krules-djangoapps-procevents", "make.py"), "clean"]),
+    #     run([os.path.join(os.path.dirname(os.path.realpath(__file__)), "apps", "krules-djangoapps-scheduler", "make.py"), "clean"]),
+    # )
 )
 
 sane_run("service")

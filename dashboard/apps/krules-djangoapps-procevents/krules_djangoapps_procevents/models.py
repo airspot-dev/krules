@@ -16,3 +16,11 @@ class ProcessingEvent(models.Model):
     passed = models.BooleanField()
     source = models.CharField(max_length=255, null=True, blank=True)
     origin_id = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return "{}:{}:{}:{}".format(
+            self.passed and "process" or "pass",
+            self.source,
+            self.rule_name,
+            str(self.subject),
+        )

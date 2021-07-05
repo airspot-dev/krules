@@ -47,7 +47,10 @@ sane_utils.make_build_recipe(
     run_before=[
         lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_dirs(
             map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
-            dst=".krules-libs"
+            dst=".krules-libs",
+            make_recipes=[
+                "clean", "setup.py"
+            ]
         )
     ]
 )

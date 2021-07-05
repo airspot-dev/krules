@@ -6,27 +6,28 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name='krules-core',
-    version="0.8.5.1",
+    name='krules-flask-env',
+{%  if release_version %}
+    version="{{ release_version }}",
+{%  endif %}
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
-    description="KRules Python core package",
+    description="KRules environment base package",
     license="Apache Licence 2.0",
-    keywords="krules rules engine",
-    url="https://github.com/airspot-dev/krules-core",
+    keywords="krules rules engine flask",
+    url="https://github.com/airspot-dev/krules-flask-env",
     packages=find_packages(),
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: Apache Software License",
     ],
-    python_requires='>3.7',
     install_requires=[
-        'dependency-injector==4.32.2',
-        'wrapt==1.12.1',
-        'rx==3.1.1',
-        'jsonpatch==1.26',
-        'jsonpath-rw-ext==1.2.2',
+{% if release_version %}
+        "krules-env=={{ release_version }}",
+{% endif %}
+        "flask==1.1.2",
+        "json-logging==1.2.11"
     ],
     setup_requires=[
         'pytest-runner',

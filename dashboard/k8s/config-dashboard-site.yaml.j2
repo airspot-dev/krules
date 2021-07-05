@@ -2,6 +2,7 @@ apiVersion: krules.airspot.dev/v1alpha1
 kind: ConfigurationProvider
 metadata:
   name: config-{{ app_name }}-site
+  namespace: {{ namespace }}
 spec:
   key: {{ configuration_key }}
   appliesTo:
@@ -58,6 +59,11 @@ spec:
           secretKeyRef:
             name: {{ app_name }}-secrets
             key: secret-key
-    envFrom:
-      - configMapRef:
-          name: {{ app_name }}-vars
+      - name: ALLOWED_HOSTS
+        valueFrom:
+          configMapKeyRef:
+            name: {{ app_name }}-vars
+            key: ALLOWED_HOSTS
+#    envFrom:
+#      - configMapRef:
+#          name: {{ app_name }}-vars

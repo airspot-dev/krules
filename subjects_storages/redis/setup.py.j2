@@ -16,16 +16,17 @@ from setuptools import setup, find_packages
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-
 setup(
-    name='krules-k8s-functions',
-    version="0.8.5.1",
+    name='krules-subjects-storage-redis',
+{% if release_version %}
+    version="{{ release_version }}",
+{% endif %}
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
-    description="KRules k8s subjects storage implementation",
+    description="KRules redis subjects storage implementation",
     licence="Apache Licence 2.0",
-    keywords="krules kubernetes k8s python python knative",
-    url="https://github.com/airspot-dev/krules-subjects-storage-k8s.git",
+    keywords="krules subject redis",
+    url="https://github.com/airspot-dev/krules-subjects-storage-redis.git",
     packages=find_packages(),
     long_description=read('README.md'),
     classifiers=[
@@ -33,8 +34,11 @@ setup(
         "License :: OSI Approved :: Apache Software License",
     ],
     install_requires=[
-        'krules-core==0.8.5.1',
-        'pykube-ng==21.3.0',
+        'redis>=3.3.5',
+        'anyjson>=0.3.3',
+{% if release_version %}
+        'krules-core=={{ release_version }}',
+{% endif %}
     ],
     setup_requires=[
         'pytest-runner',

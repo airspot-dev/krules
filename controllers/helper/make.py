@@ -39,7 +39,7 @@ def _get_image_base():
 
 def _prepare_commons():
     sane_utils.copy_dirs(
-        dirs=[os.path.join(os.path.pardir, "common", "cfgp")],
+        src=[os.path.join(ROOT_DIR, os.path.pardir, "common", "cfgp")],
         dst=".common"
     )
 
@@ -49,7 +49,7 @@ sane_utils.make_render_resource_recipes(
         'Dockerfile.j2'
     ], 
     context_vars=lambda: {
-        "ruleset_image_base": _get_image_base(),
+        "image_base": _get_image_base(),
     }, 
     hooks=['prepare_build']
 )
@@ -85,6 +85,20 @@ sane_utils.make_render_resource_recipes(
     hooks=['render_resource']
 )
 
+sane_utils.make_service_recipe(
+    image=lambda: open(".digest", "r").read().rstrip(),
+    labels={
+        "krules.airspot.dev/app": "{APP_NAME}",
+        "config.krules.airspot.dev/django-orm": "inject",
+    },
+    kn_extra=(
+      "--scale", "1",
+      "--wait-timeout", "20",
+      #"--cluster-local",
+    ),
+    info="deploy service",
+    recipe_deps=["push", "apply"],
+)
 
 sane_utils.make_apply_recipe(
     name="apply",

@@ -1,9 +1,9 @@
 import contextlib
-import inspect
-import os
+import yaml
 import shutil
 import typing
 from glob import glob
+from pathlib import Path
 from subprocess import run, CalledProcessError
 
 from dotenv import load_dotenv
@@ -25,22 +25,38 @@ def check_cmd(cmd):
 
 
 def load_env():
-    abs_path = os.path.abspath(inspect.stack()[-1].filename)
-    root_dir = os.path.dirname(abs_path)
 
-    Help.log("Loading environment for {}".format(root_dir))
-    load_dotenv(
-        os.path.join(root_dir, ".env")
-    )
-    load_dotenv(
-        # local development (in .gitignore)
-        os.path.join(root_dir, ".env.local")
-    )
-    load_dotenv(
-        # override previously set (in .gitignore)
-        os.path.join(root_dir, ".env.override"),
-        override=True
-    )
+    def _load_dir_env(_dir):
+        for f in ("env.project", ".env", "env", ".env.local", "env.local"):
+            load_dotenv(
+                os.path.join(_dir, f)
+            )
+        for f in (".env.override", "env.override"):
+            load_dotenv(
+                os.path.join(_dir, f),
+                override=True
+            )
+
+    # look for env files in caller directory
+    abs_path = os.path.abspath(inspect.stack()[-1].filename)
+    cur_dir = os.path.dirname(abs_path)
+
+    # look for a project file
+    p = Path(cur_dir)
+    while True:
+        is_project_dir = bool(sum(1 for x in p.glob("env.project")))
+        is_root = p.parent == p
+        if is_project_dir:
+            f = os.path.join(p, "env.project")
+            Help.log("Loading project environment for {}".format(p))
+            _load_dir_env(p)
+            break
+        if is_root:
+            break
+        p = p.parent
+
+    Help.log("Loading environment for {}".format(cur_dir))
+    _load_dir_env(cur_dir)
 
 
 def get_buildable_image(location: str,
@@ -67,6 +83,28 @@ def get_buildable_image(location: str,
     except CalledProcessError as ex:
         Help.error(ex.stdout.decode())
 
+
+def get_image(image, environ_override: typing.Optional[str] = None):
+    """
+    Convenient method for guessing the image name if we have a RELEASE_VERSION defined
+    or using the KRrules source repo located in KRULES_ROOT_DIR.
+    It is a wrapper for the more specialized get_buildable_image function
+    """
+    if "RELEASE_VERSION" in os.environ:
+        return get_buildable_image(
+            location="",
+            dir_name=image,
+            environ_override=environ_override,
+        )
+    if "KRULES_ROOT_DIR" in os.environ:
+        return get_buildable_image(
+            location=os.path.join(os.environ["KRULES_ROOT_DIR"], "images"),
+            dir_name=image,
+            environ_override=environ_override,
+        )
+    if environ_override is not None and environ_override in os.environ:
+        return os.environ[environ_override]
+    Help.error("One of RELEASE_VERSION or KRULES_ROOT_DIR needed")
 
 
 def make_render_resource_recipes(globs: list,
@@ -173,7 +211,7 @@ def make_build_recipe(target: str = None,
                 Help.error(ex.stdout.decode())
 
 
-def make_push_recipe(digest_file: str,
+def make_push_recipe(digest_file: str = ".digest",
                      tag: str = os.environ.get("RELEASE_VERSION"),
                      target: str = None,
                      run_before: typing.Sequence[typing.Callable] = (),
@@ -278,7 +316,9 @@ def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[t
                     Help.error(ex.stderr.decode())
 
 
-def make_service_recipe(image: typing.Union[str, typing.Callable], labels: dict = {}, kn_extra: tuple = (),
+def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
+                        labels: typing.Union[dict, typing.Callable] = {},
+                        kn_extra: tuple = (),
                         env: typing.Union[dict, typing.Callable[[], dict]] = {},
                         **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
@@ -296,13 +336,16 @@ def make_service_recipe(image: typing.Union[str, typing.Callable], labels: dict 
     else:
         Help.error(f"unknown service api {service_api}")
     app_name = check_envvar_exists("APP_NAME")
-    image_name = check_envvar_exists("IMAGE_NAME")
+    #image_name = check_envvar_exists("IMAGE_NAME")
 
     @recipe(**recipe_kwargs)
     def service():
         with pushd(root_dir):
             _image = callable(image) and image() or image
+            if _image is None:
+                _image = open(".digest", "r").read().rstrip()
             _env = callable(env) and env() or env
+            _labels = callable(labels) and labels() or labels
             try:
                 if service_api == "base":
                     out = run([
@@ -313,22 +356,47 @@ def make_service_recipe(image: typing.Union[str, typing.Callable], labels: dict 
                         Help.log(f"updating deployment '{app_name}")
                         out = run([
                             kubectl_cmd, *kubectl_opts, "-n", namespace, "set", "image", f"deployment/{app_name}",
-                            f"{image_name}={_image}", "--record"
+                            f"{app_name}={_image}", "--record"
                         ], check=True, capture_output=True).stdout
                         [Help.log(f"> {l}") for l in out.decode().splitlines()]
                     else:
                         Help.log(f"creating deployment '{app_name}")
+                        deployment = {
+                            "apiVersion": "apps/v1",
+                            "kind": "Deployment",
+                            "metadata": {
+                                "name": app_name,
+                                "labels": _labels,
+                            },
+                            "spec": {
+                                "replicas": 1,  # TODO: env var
+                                "selector": {
+                                    "matchLabels": _labels,
+                                },
+                                "template": {
+                                    "metadata": {
+                                        "labels": _labels,
+                                    },
+                                    "spec": {
+                                        "containers": [
+                                            {
+                                                "name": app_name,
+                                                "image": _image,
+                                                "env": [{"name": e[0], "value": e[1]} for e in _env.items()],
+                                                "ports": [
+                                                    {
+                                                        "containerPort": 8080,
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
                         out = run([
-                            kn_cmd, *kubectl_opts, "-n", namespace, "create", "deployment", app_name,
-                            "--image", _image
-                        ], check=True, capture_output=True).stdout
-                        [Help.log(f"> {l}") for l in out.decode().splitlines()]
-                        Help.log("setting labels")
-                        for label, value in labels.items():
-                            out = run([
-                                kubectl_cmd, *kubectl_opts, "-n", namespace, "label", "deployment", app_name,
-                                "=".join([label, value.format(APP_NAME=app_name)])
-                            ], check=True, capture_output=True).stdout
+                            kubectl_cmd, *kubectl_opts, "-n", namespace, "apply", "-f", "-",
+                        ], input=yaml.dump(deployment, Dumper=yaml.SafeDumper).encode("utf-8"), check=True, capture_output=True).stdout
                         [Help.log(f"> {l}") for l in out.decode().splitlines()]
                         if service_type != "":
                             Help.log("creating service")
@@ -359,7 +427,7 @@ def make_service_recipe(image: typing.Union[str, typing.Callable], labels: dict 
                             *list(
                                 sum([
                                     ("--label", f"{name}={value.format(APP_NAME=app_name)}") for name, value in
-                                    labels.items()
+                                    _labels.items()
                                 ], ())
                             ),
                             *list(
@@ -406,13 +474,20 @@ def pushd(new_dir):
         os.chdir(old_dir)
 
 
-def copy_dirs(dirs: typing.Iterable[str], dst: str, override=True):
-    abs_path = os.path.abspath(inspect.stack()[1].filename)
-    root_dir = os.path.dirname(abs_path)
+
+
+def copy_dirs(src: typing.Iterable[str], dst: str,
+              override: bool = True,
+              make_recipes: typing.Iterable = (),
+              workdir: str = None):
+
+    if workdir is None:
+        workdir = os.path.abspath(inspect.stack()[1].filename)
+    root_dir = os.path.dirname(workdir)
 
     with pushd(root_dir):
         os.makedirs(dst, exist_ok=True)
-        for p in dirs:
+        for p in src:
             to_path = os.path.join(dst, os.path.basename(p))
             if os.path.exists(to_path):
                 if override:
@@ -420,3 +495,44 @@ def copy_dirs(dirs: typing.Iterable[str], dst: str, override=True):
                 else:
                     Help.error(f"Destination path {to_path} already exists")
             shutil.copytree(p, to_path)
+            for recipe in make_recipes:
+                make_py = os.path.join(to_path, "make.py")
+                if os.path.exists(make_py):
+                    cmd = " ".join((make_py, recipe))
+                    Help.log(f"Invoking {cmd}")
+                    try:
+                        run(cmd, shell=True, check=True, capture_output=True)
+                    except CalledProcessError as err:
+                        Help.error(err.stderr.decode())
+
+
+def copy_source(src: typing.Union[typing.Iterable[str], str],
+                dst: str,
+                condition: typing.Callable[[], bool] = lambda: True,
+                override: bool = True,
+                make_recipes: typing.Iterable = ("clean", "setup.py")):
+    """
+    Convenient function wrapping copy_dirs.
+    It assumes paths relative to KRULES_ROOT_DIR
+    :param src: 
+    :param dst: 
+    :param condition: 
+    :param override: 
+    :param make_recipes: 
+    :return: 
+    """
+    if "KRULES_ROOT_DIR" not in os.environ:
+        return
+    if not condition():
+        return
+    if isinstance(src, str):
+        src = [src]
+    src = list(map(lambda x: os.path.join(os.environ["KRULES_ROOT_DIR"], x), src))
+
+    workdir = os.path.abspath(inspect.stack()[1].filename)
+    copy_dirs(
+        src, dst, override, make_recipes,
+        workdir
+    )
+
+
