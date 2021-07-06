@@ -10,7 +10,7 @@ from .models import ProcessingEvent
 class ProcessingEventAdmin(DeepSearchModelAdmin):
     search_fields = ("origin_id", "subject", "source")
     deep_search_fields = ("payload", "event_info")
-    list_filter = ("passed", "got_errors", "rule_name", "type")
+    list_filter = ("passed", "got_errors", "rule_name", "type", "source")
     fields = ("rule_name", "type", "subject", "success", "passed", "origin_id", "time", "event_info", "payload",
               "filters", "processing", "source")
     readonly_fields = ("rule_name", "type", "subject", "success", "passed", "origin_id", "time", "source")
