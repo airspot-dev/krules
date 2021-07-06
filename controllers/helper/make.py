@@ -27,7 +27,7 @@ RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
 DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
 
-NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
+#NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
 
 
 def _get_image_base():
@@ -77,7 +77,7 @@ sane_utils.make_render_resource_recipes(
         'k8s/*.yaml.j2'
     ], 
     context_vars=lambda: {
-        "namespace": NAMESPACE,
+        "namespace": sane_utils.check_envvar_exists("NAMESPACE"),
         "name": sane_utils.check_envvar_exists("SERVICE_NAME"),
         "digest": open(os.path.join(ROOT_DIR, ".digest"), "r").read(),
         "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,

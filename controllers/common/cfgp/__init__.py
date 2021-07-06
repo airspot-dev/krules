@@ -26,10 +26,12 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
     configuration_name = configuration.get("metadata").get("name")
     configuration_key = configuration.get("spec").get("key")
     destination_name = dest.get("metadata", {}).get("name")
+
+    extra_volumes = configuration["spec"].get("extraVolumes", [])
     configuration_hash = _hashed(
         configuration["spec"].get("data", {}),
         configuration["spec"].get("container", {}),
-        configuration["spec"].get("volumes", {}),
+        dict(zip([i for i in range(len(extra_volumes))], extra_volumes)),  # convert to dict to make it hashable
     )
 
     annotations = dest.get("metadata", {}).setdefault("annotations", {})
@@ -127,7 +129,7 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
     if not found:
         volumes.append(cm_volume)
 
-    extra_volumes = configuration["spec"].get("extraVolumes", [])
+    #extra_volumes = configuration["spec"].get("extraVolumes", [])
     volumes.extend(extra_volumes)
 
     prev_applied[configuration_name] = configuration_hash
