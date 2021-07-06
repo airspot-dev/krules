@@ -131,7 +131,7 @@ rulesdata_ce_source = [
         }
     },
     """
-    for unowned pods we get the pod's name
+    for kservice get knative service label
     """,
     {
         rulename: "mutate-pod-env-ce-source-kservice",
@@ -148,13 +148,13 @@ rulesdata_ce_source = [
             processing: [
                 SetPodEnvVar(
                     "CE_SOURCE",
-                    lambda payload: payload["request"]["object"]["metadata"]["labels"]["serving.knative.dev/revision"],
+                    lambda payload: payload["request"]["object"]["metadata"]["labels"]["serving.knative.dev/service"],
                 ),
             ]
         }
     },
     """
-    for unowned pods we get the pod's name
+    for deployments set in to pod template
     """,
     {
         rulename: "mutate-pod-env-ce-source-deployment",

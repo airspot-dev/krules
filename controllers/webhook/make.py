@@ -26,7 +26,7 @@ RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
 DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
 
-NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
+#NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
 NS_INJECTION_LBL = os.environ.get("NS_INJECTION_LBL", "dev.krules.airspot.dev")
 
 KRULES_DEP_LIBS = [
@@ -111,7 +111,7 @@ sane_utils.make_render_resource_recipes(
         'k8s/*.yaml.j2'
     ],
     context_vars=lambda: {
-        "namespace": NAMESPACE,
+        "namespace": sane_utils.check_envvar_exists("NAMESPACE"),
         "ns_injection_lbl": NS_INJECTION_LBL,
         "name": SERVICE_NAME,
         "digest": open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".digest"), "r").read(),
