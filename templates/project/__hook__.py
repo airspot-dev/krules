@@ -1,10 +1,13 @@
 """
 Start a new project
+===
 
-Accept the following environment variables
+It can be customized setting up environment variables at two different levels
 
-## At project level (in env.project file) ##
-*PROJECT_NAME*: Name of the project
+1. **Project level**: are defined in **env.project** and are part of the project itself (included in code repository)
+
+- **PROJECT_NAME**: Name of the project
+- **NAMESPACE**: It is mandatory
 
 """
 
