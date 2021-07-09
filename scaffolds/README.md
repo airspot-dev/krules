@@ -1,0 +1,1 @@
+The contents of this directory are intended for use with the KRules CLI *scaffold* command
