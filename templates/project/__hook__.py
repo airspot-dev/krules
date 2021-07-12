@@ -53,7 +53,7 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     out.append("Setting up **env.project**")
     if tag is not None and tag.startswith("v"):
         env_project.append(f"RELEASE_VERSION={tag[1:]}")
-    out.append(f"- **RELEASE_VERSION**: {tag[1:]} (automatically set)")
+        out.append(f"- **RELEASE_VERSION**: {tag[1:]}")
 
     # project name
     project_name = _get_var("PROJECT_NAME", lambda: os.path.split(dest)[-1])
