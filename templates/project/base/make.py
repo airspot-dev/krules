@@ -2,16 +2,11 @@
 import os
 import re
 
-try:
-    from krules_dev import sane_utils
-except ImportError:
-    print('\033[91mkrules local development support is not installed... run "pip install krules-dev-support"\033[0m')
-    exit(-1)
+from krules_dev import sane_utils
 
 from sane import *
 
 sane_utils.load_env()
-
 
 INSTALL_IPYTHON = int(os.environ.get("INSTALL_IPYTHON", "0"))
 
@@ -43,26 +38,33 @@ sane_utils.make_render_resource_recipes(
         "k8s/*.j2",
     ],
     context_vars=lambda: {
-        "namespace": sane_utils.check_envvar_exists("NAMESPACE"),
+        "namespace": os.environ["NAMESPACE"],
     },
     hooks=[
         'prepare_resources'
     ]
 )
 
+
 sane_utils.make_apply_recipe(
     name="apply",
-    globs=["k8s/*.yaml"],
-    hook_deps=["prepare_resources"],
+    globs=[
+        "k8s/*.yaml"
+    ],
+    hook_deps=[
+        "prepare_resources"
+    ],
 )
 
 
 sane_utils.make_build_recipe(
     name="build",
-    hook_deps=["prepare_build"],
+    hook_deps=[
+        "prepare_build"
+    ],
     run_before=[
         # KRules development environment only
-        # (when KRULES_ROOT_DIR is set)
+        # (when RELEASE_VERSION is not set)
         lambda: [
             sane_utils.copy_source(
                 src=f"subjects_storages/{backend}",

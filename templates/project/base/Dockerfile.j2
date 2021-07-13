@@ -24,8 +24,8 @@ RUN apk add --virtual .build-deps mariadb-dev build-base python3-dev && \
 {% if release_version %}
 RUN pip3 install krules-subjects-storage-{{ backend }}=={{ release_version }}
 {% else %}
-ADD .subjects-{{ backend }}/{{ backend }} /subjects-{{ backend }}
-RUN cd /subjects-{{ backend }} && python3 setup.py develop
+ADD .subjects-{{ backend }}/{{ backend }} /.subjects-{{ backend }}
+RUN cd /.subjects-{{ backend }} && python3 setup.py develop
 {% endif %}
 {% endfor %}
 
