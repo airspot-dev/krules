@@ -1,0 +1,22 @@
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: {{ app_name }}
+  namespace: {{ namespace }}
+  labels:
+    "krules.airspot.dev/app": {{ app_name }}
+spec:
+  broker: default
+  filter:
+    attributes:
+      type: my.event  # REPLACE ME!
+  subscriber:
+    ref:
+{% if service_api == "knative" %}
+    apiVersion: serving.knative.dev/v1
+{% elif service_api == "base" %}
+    apiVersion: v1
+{% endif %}
+      kind: Service
+      name: {{ app_name }}
+---
