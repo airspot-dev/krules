@@ -113,7 +113,7 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     out.append(f"- **KN_OPTS**: {kn_opts}")
     env_local.append(f"KN_OPTS={kn_opts}")
 
-    open(os.path.join(dest, "env.local"), "w").write("\n".join(env_project))
+    open(os.path.join(dest, "env.local"), "w").write("\n".join(env_local))
 
     click.echo(mdv.main("\n\n".join(out)))
 
