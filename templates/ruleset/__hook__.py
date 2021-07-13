@@ -41,3 +41,5 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     open(os.path.join(dest, ".env"), "w").write("\n".join(env))
 
     click.echo(mdv.main("\n\n".join(out)))
+
+    return True
