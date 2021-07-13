@@ -1,4 +1,6 @@
 import contextlib
+import os
+
 import yaml
 import shutil
 import typing
@@ -47,6 +49,7 @@ def load_env():
         is_project_dir = bool(sum(1 for x in p.glob("env.project")))
         is_root = p.parent == p
         if is_project_dir:
+            os.environ["KRULES_PROJECT_DIR"] = str(p)
             f = os.path.join(p, "env.project")
             Help.log("Loading project environment for {}".format(p))
             _load_dir_env(p)
@@ -105,6 +108,26 @@ def get_image(image, environ_override: typing.Optional[str] = None):
     if environ_override is not None and environ_override in os.environ:
         return os.environ[environ_override]
     Help.error("One of RELEASE_VERSION or KRULES_ROOT_DIR needed")
+
+
+def get_project_base(image):
+    """
+    Get and eventually build the image from the specified folder contained in the project root
+    It is a wrapper for the more specialized get_buildable_image function
+
+    :param image: a folder whit that name is expected in the project root to build image from
+    :return image digest
+    """
+    if "KRULES_PROJECT_DIR" not in os.environ:
+        Help.error("Cannot guess project root directory")
+    target_dir = os.path.join(os.environ["KRULES_PROJECT_DIR"], image)
+    if not os.path.exists(target_dir) or not os.path.isdir(target_dir):
+        Help.error(f"{target_dir} does not exists or is not a directory")
+    return get_buildable_image(
+        location=os.environ["KRULES_PROJECT_DIR"],
+        dir_name=image,
+        environ_override=None
+    )
 
 
 def make_render_resource_recipes(globs: list,
@@ -189,7 +212,7 @@ def make_build_recipe(target: str = None,
     def build():
         docker_registry = check_envvar_exists('DOCKER_REGISTRY')
         check_cmd(docker_cmd)
-        target_image = f'{docker_registry}/{target}'
+        target_image = f'{docker_registry}/{target}'.lower()
         Help.log(f'Building {target_image} from Dockerfile')
 
         for func in run_before:
@@ -208,7 +231,7 @@ def make_build_recipe(target: str = None,
             except CalledProcessError as ex:
                 if os.path.exists(success_file):
                     os.unlink(success_file)
-                Help.error(ex.stdout.decode())
+                Help.error(ex.stderr.decode())
 
 
 def make_push_recipe(digest_file: str = ".digest",
@@ -228,7 +251,7 @@ def make_push_recipe(digest_file: str = ".digest",
         target = os.environ.get('IMAGE_NAME')
 
     docker_registry = os.environ.get('DOCKER_REGISTRY')
-    target_image = f"{docker_registry}/{target}"
+    target_image = f"{docker_registry}/{target}".lower()
     if tag:
         _tag = f'{target_image}:{tag}'
     else:
@@ -281,7 +304,7 @@ def make_push_recipe(digest_file: str = ".digest",
                 with open(digest_file, "wb") as f:
                     f.write(out)
             except CalledProcessError as ex:
-                Help.error(ex.stdout.decode())
+                Help.error(ex.stderr.decode())
 
 
 def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[typing.Callable] = (), **recipe_kwargs):
@@ -325,7 +348,7 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
     root_dir = os.path.dirname(abs_path)
     namespace = check_envvar_exists("NAMESPACE")
     service_api = os.environ.get("SERVICE_API", "base")
-    service_type = os.environ.get("SERVICE_TYPE", "")
+    service_type = os.environ.get("SERVICE_TYPE", "ClusterIP")
     kubectl_cmd = kubectl_opts = kn_cmd = kn_opts = None
     if service_api == "base":
         kubectl_cmd = os.environ.get("KUBECTL_CMD", check_cmd("kubectl"))
