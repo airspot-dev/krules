@@ -21,6 +21,7 @@ These variables can be used to distinguish different deployments environments li
 for local user *development* or different target environments such as *staging* or *production*
 
   - **NAMESPACE**: It must be set in order to deploy resources
+  - **DOCKER_REGISTRY**: It must be set in order build and push images
   - **KUBECTL_CMD**: Your Kubernetes client. Defaults to **kubectl**
   - **KUBECTL_OPTS**: Any KUBECTL_CMD options. For example "--context=..."
   - **KN_CMD**: Knative client. Defaults to **kn**
@@ -81,9 +82,20 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     if namespace is None:
         warns.append("NAMESPACE must be set in env.local!")
         env_local.append(f"#NAMESPACE=")
+        out.append(f"- **NAMESPACE**: *not set!*")
     else:
         env_local.append(f"NAMESPACE={namespace}")
-    out.append(f"- **NAMESPACE**: *not set!*")
+        out.append(f"- **NAMESPACE**: {namespace}")
+    # docker registry
+    docker_registry = _get_var("DOCKER_REGISTRY", lambda: None)
+    if docker_registry is None:
+        warns.append("DOCKER_REGISTRY must be set in env.local!")
+        env_local.append(f"#DOCKER_REGISTRY=")
+        out.append(f"- **DOCKER_REGISTRY**: *not set!*")
+    else:
+        env_local.append(f"DOCKER_REGISTRY={docker_registry}")
+        out.append(f"- **DOCKER_REGISTRY**: {docker_registry}")
+
     # kubectl
     kubectl_cmd = _get_var("KUBECTL_CMD", lambda: "kubectl")
     out.append(f"- **KUBECTL_CMD**: {kubectl_cmd}")
