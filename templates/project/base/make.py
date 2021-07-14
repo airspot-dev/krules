@@ -6,7 +6,9 @@ from krules_dev import sane_utils
 
 from sane import *
 
+
 sane_utils.load_env()
+
 
 INSTALL_IPYTHON = int(os.environ.get("INSTALL_IPYTHON", "0"))
 
@@ -17,6 +19,7 @@ SUPPORTS_POSTGRESQL = int(os.environ.get("SUPPORTS_POSTGRESQL", "0"))
 SUPPORTS_MYSQL = int(os.environ.get("SUPPORTS_MYSQL", "0"))
 
 
+# render the templates required by the build process
 sane_utils.make_render_resource_recipes(
     globs=[
         "*.j2",
@@ -33,6 +36,8 @@ sane_utils.make_render_resource_recipes(
     ]
 )
 
+
+# render k8s resources templates
 sane_utils.make_render_resource_recipes(
     globs=[
         "k8s/*.j2",
@@ -46,6 +51,7 @@ sane_utils.make_render_resource_recipes(
 )
 
 
+# apply k8s resources
 sane_utils.make_apply_recipe(
     name="apply",
     globs=[
@@ -57,6 +63,7 @@ sane_utils.make_apply_recipe(
 )
 
 
+# build image
 sane_utils.make_build_recipe(
     name="build",
     hook_deps=[
@@ -75,7 +82,7 @@ sane_utils.make_build_recipe(
     ]
 )
 
-
+# push image
 sane_utils.make_push_recipe(
     name="push",
     recipe_deps=[
@@ -83,7 +90,9 @@ sane_utils.make_push_recipe(
     ],
 )
 
+# clean
 sane_utils.make_clean_recipe(
+    name="clean",
     globs=[
         "Dockerfile",
         "env.py",

@@ -1,4 +1,5 @@
 import contextlib
+import hashlib
 import os
 
 import yaml
@@ -130,6 +131,24 @@ def get_project_base(image):
     )
 
 
+def update_code_hash(globs: list,
+                     output_file: str = ".code.digest"):
+
+    abs_path = os.path.abspath(inspect.stack()[-1].filename)
+    root_dir = os.path.dirname(abs_path)
+
+    files = []
+    with pushd(root_dir):
+        for file in globs:
+            files.extend(glob(file))
+
+        hash = hashlib.md5()
+        for file in files:
+            if os.path.isfile(file):
+                hash.update(open(file, "rb").read())
+        open(output_file, "w").write(hash.hexdigest())
+
+
 def make_render_resource_recipes(globs: list,
                                  context_vars: typing.Union[dict, typing.Callable[[], dict]] = {},
                                  run_before: typing.Sequence[typing.Callable] = (),
@@ -189,6 +208,8 @@ def make_render_resource_recipes(globs: list,
 def make_build_recipe(target: str = None,
                       run_before: typing.Sequence[typing.Callable] = (),
                       dockerfile: str = "Dockerfile",
+                      code_digest_file: str = ".code.digest",
+                      success_file: str = None,
                       **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
@@ -199,14 +220,19 @@ def make_build_recipe(target: str = None,
     if 'name' not in recipe_kwargs:
         recipe_kwargs['name'] = 'build'
     docker_cmd = os.environ.get("DOCKER_CMD", check_cmd("docker"))
-    success_file = f".{recipe_kwargs['name']}.success"
+    if success_file is None:
+        success_file = f".{recipe_kwargs['name']}.success"
     if 'info' not in recipe_kwargs:
         recipe_kwargs['info'] = "Build the docker image for target {target}"
     recipe_kwargs['info'] = recipe_kwargs['info'].format(target=target)
 
     if 'conditions' not in recipe_kwargs:
         recipe_kwargs['conditions'] = []
-    recipe_kwargs['conditions'].append(lambda: not os.path.exists(os.path.join(root_dir, success_file)))
+    success_file = os.path.join(root_dir, success_file)
+    code_digest_file = os.path.join(root_dir, code_digest_file)
+    recipe_kwargs['conditions'].append(lambda: not os.path.exists(success_file))
+    recipe_kwargs['conditions'].append(lambda: os.path.exists(code_digest_file) and
+                                               open(success_file).read() != open(code_digest_file).read())
 
     @recipe(**recipe_kwargs)
     def build():
@@ -227,7 +253,11 @@ def make_build_recipe(target: str = None,
                 ).stdout
                 [Help.log(f"> {l}") for l in out.decode().splitlines()]
                 with open(success_file, "w") as f:
-                    f.write(target_image)
+                    try:
+                        code_digest = open(code_digest_file, "r").read()
+                    except FileNotFoundError:
+                        code_digest = ""
+                    f.write(code_digest)
             except CalledProcessError as ex:
                 if os.path.exists(success_file):
                     os.unlink(success_file)
