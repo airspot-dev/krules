@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 import shutil
-from subprocess import run, CalledProcessError
 
 
-try:
-    from krules_dev import sane_utils
-except ImportError:
-    print('\033[91mkrules-dev is not installed... run "pip install krules-dev-support"\033[0m')
-    exit(-1)
+from krules_dev import sane_utils
 
 from sane import sane_run, recipe, _Help as Help
 import os
@@ -61,6 +56,7 @@ sane_utils.make_render_resource_recipes(
         "app_name": sane_utils.check_envvar_exists("APP_NAME"),
         "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
         "djangoapps_sources": djangoapps_sources,
+        "release_version":  os.environ.get("RELEASE_VERSION", False)
     },
     run_before=[
         lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_dirs(
@@ -84,7 +80,9 @@ sane_utils.make_build_recipe(
 sane_utils.make_push_recipe(
     name="push",
     digest_file=".digest",
-    recipe_deps=["build"],
+    recipe_deps=[
+        "build"
+    ],
 )
 
 
@@ -98,14 +96,20 @@ sane_utils.make_render_resource_recipes(
         "djangoapps_sources": djangoapps_sources,
         "namespace": sane_utils.check_envvar_exists("NAMESPACE")
     },
-    hooks=['prepare_deploy']
+    hooks=[
+        'prepare_deploy'
+    ]
 )
 
 
 sane_utils.make_apply_recipe(
     name="apply",
-    globs=["k8s/*.yaml"],
-    hook_deps=["prepare_deploy"],
+    globs=[
+        "k8s/*.yaml"
+    ],
+    hook_deps=[
+        "prepare_deploy"
+    ],
 )
 
 sane_utils.make_service_recipe(

@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 
-
 import os
 
-try:
-    from krules_dev import sane_utils
-except ImportError:
-    print('\033[91mcannot import sane_utils... run "pip install krules-dev-support"\033[0m')
-    exit(-1)
+from krules_dev import sane_utils
 
 from sane import sane_run
 

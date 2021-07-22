@@ -38,11 +38,8 @@ ADD site/urls.py /app/{{ site_name }}
 ENV CONFIGURATION_KEY {{ configuration_key }}
 ENV DJANGO_SETTINGS_MODULE {{ site_name }}.settings
 
-#RUN python3 manage.py collectstatic --noinput
-
 ENV SITE_NAME={{ site_name }}
 
 ADD django_run.sh /app/
 RUN chmod +x django_run.sh
 CMD ["/app/django_run.sh"]
-#CMD ["daphne", "-p 8080", "{{ site_name }}.asgi:application"]

@@ -73,9 +73,10 @@ def get_buildable_image(location: str,
     if environ_override is not None and environ_override in os.environ:
         return os.environ[environ_override]
     if use_release_version and 'RELEASE_VERSION' in os.environ:
+        docker_registry = check_envvar_exists("DOCKER_REGISTRY")
         if name is None:
             name = f'krules-{dir_name}'
-        return f'{name}:{os.environ["RELEASE_VERSION"]}'
+        return f'{docker_registry}/{name}:{os.environ["RELEASE_VERSION"]}'
     try:
         build_dir = os.path.join(location, dir_name)
         Help.log(f"Ensuring {digest_file} in {dir_name}")
@@ -374,25 +375,25 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                         kn_extra: tuple = (),
                         env: typing.Union[dict, typing.Callable[[], dict]] = {},
                         **recipe_kwargs):
-    abs_path = os.path.abspath(inspect.stack()[-1].filename)
-    root_dir = os.path.dirname(abs_path)
-    namespace = check_envvar_exists("NAMESPACE")
-    service_api = os.environ.get("SERVICE_API", "base")
-    service_type = os.environ.get("SERVICE_TYPE", "ClusterIP")
-    kubectl_cmd = kubectl_opts = kn_cmd = kn_opts = None
-    if service_api == "base":
-        kubectl_cmd = os.environ.get("KUBECTL_CMD", check_cmd("kubectl"))
-        kubectl_opts = os.environ.get("KUBECTL_OPTS", "").split()
-    elif service_api == "knative":
-        kn_cmd = os.environ.get("KN_CMD", check_cmd("kn"))
-        kn_opts = os.environ.get("KN_OPTS", "").split()
-    else:
-        Help.error(f"unknown service api {service_api}")
-    app_name = check_envvar_exists("APP_NAME")
-    #image_name = check_envvar_exists("IMAGE_NAME")
-
     @recipe(**recipe_kwargs)
     def service():
+        abs_path = os.path.abspath(inspect.stack()[-1].filename)
+        root_dir = os.path.dirname(abs_path)
+        namespace = check_envvar_exists("NAMESPACE")
+        service_api = os.environ.get("SERVICE_API", "base")
+        service_type = os.environ.get("SERVICE_TYPE", "ClusterIP")
+        kubectl_cmd = kubectl_opts = kn_cmd = kn_opts = None
+        if service_api == "base":
+            kubectl_cmd = os.environ.get("KUBECTL_CMD", check_cmd("kubectl"))
+            kubectl_opts = os.environ.get("KUBECTL_OPTS", "").split()
+        elif service_api == "knative":
+            kn_cmd = os.environ.get("KN_CMD", check_cmd("kn"))
+            kn_opts = os.environ.get("KN_OPTS", "").split()
+        else:
+            Help.error(f"unknown service api {service_api}")
+        app_name = check_envvar_exists("APP_NAME")
+        # image_name = check_envvar_exists("IMAGE_NAME")
+
         with pushd(root_dir):
             _image = callable(image) and image() or image
             if _image is None:
