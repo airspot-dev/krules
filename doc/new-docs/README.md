@@ -19,6 +19,8 @@ With Krules you can base your development with a new set of paradigmas:
 - **HIGH WORKLOAD TOLERANCE**: The system stays responsive under varying workload;
 - **EVENT DRIVEN FLOW**: The system relies on asynchronous event-dispatching to establish a boundary between components that ensure loose coupling, isolation and location transparency.
 
+Please refer to the sections to learn about [***Concepts and Jargon***](./concepts) of the framework, as well to [***get started***](./getting-started) and [***roll your first KRules-based cluster***](./getting-started#cluster-setup).
+
 Before diving into the basics, let us share with you the minimal requirements to run the whole environment.
 
 ## Minimal requirements
@@ -26,4 +28,8 @@ Before diving into the basics, let us share with you the minimal requirements to
 To run KRules, you need to have a working [Python](https://python.org) environment. We support versions from `Python 3.8.x`.
 
 You will also need `pip` to install all the required packages.
- 
+
+### Preferred IDE
+
+To use KRules smoothly we advise to develop using PyCharm IDE:
+it is not a requirement, but if you plan to extend the framework functionality it is the choice we use internally, so we can help you best.
