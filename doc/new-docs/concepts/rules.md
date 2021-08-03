@@ -22,7 +22,8 @@ After your ruleset is created you can then add rules inside it to develop the lo
 
 A `Rule` is one of the core concepts of the KRules framework. It is an object which performs the following actions:
 
-- Perform reactive updates and provide statefulness thanks to a context called [`Subject`](./subjects.md)
+- Perform reactive updates and provide statefulness thanks to a context called [`Subject`](./subjects.md).
+- Produce and consume [cloud events](https://cloudevents.io) coming from the Knative eventing.
 
 # What is a Filter ? 
 
