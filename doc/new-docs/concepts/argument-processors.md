@@ -76,7 +76,10 @@ class MyArgumentProcessor(BaseArgProcessor):
 
     def process(instance):
         """
-        Performs the actual argument processing, allowing to access the status information at runtime and manipulate the argument and its attributes. You can use it to manipulate the payload before the final processing or set subject properties, etc... Refer to the Subjects documentation to know more.
+        Performs the actual argument processing, allowing to access the status information at runtime
+        and manipulate the argument and its attributes. You can use it to manipulate the payload
+        before the final processing or set subject properties, etc...
+        Refer to the Subjects documentation to know more.
 
         Parameters
         ----------
