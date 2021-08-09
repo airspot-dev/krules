@@ -25,9 +25,41 @@ A `Rule` is one of the core concepts of the KRules framework. It is an object wh
 - Perform reactive updates and provide statefulness thanks to a context called [`Subject`](./subjects.md).
 - Produce and consume [cloud events](https://cloudevents.io) coming from the Knative eventing.
 
-# What is a Filter ? 
+To achieve their goals, rules must be defined and implemented. The standard way to do that is through the usage of ***Rule Functions***.
 
 # What is a Rule Function?
+
+You have one principal way to define a Rule. And this way is through Rule Functions.
+
+A Rule Function is a python class which extends `RuleFunctionBase` and implements the methods defined below:
+
+``` python 
+class MyRuleFunction(RuleFunctionBase):
+    """
+    The RuleFunction is an example Rule Function.
+
+    Methods:
+    ----------
+    execute():
+        Performs the logic of the rule function.
+    """
+
+    def execute(self, arg1, arg2):
+        """
+        Performs the logic of the rule function.
+
+        Parameters
+        ----------
+        arg1 : 
+            The argument of the function, can pass an indefinite
+            number of params, check example in latter sections.
+        arg2 : 
+            Same as arg1.
+        """
+        pass
+```
+
+Let's dive into an example implementation right away!
 
 ## The Print RuleFunction, an example to rule them all
 
