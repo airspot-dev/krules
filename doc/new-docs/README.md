@@ -6,6 +6,8 @@ in here you can find everything about the KRules framework and its core features
 
 You will even learn how to build our own rules and integrate them to build a truly serverless environment. 
 
+> **Want to start using it now? go [here](./getting-started.md)**
+
 ## What is KRules?
 
 [KRules](https://intro.krules.com) is an open source framework that provides, to Python developers, a flexible and fast way to build cloud native applications, creating event driven, context aware, and reactive microservices in a Kubernetes cluster.
