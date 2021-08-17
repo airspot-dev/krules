@@ -7,6 +7,8 @@ in here you can find everything about the KRules framework and its core features
 You will even learn how to build our own rules and integrate them to build a truly serverless environment. 
 
 > **Want to start using it now? go [here](./getting-started.md)**
+>
+> **Want an environment reference? go [here](./krules-environment.md)**
 
 ## What is KRules?
 
