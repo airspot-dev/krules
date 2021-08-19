@@ -1,5 +1,7 @@
 # KRules : Getting started
 
+![Krules Logo](https://github.com/airspot-dev/krules/blob/feature/docs/.support/krules_ext_logo.png)
+
 ## Setting up the environment
 
 To run KRules, you need to have a working [Python](https://python.org) environment. We support versions from `Python 3.8.x`.

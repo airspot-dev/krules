@@ -1,5 +1,7 @@
 # KRules : The Rules overview
 
+![Krules Logo](https://github.com/airspot-dev/krules/blob/feature/docs/.support/krules_ext_logo.png)
+
 in here you can find everything about the KRules Rules, from base to advanced level.
 
 Rulesets and Rules are one of the core concepts of the KRules framework, and in this document they will be throughly explained. 

@@ -1,5 +1,7 @@
 # The KRules environment
 
+![Krules Logo](https://github.com/airspot-dev/krules/blob/feature/docs/.support/krules_ext_logo.png)
+
 > ***NOTE: This document is for advanced users. If you need to learn the basics, why don't you check [the basic concepts](./concepts) or the [getting started guide](./getting-started)?***
 
 The Krules framework comes with a predefined set of environment variables you can configure in different ways, let's see what they are and what is their purpose.

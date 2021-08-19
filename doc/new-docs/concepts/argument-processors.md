@@ -1,5 +1,7 @@
 # KRules : The Argument Processors overview
 
+![Krules Logo](https://github.com/airspot-dev/krules/blob/feature/docs/.support/krules_ext_logo.png)
+
 in here you can find everything about the KRules argument processors, including how to create, use and extend their functionality to meet you custom needs.
 
 The Argument Processors are one of the core concepts of the KRules framework. You can think of them as the processing units of a [**Rule**](./rules.md).

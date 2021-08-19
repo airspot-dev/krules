@@ -1,5 +1,7 @@
 # KRules : Concepts and Jargon
 
+![Krules Logo](https://github.com/airspot-dev/krules/blob/feature/docs/.support/krules_ext_logo.png)
+
 in here you can find everything about the KRules concepts and jargon, from base to advanced level.
 
 Please refer to the following table of contents to find what you are searching for:

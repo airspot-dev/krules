@@ -1,5 +1,7 @@
 # KRules : Be serverless
 
+![Krules Logo](https://github.com/airspot-dev/krules/blob/feature/docs/.support/krules_ext_logo.png)
+
 Welcome to this wiki,
 
 in here you can find everything about the KRules framework and its core features.

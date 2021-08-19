@@ -1,5 +1,7 @@
 # KRules : The Filters overview
 
+![Krules Logo](https://github.com/airspot-dev/krules/blob/feature/docs/.support/krules_ext_logo.png)
+
 in here you can find everything about the KRules Filters, from base to advanced level.
 
 ## What are filters ?
