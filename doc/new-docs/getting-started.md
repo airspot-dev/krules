@@ -49,4 +49,21 @@ To set up a new project run:
 krules scaffold create project-name /path/of/project/root
 ```
 
+> If you need to customize this behavior, see how you can do that by [***manipulating the environment***](./krules-environment).
+
 The CLI will automatically create the project scaffolding for you. You can also tweak the CLI behaviour by using some enviroment variables, check the reference [**HERE (TODO POINT TO THE KRULES CLI DOC CONTAINING ENV REFERENCE**](./TODO)
+
+Once your project is downloaded, you are ready to start developing your rules.
+
+## Running the rulesets
+
+KRules uses the [`sane-build`](https://github.com/mikeevmm/sane) tool to execute build and deploy recipes, so to run your ruleset you just have to do:
+
+``` bash
+cd /the/rulesets/folder
+python make.py
+```
+
+And it will automatically deploy your rulesets according to the [***environment variables***](./krules-environment) you have set.
+
+> The `NAMESPACE` and `DOCKER_REGISTRY` variables are mandatory to set, either as evironment variable or in a `env.project` file.
