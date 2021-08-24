@@ -28,10 +28,7 @@ The KRules environment variable can be summarized by the following table
 |--------------------------|----------|----------------------|--------------------
 | `"NAMESPACE"`            | true     | `""`                 | The name of the Kubernetes namespace in which the framework runs 
 | `"DOCKER_REGISTRY"`      | true     | `""`                 | The URL of the docker registry from where to push the built images of the various components of the framework (including the built rulesets)
-| `"INSTALL_IPYTHON"`      | false    | `""`                 | Installs [IPython](https://ipython.org) if set to `"1"`, does not otherwise
 | `"KUBECTL_CMD"`          | false    | `"$(which kubectl)"` | The path of the `kubectl` executable in your system
 | `"KUBECTL_OPTS"`         | false    | `""`                 | The `kubectl` executable custom flags
 | `"KN_CMD"`               | false    | `"$(which kn)"`      | The path of the `kn` executable in your system
 | `"KN_OPTS"`              | false    | `""`                 | The `kn` executable custom flags
-| `"SUPPORTS_MYSQL"`       | false    | `""`                 | Enables the support for MySQL database clusters
-| `"SUPPORTS_POSTGRESQL"`  | false    | `""`                 | Enables the support for MySQL database clusters

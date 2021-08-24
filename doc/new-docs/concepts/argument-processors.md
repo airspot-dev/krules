@@ -13,6 +13,8 @@ The Argument Processors are one of the core concepts of the KRules framework. Yo
 If you saw the [`Print` RuleFunction example in the rules chapter](./rules.md), you have seen it's possible to extract a field from the payload and log it.
 
 ``` python 
+from krules_core.base_functions import RuleFunctionBase
+
 class PrintMessageFromPayload(RuleFunctionBase):
     def execute(self):
         print(self.payload["message"])
@@ -31,6 +33,8 @@ rulesdata=[
 However, it is possible to achieve the same effect with the generic function defined in our first try:
 
 ``` python
+from krules_core.base_functions import RuleFunctionBase
+
 class Print(RuleFunctionBase):
     def execute(self, text):
         print(text)
@@ -103,7 +107,7 @@ The available argument processors are defined in the module `krules_core.arg_pro
 It allows to use a simple function as parameter that will be invoked without providing further parameters. An example of this is `SetSubjectProperty`.
 
 ``` python
-from krules_core.arg_processors import SetSubjectProperty
+from krules_core.base_functions import SetSubjectProperty
 
 # ...
 
@@ -121,7 +125,7 @@ rulesdata=[
 It allows to use a function to which the running RuleFunction instance is passed so that you can access current status information such as the payload or subject. A function, to be eligible to be wrapped to this argument processor, must have only one argument called **self**.
 
 ``` python
-from krules_core.arg_processors import PyCall
+from krules_core.base_functions import PyCall
 
 # ...
 
@@ -146,14 +150,14 @@ rulesdata=[
 > The following implementation will not be called correctly, as the lambda parameter name is not `self` but `s`, so pay extra care.
 
 ``` python
-from krules_core.arg_processors import PyCall
+from krules_core.base_functions import PyCall
 
 # ...
 
 rulesdata=[
     {
         processing: [
-            PyCall(requests.get, args=lambda s: (
+            PyCall(requests.get, args=lambda s: ( # s is wrong parameter name, will fail.
                 "http://server.address/{}?attr={}".format(
                     str(s.subject),
                     s.payload["req_attr"],
@@ -177,10 +181,9 @@ Following the same principle `CallableWithSubjectArgProcessor` types accept a su
 > 
 > Like with `CallableWithSelfArgProcessor`, the `subject` and `payload` parameter names are locked, you can only use them, otherwise they will not work.
 
-Here you can find some examples of those processor types: `FormatMessage` and `Print`.
-
 ``` python
-from krules_core.arg_processors import FormatMessage, Print
+# Let's assume we implemented 2 functions like the ones imported here.
+from my_application_rule_functions import FormatMessage, Print 
 
 # ...
 
@@ -192,7 +195,7 @@ ruledata={
 }
 ```
 
-> Some `RuleFunctions` accept `Callable` types as parameters:
+> Some `RuleFunctions` accept callables as parameters:
 > 
 > It is important to note that this **does not conflict** with the argument processors, indeed, the two things can coexist in the same argument.
 >  
@@ -204,7 +207,7 @@ ruledata={
 > However, it is also possible to assign a boolean function to these parameters which takes `value` and `old_value` as arguments.
 
 ``` python
-from krules_core.arg_processors import OnSubjectPropertyChanged
+from krules_core.base_functions import OnSubjectPropertyChanged
 
 # ...
 
@@ -212,7 +215,7 @@ ruledata={
     filters: [
         OnSubjectPropertyChanged(
             "temperature",
-            old_value=lambda old_value,value: value > 25 and old_value is None,
+            value=lambda value,old_value: value > 25 and old_value is None,
         ),
     ],
 }
@@ -221,7 +224,7 @@ ruledata={
 Suppose we want also to pass the subject information to the *old_value* function.
  
 ``` python
-from krules_core.arg_processors import OnSubjectPropertyChanged
+from krules_core.base_functions import OnSubjectPropertyChanged
 
 # ...
 
@@ -229,13 +232,13 @@ ruledata={
     filters: [
         OnSubjectPropertyChanged(
             "temperature",
-            old_value=lambda subject: lambda old_value, value: subject.status == "READY" and value > 25 and old_value is None,
+            value=lambda subject: lambda value, old_value: subject.status == "READY" and value > 25 and old_value is None,
         ),
     ],
 }
 ```
 
-In this case the first lambda function will be called by the argument processor and its result, which is itself a lambda function, will be passed to `old_value`.
+In this case the first lambda function will be called by the argument processor and its result, which is itself a lambda function, will be passed to `value`.
 
 To get the detail of all the core processors available, please refer to the [***KRules API Reference (TODO)***](./TODO).
 
@@ -253,41 +256,111 @@ Let's suppose we want to develop an application that needs to access the element
 
 A possible implementation of this custom argument processor could be the following:
 
-_____________________________
-> ***NOTE FOR THE REVIEWER: THIS EXAMPLE IS NOT CLEAR***
-
 ``` python
+import jsonpath_rw_ext as jp
 from krules_core.arg_processors import processors, BaseArgProcessor
+
 #...
 
 class JPPayloadMatchBase:
+    """
+    JPPayloadMatchBase is an abstract class representing
+    a json path matcher.
+    """
+
     def __init__(self, expr):
+        """
+        __init__ initializes class properties.
+        Parameters
+        ----------
+            expr (str):
+            The json path expression string used to match.
+        """
         self._expr = expr
 
     def match(self, instance):
+        """
+        match implements the interface and is used to 
+        run the matching with the argument processor.
+        Parameters
+        ----------
+            instance (dict):
+            The argument instance to process. Has a 'payload' attribute.
+        """
         raise NotImplementedError()
 
-class jp_match(JPPayloadMatchBase):
+class JPMatcherMulti(JPPayloadMatchBase):
+    """
+    JPMatcherMulti is a class representing
+    a json path matcher with full path match.
+    """
 
     def match(self, instance):
+        """
+        match implements the interface and is used to 
+        run the matching with the argument processor.
+        
+        Parameters
+        ----------
+            instance (dict):
+            The argument instance to process. Has a 'payload' attribute.
+        """
         return jp.match(self._expr, instance.payload)
 
-class jp_match1(JPPayloadMatchBase):
+class JPMatcherSingle(JPPayloadMatchBase):
+    """
+    JPMatcherMulti is a class representing
+    a json path matcher with single path element match.
+    """
 
     def match(self, instance):
+        """
+        match implements the interface and is used to 
+        run the matching with the argument processor.
+        
+        Parameters
+        ----------
+            instance (dict):
+            The argument instance to process. Has a 'payload' attribute.
+        """
         return jp.match1(self._expr, instance.payload)
 
 class JPProcessor(BaseArgProcessor):
+    """
+    JPProcessor is the custom argument processor which matches 
+    json paths.
+    """
 
     @staticmethod
     def interested_in(arg):
+        """
+        Checks whether if the passed arg meets the requirements for it to be processed.
+
+        Parameters
+        ----------
+        arg (str):
+            The argument that needs to be processed.
+
+        Returns
+        ----------
+        is_interested_in (bool): True if the argument should be processed, False otherwise.
+        """
         return isinstance(arg, JPPayloadMatchBase)
 
     def process(self, instance):
+        """
+        Performs the actual argument processing, matching json paths using the matcher.
+
+        Parameters
+        ----------
+        instance (dict):
+            The argument instance to process. Has a 'payload' attribute.
+        """
         return self._arg.match(instance)
 
 processors.append(JPProcessor)
 
+# here we add a new rule using the RuleFactory approach.
 RuleFactory.create(
     "test-with-jp-expr",
     subscribe_to="test-argprocessors-jp-match",
@@ -296,7 +369,7 @@ RuleFactory.create(
             CheckValues("$.elems[*].value")
         ]
         processing: [
-            Print(jp_match1("$.elems[?id==2].message"))
+            Print(JPMatcherSingle("$.elems[?id==2].message"))
         ]
     }
 )
@@ -309,6 +382,7 @@ We will not dwell too much on the implementation of the *jp_match* and *jp_match
 Let's now move on to the actual argument processor, the **JPProcessor** class. In the *interested_in* method, it verifies that the argument is an instance of the *JPPayloadMatchBase* class. The *process* method instead invokes the match method by passing it the instance of the RuleFunctionBase that will use the wrapped argument.
 
 A fundamental step is the extension of the argument processor pool.
+
 ```python
 from krules_core.arg_processors import processors, BaseArgProcessor
 #...
@@ -317,8 +391,7 @@ processors.append(JPProcessor)
 
 #...
 ```
+
 Doing this you add the new class (or new classes) to the argument processors pool.
 
 At this point it is possible to use the 2 classes just implemented as arguments of the next RuleFunctions.
-
-____

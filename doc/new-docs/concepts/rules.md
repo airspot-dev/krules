@@ -46,17 +46,9 @@ class MyRuleFunction(RuleFunctionBase):
         Performs the logic of the rule function.
     """
 
-    def execute(self, arg1, arg2):
+    def execute(self, *args, **kwargs):
         """
         Performs the logic of the rule function.
-
-        Parameters
-        ----------
-        arg1 : 
-            The argument of the function, can pass an indefinite
-            number of params, check example in latter sections.
-        arg2 : 
-            Same as arg1.
         """
         pass
 ```
@@ -70,6 +62,8 @@ The `Print` RuleFunction can be used to log a text upon receipt of a certain eve
 You can define it like the following class:
 
 ``` python
+from krules_core.base_functions import RuleFunctionBase
+
 class Print(RuleFunctionBase):
     """
     The Print RuleFunction is an Argument Processor which logs the text, passed as parameter.
@@ -95,6 +89,8 @@ class Print(RuleFunctionBase):
 and while you actually add it to a rule, the code should be similar to this
 
 ``` python
+from krules_core.base_functions import RuleFunctionBase
+
 class Print(RuleFunctionBase):
     def execute(self, text):
         print(text)
@@ -115,6 +111,8 @@ In this example, at startup, there will be created a `Print` Rule function insta
 Take this new implementation as example, which allows to log a message received in the payload of the event that has just been received.
 
 ``` python
+from krules_core.base_functions import RuleFunctionBase
+
 class PrintMessageFromPayload(RuleFunctionBase):
     """
     PrintMessageFromPayload prints the 'message' field from an incoming payload.
@@ -140,6 +138,8 @@ class PrintMessageFromPayload(RuleFunctionBase):
 and again, let's see its usage in a Rule
 
 ``` python 
+from krules_core.base_functions import RuleFunctionBase
+
 class PrintMessageFromPayload(RuleFunctionBase):
     def execute(self):
         print(self.payload["message"])
