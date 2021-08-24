@@ -49,7 +49,7 @@ a `subject-property-changed` event which needs to be catched and handled somewhe
 
 ### Reacting to subject property changes
 
-If you need to listen to the change events from a rule you can use the `OnSubjectPropertyChanged` filter (if you need an overview about the filters, you can find it [***HERE***](./filters.md)).
+If you need to listen to the change events from a rule you can use the `OnSubjectPropertyChanged` filter (if you need an overview about the filters, you can find it [***HERE***](./rules.md)).
 
 ``` python
 from krules_core.arg_processors import OnSubjectPropertyChanged
@@ -75,6 +75,30 @@ rulesdata=[
 ```
 
 In this way the event will be handled by printing the `proc_time` when it changes. This is just an example of what you can do with the framework.
+
+```
+☁️  cloudevents.Event
+Validation: valid
+Context Attributes,
+  specversion: 1.0
+  type: subject-property-changed
+  source: my-ruleset
+  subject: foo
+  id: bd198e83-9d7e-4e93-a9ae-aa21a40383c6
+  time: 2020-06-16T08:16:57.340692Z
+  datacontenttype: application/json
+Extensions,
+  knativearrivaltime: 2020-06-16T08:16:57.346535873Z
+  originid: bd198e83-9d7e-4e93-a9ae-aa21a40383c6
+  propertyname: proc_time
+  traceparent: 00-d571530282362927f824bae826e1fa36-a52fceb915060653-00
+Data,
+  {
+    "property_name": "proc_time",
+    "old_value": 0,
+    "value": 1629814092
+  }
+```
 
 ### Filtering event changes
 
