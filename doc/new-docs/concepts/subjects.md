@@ -33,9 +33,13 @@ from krules_core.arg_processors import SetSubjectProperty
 
 rulesdata=[
     {
-        processing: [
-            SetSubjectProperty("proc_time", datetime.now),
-        ],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                SetSubjectProperty("proc_time", datetime.now),
+            ],
+        },
     },
 ]
 ```
@@ -52,16 +56,22 @@ from krules_core.arg_processors import OnSubjectPropertyChanged
 
 # ...
 
-ruledata={
-    filters: [
-        OnSubjectPropertyChanged(
-            "proc_time",
-        ),
-    ],
-    processing: [
-        Print(lambda payload: payload["proc_time"]),
-    ],
-}
+rulesdata=[
+    {
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            filters: [
+                OnSubjectPropertyChanged(
+                    "proc_time",
+                ),
+            ],
+            processing: [
+                Print(lambda payload: payload["proc_time"]),
+            ],
+        },
+    },
+]
 ```
 
 In this way the event will be handled by printing the `proc_time` when it changes. This is just an example of what you can do with the framework.
@@ -78,50 +88,66 @@ from krules_core.arg_processors import SetSubjectProperty, OnSubjectPropertyChan
 
 rulesdata=[
     {
-        processing: [
-            # here we are simulating to receive some temperature data from an
-            # iot device, for example.
-            SetSubjectProperty("temperature", randint(-20, +20)),
-        ],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                # here we are simulating to receive some temperature data from an
+                # iot device, for example.
+                SetSubjectProperty("temperature", randint(-20, +20)),
+            ],
+        },
     },
     {
-        filters: [
-            OnSubjectPropertyChanged(
-                "temperature",
-                old_value=lambda old_value,value: value <= 0,
-            ),
-        ],
-        processing: [
-            SetSubjectProperty(
-                "status",
-                "COLD",
-            ),
-        ],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            filters: [
+                OnSubjectPropertyChanged(
+                    "temperature",
+                    old_value=lambda old_value,value: value <= 0,
+                ),
+            ],
+            processing: [
+                SetSubjectProperty(
+                    "status",
+                    "COLD",
+                ),
+            ],
+        },
     },
     {
-        filters: [
-            OnSubjectPropertyChanged(
-                "temperature",
-                old_value=lambda old_value,value: value > 0,
-            ),
-        ],
-        processing: [
-            SetSubjectProperty(
-                "status",
-                "HOT",
-            ),
-        ],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            filters: [
+                OnSubjectPropertyChanged(
+                    "temperature",
+                    old_value=lambda old_value,value: value > 0,
+                ),
+            ],
+            processing: [
+                SetSubjectProperty(
+                    "status",
+                    "HOT",
+                ),
+            ],
+        },
     },
     {
-        filters: [
-            OnSubjectPropertyChanged(
-                "status"
-            ),
-        ],
-        processing: [
-            Print(lambda payload: payload["status"])
-        ]
-    }
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            filters: [
+                OnSubjectPropertyChanged(
+                    "status",
+                ),
+            ],
+            processing: [
+                Print(lambda payload: payload["status"]),
+            ],
+        },
+    },
 ]
 ```
 

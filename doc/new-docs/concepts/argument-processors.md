@@ -23,9 +23,13 @@ class PrintMessageFromPayload(RuleFunctionBase):
 
 rulesdata=[
     {
-        processing: [
-            PrintMessageFromPayload(),
-        ],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                PrintMessageFromPayload(),
+            ],
+        },
     },
 ]
 ```
@@ -43,9 +47,13 @@ class Print(RuleFunctionBase):
 
 rulesdata=[
     {
-        processing: [
-            Print(lambda payload: payload["message"]),
-        ],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                Print(lambda payload: payload["message"]),
+            ],
+        },
     },
 ]
 ```
@@ -113,9 +121,13 @@ from krules_core.base_functions import SetSubjectProperty
 
 rulesdata=[
     {
-        processing: [
-            SetSubjectProperty("proc_time", datetime.now),
-        ],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                SetSubjectProperty("proc_time", datetime.now),
+            ],
+        },
     },
 ]
 ```
@@ -131,14 +143,18 @@ from krules_core.base_functions import PyCall
 
 rulesdata=[
     {
-        processing: [
-            PyCall(requests.get, args=lambda self: (
-                "http://server.address/{}?attr={}".format(
-                    str(self.subject),
-                    self.payload["req_attr"],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                PyCall(requests.get, args=lambda self: (
+                    "http://server.address/{}?attr={}".format(
+                        str(self.subject),
+                        self.payload["req_attr"],
+                    ),
                 ),
-            ),
-        ],
+            ],
+        },
     },
 ]
 ```
@@ -156,14 +172,18 @@ from krules_core.base_functions import PyCall
 
 rulesdata=[
     {
-        processing: [
-            PyCall(requests.get, args=lambda s: ( # s is wrong parameter name, will fail.
-                "http://server.address/{}?attr={}".format(
-                    str(s.subject),
-                    s.payload["req_attr"],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                PyCall(requests.get, args=lambda s: ( # s is wrong parameter name, will fail.
+                    "http://server.address/{}?attr={}".format(
+                        str(s.subject),
+                        s.payload["req_attr"],
+                    ),
                 ),
-            ),
-        ],
+            ],
+        },
     },
 ]
 ```
@@ -187,11 +207,17 @@ from my_application_rule_functions import FormatMessage, Print
 
 # ...
 
-ruledata={
-    processing: [
-        FormatMessage(lambda subject: subject.name), # CallableWithSubjectArgProcessor
-        Print(lambda payload: payload["message"]),   # CallableWithPayloadArgProcessor
-    ],
+rulesdata=[
+    {
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                FormatMessage(lambda subject: subject.name), # CallableWithSubjectArgProcessor
+                Print(lambda payload: payload["message"]),   # CallableWithPayloadArgProcessor
+            ],
+        },
+    },
 }
 ```
 
@@ -211,13 +237,19 @@ from krules_core.base_functions import OnSubjectPropertyChanged
 
 # ...
 
-ruledata={
-    filters: [
-        OnSubjectPropertyChanged(
-            "temperature",
-            value=lambda value,old_value: value > 25 and old_value is None,
-        ),
-    ],
+rulesdata=[
+    {
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            filters: [
+                OnSubjectPropertyChanged(
+                    "temperature",
+                    value=lambda value,old_value: value > 25 and old_value is None,
+                ),
+            ],
+        },
+    },
 }
 ```
 
@@ -228,13 +260,19 @@ from krules_core.base_functions import OnSubjectPropertyChanged
 
 # ...
 
-ruledata={
-    filters: [
-        OnSubjectPropertyChanged(
-            "temperature",
-            value=lambda subject: lambda value, old_value: subject.status == "READY" and value > 25 and old_value is None,
-        ),
-    ],
+rulesdata=[
+    {
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            filters: [
+                OnSubjectPropertyChanged(
+                    "temperature",
+                    value=lambda subject: lambda value, old_value: subject.status == "READY" and value > 25 and old_value is None,
+                ),
+            ],
+        },
+    },
 }
 ```
 
@@ -360,19 +398,20 @@ class JPProcessor(BaseArgProcessor):
 
 processors.append(JPProcessor)
 
-# here we add a new rule using the RuleFactory approach.
-RuleFactory.create(
-    "test-with-jp-expr",
-    subscribe_to="test-argprocessors-jp-match",
-    data={
-        filters: [
-            CheckValues("$.elems[*].value")
-        ]
-        processing: [
-            Print(JPMatcherSingle("$.elems[?id==2].message"))
-        ]
-    }
-)
+rulesdata=[
+    {
+        rulename: "test-with-jp-expr",
+        subscribe_to: "test-argprocessors-jp-match",
+        ruledata: {
+            filters: [
+                CheckValues("$.elems[*].value"),
+            ],
+            processing: [
+                Print(JPMatcherSingle("$.elems[?id==2].message")),
+            ],
+        },
+    },
+]
 ```
 
 Let's analyze the implementation in details.
