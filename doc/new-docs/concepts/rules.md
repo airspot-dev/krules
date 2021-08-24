@@ -27,7 +27,90 @@ A `Rule` is one of the core concepts of the KRules framework. It is an object wh
 - Perform reactive updates and provide statefulness thanks to a context called [`Subject`](./subjects.md).
 - Produce and consume [cloud events](https://cloudevents.io) coming from the Knative eventing.
 
-To achieve their goals, rules must be defined and implemented. The standard way to do that is through the usage of ***Rule Functions***.
+## Anatomy of a Rule
+
+A rule is composed by the following elements:
+
+- `rulename`: The name of the rule, must be unique.
+- `subscribe_to`: The array of cloudevents the rule is set to react to. Determines the reactive property of the rules.
+- `ruledata`: An object containing the following data:
+  - `filters`: They are described in the section below, but they can be summarized as a way to filter rules execution.
+  - `processing`: They are composed by a set of `RuleFunction` instances and by being compose they determine what the rule will do during its execution.
+
+## What are filters ?
+
+Filters are used to filter incoming cloud events to the rules, to execute the RuleFunctions only when those filters are passed.
+
+## How to add a filter to a rule ?
+
+You can add a filter to a rule by using the `filters` property of the rule object. A very simple example is the one below:
+
+``` python
+from krules_core.arg_processors import SubjectNameMatch
+
+rulesdata = [
+    {
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            filters: [
+                SubjectNameMatch("a_string"),
+            ],
+            processing: [
+                # add your rule functions
+            ],
+        },
+    },
+]
+```
+
+There is a number of available filters, please refer to the [***API Reference (TODO)***](./TODO)
+
+## Defining rules
+
+To achieve their goals, rules must be defined and implemented. The standard way to do that is through the usage of ***`rulesdata` variable*** or **`RuleFactory` class**.
+
+Let's say we define the following Rule function (don't worry, we will come back to this later)
+
+``` python
+from krules_core.base_functions import RuleFunctionBase
+
+class Print(RuleFunctionBase):
+    def execute(self, text):
+        print(text)
+```
+
+you can add a rule to the ruleset like this:
+``` python
+rulesdata=[
+    # In here I am adding a rule to the ruleset.
+    {
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                Print("Hello World!"),
+            ],
+        }
+    },
+]
+```
+
+or like this (Using `RuleFactory`):
+
+``` python
+from krules_core.core import RuleFactory
+
+RuleFactory.create({
+    "test",
+    subscribe_to="...",
+    data={
+        processing: [
+            Print("Hello World!"),
+        ],
+    },
+})
+```
 
 # What is a Rule Function?
 
@@ -99,9 +182,13 @@ class Print(RuleFunctionBase):
 rulesdata=[
     # In here I am adding a rule to the ruleset.
     {
-        processing: [
-            Print("Hello World!"),
-        ],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                Print("Hello World!"),
+            ],
+        },
     },
 ]
 ```
@@ -148,9 +235,13 @@ class PrintMessageFromPayload(RuleFunctionBase):
 
 rulesdata=[
     {
-        processing: [
-            PrintMessageFromPayload(),
-        ],
+        rulename: "test",
+        subscribe_to: "...",
+        ruledata: {
+            processing: [
+                PrintMessageFromPayload(),
+            ],
+        }
     },
 ]
 ```
