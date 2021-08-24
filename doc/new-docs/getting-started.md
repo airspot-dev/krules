@@ -8,6 +8,8 @@ To run KRules, you need to have a working [Python](https://python.org) environme
 
 You will also need `pip` to install all the required packages.
 
+You also need [Docker](https://docs.docker.com/get-started) to build images with KRules, and [`kubectl`](https://kubernetes.io/docs/setup) to interact with the Kubernetes cluster you are going to deploy.
+
 ### Creating the Knative cluster
 
 > **Are you a KNative developer? Probably your environment is already set up and you can skip this section**

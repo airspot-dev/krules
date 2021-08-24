@@ -1,4 +1,4 @@
-# KRules : Be serverless
+# KRules : Wiki
 
 ![Krules Logo](https://github.com/airspot-dev/krules/blob/feature/docs/.support/krules_ext_logo.png)
 
@@ -6,7 +6,7 @@ Welcome to this wiki,
 
 in here you can find everything about the KRules framework and its core features.
 
-You will even learn how to build our own rules and integrate them to build a truly serverless environment. 
+You will even learn how to build your own rules and integrate them to build a truly serverless environment. 
 
 > **Want to start using it now? go [here](./getting-started.md)**
 >
@@ -16,7 +16,7 @@ You will even learn how to build our own rules and integrate them to build a tru
 
 [KRules](https://intro.krules.com) is an open source framework that provides, to Python developers, a flexible and fast way to build cloud native applications, creating event driven, context aware, and reactive microservices in a Kubernetes cluster.
 
-KRules adopts a rules-based approach based on paradigm events-condtions-actions and is inspired by [***the reactive manifesto***](https://www.reactivemanifesto.org) taking full advantages of the Kubernetes cluster and, in particular, the [***Knative eventing***](https://knative.dev/docs).
+KRules adopts a rules-based approach based on paradigm events-condtions-actions and is inspired by [***the reactive manifesto***](https://www.reactivemanifesto.org) taking full advantages of the Kubernetes cluster and, in particular, the [***Knative eventing***](https://knative.dev/docs/eventing).
 
 With Krules you can base your development with a new set of paradigmas:
 
@@ -34,6 +34,8 @@ Before diving into the basics, let us share with you the minimal requirements to
 To run KRules, you need to have a working [Python](https://python.org) environment. We support versions from `Python 3.8.x`.
 
 You will also need `pip` to install all the required packages.
+
+You also need [Docker](https://docs.docker.com/get-started) to build images with KRules, and [`kubectl`](https://kubernetes.io/docs/setup) to interact with the Kubernetes cluster you are going to deploy.
 
 ### Preferred IDE
 
