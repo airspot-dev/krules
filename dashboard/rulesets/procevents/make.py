@@ -95,7 +95,7 @@ sane_utils.make_apply_recipe(
 )
 
 sane_utils.make_service_recipe(
-    image=lambda: open(".digest", "r").read().rstrip(),
+    #image=lambda: open(".digest", "r").read().rstrip(),
     labels={
         "krules.airspot.dev/app": "{APP_NAME}",
         "krules.airspot.dev/type": "ruleset",
