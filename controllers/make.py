@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import glob
 import os
 import shutil
 import subprocess
@@ -17,7 +18,14 @@ from sane import _Help as Help
 
 sane_utils.load_env()
 
-NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
+
+def _get_namespace():
+    if not "NAMESPACE" in os.environ:
+        if "RELEASE_VERSION" in os.environ:
+            return "krules-system"
+        else:
+            return "krules-system-dev"
+    return os.environ["NAMESPACE"]
 
 #CONTROLLERS_HELPER_SERVICE_NAME = os.environ.get("CONTROLLERS_HELPER_SERVICE_NAME", "krules-helper")
 #CONTROLLERS_WEBHOOK_SERVICE_NAME = os.environ.get("CONTROLLERS_WEBHOOK_SERVICE_NAME", "krules-webhook")
@@ -26,8 +34,8 @@ sane_utils.make_render_resource_recipes(
     globs=[
         f'k8s/*.yaml.j2'
     ],
-    context_vars={
-        "namespace": NAMESPACE
+    context_vars=lambda: {
+        "namespace": _get_namespace()
     },
     hooks=[
         'render_resource'
@@ -45,36 +53,49 @@ sane_utils.make_apply_recipe(
 )
 
 
-# @recipe(info="Build and deploy the webhook controller", recipe_deps=["apply"])
-# def webhook():
-#     Help.log("Applying webhook..")
-#     with sane_utils.pushd(ROOT_DIR):
-#         webhook_env = os.environ.update({"SERVICE_NAME": CONTROLLERS_WEBHOOK_SERVICE_NAME})
-#         try:
-#             subprocess.run([os.path.join("webhook", "make.py"), "apply"], env=webhook_env).check_returncode()
-#         except subprocess.CalledProcessError:
-#             Help.error("Cannot apply webhook")
-#
-#
-# @recipe(info="Build and deploy the helper controller", recipe_deps=['apply'])
-# def helper():
-#     Help.log("Applying helper..")
-#     with sane_utils.pushd(ROOT_DIR):
-#         helper_env = os.environ.update({"SERVICE_NAME": CONTROLLERS_HELPER_SERVICE_NAME})
-#         try:
-#             subprocess.run([os.path.join("helper", "make.py"), "apply"], env=helper_env).check_returncode()
-#         except subprocess.CalledProcessError:
-#             Help.error("Cannot apply helper")
-#
-#
-# @recipe(info="Build and deploy all controllers", recipe_deps=[webhook, helper])
-# def controllers():
-#     Help.log("Controllers applied successfully")
+@recipe(hook_deps=["render_resource"])
+def render_resource():
+    pass
+
+
+@recipe(recipe_deps=["render_resource"])
+def release():
+    if not "RELEASE_VERSION" in os.environ:
+        Help.error("missing RELEASE_VERSION environment variable")
+    Help.log("Generating release.yaml")
+    with sane_utils.pushd(os.path.dirname(os.path.realpath(__file__))):
+        Help.log("..for common resources")
+        resources = []
+        for resource in sorted(glob.glob("k8s/*.yaml")):
+            resources.append(open(resource, "r").read())
+        Help.log("..for webhook")
+        try:
+            folders = [
+                "webhook",
+                "helper",
+            ]
+            for folder in folders:
+                make_py = os.path.abspath(os.path.join(folder, "make.py"))
+                out = subprocess.run(
+                    (make_py, "clean"),
+                    capture_output=True, check=True
+                ).stdout
+                [Help.log(f"> {l}") for l in out.decode().splitlines()]
+                out = subprocess.run(
+                    (make_py, "render_resource"),
+                    capture_output=True, check=True, env=dict(os.environ)
+                ).stdout
+                [Help.log(f"> {l}") for l in out.decode().splitlines()]
+                for resource in sorted(glob.glob(f"{folder}/k8s/*.yaml")):
+                    resources.append(open(resource, "r").read())
+            open("release.yaml", "w").write("\n".join(resources))
+        except subprocess.CalledProcessError as ex:
+            Help.error(ex.stderr.decode())
 
 
 sane_utils.make_clean_recipe(
     globs=[
-        "k8s/*.yaml"
+        "k8s/*.yaml",
     ],
 )
 

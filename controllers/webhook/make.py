@@ -10,7 +10,7 @@ except ImportError:
     exit(-1)
 
 
-from sane import sane_run
+from sane import sane_run, recipe
 
 sane_utils.load_env()
 
@@ -24,10 +24,7 @@ SERVICE_NAME = os.environ.get("SERVICE_NAME", "webhook")
 IMAGE_NAME = os.environ.get("IMAGE_NAME", SERVICE_NAME)
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
-DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
-
-#NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
-NS_INJECTION_LBL = os.environ.get("NS_INJECTION_LBL", "dev.krules.airspot.dev")
+DEBUG_PROCEVENTS_SINK = "RELEASE_VERSION" not in os.environ and os.environ.get("DEBUG_PROCEVENTS_SINK") or ""
 
 KRULES_DEP_LIBS = [
     "krules-flask-env",
@@ -46,6 +43,32 @@ DEP_LIBS = [
 
 if "RELEASE_VERSION" not in os.environ:
     KRULES_DEP_LIBS = KRULES_DEV_DEP_LIBS + KRULES_DEP_LIBS
+    if "NAMESPACE" not in os.environ:
+        os.environ["NAMESPACE"] = "krules-system-dev"
+else:
+    os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")
+    if "NAMESPACE" not in os.environ:
+        os.environ["NAMESPACE"] = "krules-system"
+    os.environ.pop("DEBUG_PROCEVENTS_SINK", None)
+
+def _get_namespace():
+    if not "NAMESPACE" in os.environ:
+        if "RELEASE_VERSION" in os.environ:
+            return "krules-system"
+        else:
+            return "krules-system-dev"
+    return os.environ["NAMESPACE"]
+
+
+def _get_ns_injection_lbl():
+    if not "NS_INJECTION_LBL" in os.environ:
+        if "RELEASE_VERSION" in os.environ:
+            return "krules.airspot.dev"
+        else:
+            return "dev.krules.airspot.dev"
+    return os.environ["NS_INJECTION_LBL"]
+
+
 
 
 def _get_image_base():
@@ -112,13 +135,21 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "namespace": sane_utils.check_envvar_exists("NAMESPACE"),
-        "ns_injection_lbl": NS_INJECTION_LBL,
+        "ns_injection_lbl": _get_ns_injection_lbl(),
         "name": SERVICE_NAME,
-        "digest": open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".digest"), "r").read(),
+        "image": "RELEASE_VERSION" not in os.environ and
+                  open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".digest"), "r").read()
+                  or f"{os.environ['DOCKER_REGISTRY']}/{IMAGE_NAME}:{RELEASE_VERSION}",
         "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
     },
     hooks=['render_resource'],
 )
+
+
+@recipe(hook_deps=["render_resource"], recipe_deps=["push"])
+def render_resource():
+    pass
+
 
 sane_utils.make_apply_recipe(
     name="apply",
@@ -135,7 +166,8 @@ sane_utils.make_clean_recipe(
         "k8s/*.yaml",
         ".krules-libs",
         "Dockerfile",
-        ".digest"
+        ".digest",
+        ".build.out",
     ]
 )
 

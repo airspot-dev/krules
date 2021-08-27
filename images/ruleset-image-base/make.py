@@ -29,6 +29,10 @@ DEV_REQUIREMENTS = [
     "dependency-injector==4.32.2"
 ]
 
+if "RELEASE_VERSION" in os.environ:
+    os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")
+
+
 sane_utils.make_render_resource_recipes(
     globs=[
         "Dockerfile.j2"
@@ -66,7 +70,8 @@ sane_utils.make_clean_recipe(
     globs=[
         "Dockerfile",
         ".digest",
-        ".krules-libs"
+        ".krules-libs",
+        ".build.success",
     ]
 )
 

@@ -13,14 +13,20 @@ sane_utils.load_env()
 KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir, os.path.pardir))
 
+if "RELEASE_VERSION" in os.environ:
+    os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")
+
+
 sane_utils.make_render_resource_recipes(
     globs=[
         "*.j2",
     ],
     context_vars=lambda: {
         "image_base": sane_utils.get_buildable_image(
-            location=KRULES_ROOT_DIR,
-            dir_name="dashboard"
+            location=os.path.join(KRULES_ROOT_DIR, "images"),
+            dir_name="django-image-base",
+            use_release_version=True,
+            environ_override="IMAGE_BASE",
         ),
     },
     hooks=[

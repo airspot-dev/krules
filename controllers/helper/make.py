@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-import os
-import shutil
-import subprocess
 
 try:
     from krules_dev import sane_utils
@@ -25,9 +22,17 @@ SERVICE_NAME = os.environ.get("SERVICE_NAME", "webhook")
 IMAGE_NAME = os.environ.get("IMAGE_NAME", SERVICE_NAME)
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
-DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
 
-#NAMESPACE = os.environ.get("NAMESPACE", "krules-system-dev")
+if "RELEASE_VERSION" in os.environ:
+    os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")
+    if "NAMESPACE" not in os.environ:
+        os.environ["NAMESPACE"] = "krules-system"
+    os.environ.pop("DEBUG_PROCEVENTS_SINK", None)
+else:
+    if not "NAMESPACE" in os.environ:
+        os.environ["NAMESPACE"] = "krules-system-dev"
+
+DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
 
 
 def _get_image_base():
@@ -79,11 +84,19 @@ sane_utils.make_render_resource_recipes(
     context_vars=lambda: {
         "namespace": sane_utils.check_envvar_exists("NAMESPACE"),
         "name": sane_utils.check_envvar_exists("SERVICE_NAME"),
-        "digest": open(os.path.join(ROOT_DIR, ".digest"), "r").read(),
+        "image": "RELEASE_VERSION" not in os.environ and
+                  open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".digest"), "r").read()
+                  or f"{os.environ['DOCKER_REGISTRY']}/{IMAGE_NAME}:{RELEASE_VERSION}",
         "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
     },
     hooks=['render_resource']
 )
+
+
+@recipe(hook_deps=["render_resource"], recipe_deps=["push"])
+def render_resource():
+    pass
+
 
 sane_utils.make_service_recipe(
     image=lambda: open(".digest", "r").read().rstrip(),

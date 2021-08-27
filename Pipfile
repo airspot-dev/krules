@@ -4,12 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-jinja2 = "*"
-sane-build = "*"
-python-dotenv = "*"
-pyyaml = "*"
 
 [dev-packages]
+krules-dev-support = {editable = true, path = "./dev_support/krules-dev-support"}
+twine = "*"
 
 [requires]
 python_version = "3.8"

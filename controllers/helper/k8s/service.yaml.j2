@@ -18,8 +18,8 @@ spec:
         spec:
             serviceAccountName: krules-system
             containers:
-              - name: webhook
-                image: {{ digest }}
+              - name: helper
+                image: {{ image }}
                 ports: 
                   - containerPort: 8080
                     name: helper
@@ -81,3 +81,4 @@ spec:
       apiVersion: v1
       kind: Service
       name: {{ name }}
+---

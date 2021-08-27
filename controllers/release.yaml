@@ -1,0 +1,538 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: krules-system
+---
+
+apiVersion: eventing.knative.dev/v1
+kind: Broker
+metadata:
+  namespace: krules-system
+  name: default
+---
+
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: configurationproviders.krules.airspot.dev
+spec:
+  group: krules.airspot.dev
+  scope: Namespaced
+  names:
+    plural: configurationproviders
+    singular: configurationprovider
+    kind: ConfigurationProvider
+    shortNames:
+      - configprovider
+      - cfgprovider
+      - cfgprov
+      - cfgp
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              properties:
+                key:
+                  type: string
+                appliesTo:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                data:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                container:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                extraVolumes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      secret:
+                        type: object
+                        properties:
+                          secretName:
+                            type: string
+                      configMap:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                    oneOf:
+                      - required:
+                          - name
+                          - secret
+                      - required:
+                          - name
+                          - configMap
+
+                    x-kubernetes-preserve-unknown-fields: true
+
+              anyOf:
+                - required:
+                  - key
+                  - appliesTo
+                  - data
+                - required:
+                  - key
+                  - appliesTo
+                  - container
+                - required:
+                  - key
+                  - appliesTo
+                  - extraVolumes
+
+            status:
+              type: object
+              properties:
+                applied_to:
+                  type: string
+          required:
+            - apiVersion
+            - kind
+            - metadata
+            - spec
+
+      additionalPrinterColumns:
+      - jsonPath: .spec.appliesTo
+        name: APPLIES
+        type: string
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: krules-system
+  namespace: krules-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: krules-system
+rules:
+- apiGroups: ["eventing.knative.dev",]
+  resources:
+    - brokers
+  verbs:
+    - list
+    - get
+    - create
+- apiGroups: ["krules.airspot.dev"]
+  resources:
+   - configurationproviders
+  verbs:
+  - list
+  - get
+  - patch
+- apiGroups: [""]
+  resources:
+    - configmaps
+  verbs:
+    - list
+    - get
+    - create
+    - delete
+    - patch
+- apiGroups:
+    - apps
+  resources:
+    - deployments
+  verbs:
+    - list
+    - get
+    - patch
+- apiGroups:
+    - serving.knative.dev
+  resources:
+    - services
+  verbs:
+    - list
+    - get
+    - patch
+- apiGroups: [""]
+  resources:
+    - events
+  verbs:
+    - create
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: krules-system
+subjects:
+- kind: ServiceAccount
+  name: krules-system
+  namespace: krules-system
+roleRef:
+  kind: ClusterRole
+  name: krules-system
+  apiGroup: rbac.authorization.k8s.io
+---
+
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: webhook
+webhooks:
+  - name: webhook.krules-system.svc
+    sideEffects: None
+    matchPolicy: Equivalent
+    failurePolicy: Fail
+    timeoutSeconds: 5
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    namespaceSelector:
+      matchExpressions:
+        - { key: krules.airspot.dev/injection, operator: In, values: [enabled] }
+    clientConfig:
+      service:
+        name: webhook
+        namespace: krules-system
+        path: "/mutate"
+    rules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        scope: "Namespaced"
+        operations:
+          - CREATE
+      - apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        resources: ["deployments"]
+        scope: "Namespaced"
+        operations:
+          - CREATE
+      - apiGroups: [ "serving.knative.dev" ]
+        apiVersions: [ "v1" ]
+        resources: [ "services" ]
+        scope: Namespaced
+        operations:
+          - CREATE
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: webhook
+webhooks:
+  - name: webhook.krules-system.svc
+    sideEffects: None
+    matchPolicy: Equivalent
+    failurePolicy: Fail
+    timeoutSeconds: 5
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    namespaceSelector:
+      matchExpressions:
+        - { key: krules.airspot.dev/injection, operator: In, values: [enabled] }
+    clientConfig:
+      service:
+        name: webhook
+        namespace: krules-system
+        path: "/validate"
+    rules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        scope: "Namespaced"
+        operations:
+          - CREATE
+          - UPDATE
+      - apiGroups: ["krules.airspot.dev"]
+        apiVersions: ["*"]
+        resources: ["configurationproviders"]
+        scope: "Namespaced"
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["configmaps"]
+        operations:
+          - DELETE
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["namespaces"]
+        scope: "Cluster"
+        operations:
+          - CREATE
+          - UPDATE
+      - apiGroups: ["eventing.knative.dev"]
+        apiVersions: ["*"]
+        resources: ["brokers"]
+        scope: "Namespaced"
+        operations:
+          - DELETE
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: webhook-gencert
+  namespace: krules-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: webhook-gencert
+rules:
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: webhook-gencert
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: webhook-gencert
+subjects:
+  - kind: ServiceAccount
+    name: webhook-gencert
+    namespace: krules-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: webhook-gencert
+  namespace: krules-system
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    verbs:
+      - get
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: webhook-gencert
+  namespace: krules-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: webhook-gencert
+subjects:
+  - kind: ServiceAccount
+    name: webhook-gencert
+    namespace: krules-system
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: webhook-gencert-create
+  namespace: krules-system
+spec:
+  template:
+    metadata:
+      name: webhook-gencert-create
+    spec:
+      containers:
+        - name: create
+          image: docker.io/jettech/kube-webhook-certgen:v1.5.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - create
+            - --host=webhook,webhook.krules-system.svc
+            - --namespace=krules-system
+            - --secret-name=webhook-tls
+      restartPolicy: OnFailure
+      serviceAccountName: webhook-gencert
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 8850
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: webhook-gencert-patch
+  namespace: krules-system
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    metadata:
+      name: webhook-gencert-patch
+    spec:
+      containers:
+        - name: patch
+          image: docker.io/jettech/kube-webhook-certgen:v1.5.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - patch
+            - --webhook-name=webhook
+            - --namespace=krules-system
+            - --secret-name=webhook-tls
+            - --patch-failure-policy=Fail
+      restartPolicy: OnFailure
+      serviceAccountName: webhook-gencert
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 8850
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: webhook
+    namespace: krules-system
+    labels:
+        app: webhook
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: webhook
+    template:
+        metadata:
+            labels:
+                app: webhook
+        spec:
+            serviceAccountName: krules-system
+            containers:
+              - name: webhook
+                image: gcr.io/airspot/krules-webhook:0.9.1
+                ports:
+                  - containerPort: 8443
+                    name: webhook-api
+                volumeMounts:
+                  - name: webhook-tls
+                    mountPath: /run/secrets/tls
+                    readOnly: true
+
+            volumes:
+              - name: webhook-tls
+                secret:
+                    secretName: webhook-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook
+  namespace: krules-system
+spec:
+  selector:
+    app: webhook
+  ports:
+    - port: 443
+      targetPort: webhook-api
+
+---
+
+apiVersion: sources.knative.dev/v1
+kind: SinkBinding
+metadata:
+ name: webhook
+ namespace: krules-system
+spec:
+ subject:
+   apiVersion: apps/v1
+   kind: Deployment
+   selector:
+     matchLabels:
+       app: webhook
+ sink:
+   ref:
+     apiVersion: eventing.knative.dev/v1
+     kind: Broker
+     namespace: krules-system
+     name: default
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+    name: helper
+    namespace: krules-system
+    labels: 
+        app: helper
+spec:
+    replicas: 1
+    selector:
+        matchLabels: 
+            app: helper
+    template:
+        metadata:
+            labels:
+                app: helper
+        spec:
+            serviceAccountName: krules-system
+            containers:
+              - name: helper
+                image: gcr.io/airspot/krules-helper:0.9.1
+                ports: 
+                  - containerPort: 8080
+                    name: helper
+                env:
+                  - name: CE_SOURCE
+                    value: helper
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: helper
+  namespace: krules-system
+spec:
+  selector:
+    app: helper
+  ports:
+    - port: 80
+      targetPort: helper
+
+---
+apiVersion: sources.knative.dev/v1
+kind: SinkBinding
+metadata:
+ name: helper
+ namespace: krules-system
+spec:
+ subject:
+   apiVersion: apps/v1
+   kind: Deployment
+   selector:
+     matchLabels:
+       app: helper
+ sink:
+   ref:
+     apiVersion: eventing.knative.dev/v1
+     kind: Broker
+     namespace: krules-system
+     name: default
+
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+ name: default-to-helper
+ namespace: krules-system
+spec:
+  broker: default
+  subscriber:
+    ref:
+      apiVersion: v1
+      kind: Service
+      name: helper
+---
