@@ -1,12 +1,27 @@
 #!/usr/bin/env python3
 import os
+import re
 
 from krules_dev import sane_utils
 
 from sane import *
 
-
 sane_utils.load_env()
+
+RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
+SUBJECTS_BACKENDS = "SUBJECTS_BACKENDS" in os.environ and \
+                    re.split('; |, ', os.environ["SUBJECTS_BACKENDS"]) or []
+SUPPORTS_POSTGRESQL = int(os.environ.get("SUPPORTS_POSTGRESQL", "0"))
+SUPPORTS_MYSQL = int(os.environ.get("SUPPORTS_MYSQL", "0"))
+
+
+sane_utils.copy_resources(
+    [os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "env.py")],
+    dst=".",
+    make_recipes_before=[
+        "{src}",
+    ],
+)
 
 # making changes to these files will result in a new build
 sane_utils.update_code_hash(
@@ -22,7 +37,11 @@ sane_utils.make_render_resource_recipes(
         "Dockerfile.j2",
     ],
     context_vars=lambda: {
-        "image_base": sane_utils.get_project_base("base"),
+        "image_base": sane_utils.get_image("generic-image-base"),
+        "subjects_backends": SUBJECTS_BACKENDS,
+        "supports_postgresql": SUPPORTS_POSTGRESQL,
+        "supports_mysql": SUPPORTS_MYSQL,
+        "release_version": RELEASE_VERSION,
     },
     hooks=[
         'prepare_build'
@@ -84,14 +103,14 @@ sane_utils.make_service_recipe(
     name="service",
     labels=lambda: {
         "krules.airspot.dev/app": os.environ["APP_NAME"],
-        "krules.airspot.dev/type": "ruleset"
+        "krules.airspot.dev/type": "generic"
     },
     env={},
     # if SERVICE_API="knative" (requires kn client)
     kn_extra=(
       "--scale", "1",
       "--no-wait",
-      "--cluster-local",
+      #"--cluster-local",   # uncomment to make publically available
     ),
     recipe_deps=[
         "push",

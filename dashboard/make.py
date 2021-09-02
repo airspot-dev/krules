@@ -59,10 +59,10 @@ sane_utils.make_render_resource_recipes(
         "release_version":  os.environ.get("RELEASE_VERSION", False)
     },
     run_before=[
-        lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_dirs(
+        lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_resources(
             map(lambda x: os.path.join("apps", x), djangoapps_sources),
             dst=".djangoapps-libs",
-            make_recipes=[
+            make_recipes_after=[
                 "setup.py"
             ]
         ),

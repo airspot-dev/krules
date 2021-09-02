@@ -1,0 +1,11 @@
+apiVersion: krules.airspot.dev/v1alpha1
+kind: ConfigurationProvider
+metadata:
+  name: config-ruleset-{{ app_name }}
+  namespace: {{ namespace }}
+spec:
+  key: rulesets.{{ app_name }}
+  appliesTo:
+    krules.airspot.dev/app: {{ app_name }}
+  data: {}
+  container: {}

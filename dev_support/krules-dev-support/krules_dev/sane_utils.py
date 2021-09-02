@@ -67,13 +67,15 @@ def get_buildable_image(location: str,
                         dir_name: str,
                         name=None,
                         use_release_version=True,
+                        docker_registry=None,
                         environ_override: typing.Optional[str] = None,
                         push_cmd: str = "push",
                         digest_file: str = ".digest"):
     if environ_override is not None and environ_override in os.environ:
         return os.environ[environ_override]
     if use_release_version and 'RELEASE_VERSION' in os.environ:
-        docker_registry = check_envvar_exists("DOCKER_REGISTRY")
+        if docker_registry is None:
+            docker_registry = check_envvar_exists("DOCKER_REGISTRY")
         if name is None:
             name = f'krules-{dir_name}'
         return f'{docker_registry}/{name}:{os.environ["RELEASE_VERSION"]}'
@@ -96,10 +98,12 @@ def get_image(image, environ_override: typing.Optional[str] = None):
     It is a wrapper for the more specialized get_buildable_image function
     """
     if "RELEASE_VERSION" in os.environ:
+        docker_registry = check_envvar_exists("RELEASE_DOCKER_REGISTRY")
         return get_buildable_image(
             location="",
             dir_name=image,
             environ_override=environ_override,
+            docker_registry=docker_registry,
         )
     if "KRULES_ROOT_DIR" in os.environ:
         return get_buildable_image(
@@ -112,23 +116,24 @@ def get_image(image, environ_override: typing.Optional[str] = None):
     Help.error("One of RELEASE_VERSION or KRULES_ROOT_DIR needed")
 
 
-def get_project_base(image):
+def get_project_base(location):
     """
     Get and eventually build the image from the specified folder contained in the project root
     It is a wrapper for the more specialized get_buildable_image function
 
-    :param image: a folder whit that name is expected in the project root to build image from
+    :param location: a folder with that name is expected in the project root to build image from
     :return image digest
     """
     if "KRULES_PROJECT_DIR" not in os.environ:
         Help.error("Cannot guess project root directory")
-    target_dir = os.path.join(os.environ["KRULES_PROJECT_DIR"], image)
+    target_dir = os.path.join(os.environ["KRULES_PROJECT_DIR"], location)
     if not os.path.exists(target_dir) or not os.path.isdir(target_dir):
         Help.error(f"{target_dir} does not exists or is not a directory")
     return get_buildable_image(
         location=os.environ["KRULES_PROJECT_DIR"],
-        dir_name=image,
-        environ_override=None
+        dir_name=location,
+        environ_override=None,
+        use_release_version=False,
     )
 
 
@@ -409,14 +414,14 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                         "-o", "jsonpath=\"{{.items[?(@.metadata.name=='{}')]}}\"".format(app_name)
                     ], check=True, capture_output=True).stdout
                     if len(out) > len('""'):  # found
-                        Help.log(f"updating deployment '{app_name}")
+                        Help.log(f"updating deployment {app_name}")
                         out = run([
                             kubectl_cmd, *kubectl_opts, "-n", namespace, "set", "image", f"deployment/{app_name}",
                             f"{app_name}={_image}", "--record"
                         ], check=True, capture_output=True).stdout
                         [Help.log(f"> {l}") for l in out.decode().splitlines()]
                     else:
-                        Help.log(f"creating deployment '{app_name}")
+                        Help.log(f"creating deployment {app_name}")
                         deployment = {
                             "apiVersion": "apps/v1",
                             "kind": "Deployment",
@@ -530,32 +535,54 @@ def pushd(new_dir):
         os.chdir(old_dir)
 
 
+def copy_resources(src: typing.Iterable[str], dst: str,
+                   override: bool = True,
+                   make_recipes_before: typing.Iterable = (),
+                   make_recipes_after: typing.Iterable = (),
+                   workdir: str = None):
 
-
-def copy_dirs(src: typing.Iterable[str], dst: str,
-              override: bool = True,
-              make_recipes: typing.Iterable = (),
-              workdir: str = None):
+    for recipe in make_recipes_before:
+        for f in src:
+            fname=os.path.basename(f)
+            fdir=os.path.dirname(f)
+            make_py = os.path.join(fdir, "make.py")
+            if os.path.exists(make_py):
+                cmd = " ".join((make_py, recipe.format(src=fname)))
+                Help.log(f"Invoking [before] {cmd}")
+                try:
+                    run(cmd, shell=True, check=True, capture_output=True)
+                except CalledProcessError as err:
+                    Help.error(err.stderr.decode())
 
     if workdir is None:
         workdir = os.path.abspath(inspect.stack()[1].filename)
-    root_dir = os.path.dirname(workdir)
+    dest_dir = os.path.dirname(workdir)
 
-    with pushd(root_dir):
+    # wi pushd(src_base_dir):
+    #       _recipe_before:
+    #         run(f"make
+    #         y {r)}", shell=True, check=True, capture_output=True)
+    with pushd(dest_dir):
         os.makedirs(dst, exist_ok=True)
         for p in src:
             to_path = os.path.join(dst, os.path.basename(p))
             if os.path.exists(to_path):
                 if override:
-                    shutil.rmtree(to_path)
+                    if os.path.isdir(to_path):
+                        shutil.rmtree(to_path)
+                    else:
+                        os.unlink(to_path)
                 else:
                     Help.error(f"Destination path {to_path} already exists")
-            shutil.copytree(p, to_path)
-            for recipe in make_recipes:
+            if os.path.isdir(p):
+                shutil.copytree(p, to_path)
+            else:
+                shutil.copyfile(p, to_path)
+            for recipe in make_recipes_after:
                 make_py = os.path.join(to_path, "make.py")
                 if os.path.exists(make_py):
                     cmd = " ".join((make_py, recipe))
-                    Help.log(f"Invoking {cmd}")
+                    Help.log(f"Invoking [after] {cmd}")
                     try:
                         run(cmd, shell=True, check=True, capture_output=True)
                     except CalledProcessError as err:
@@ -586,7 +613,7 @@ def copy_source(src: typing.Union[typing.Iterable[str], str],
     src = list(map(lambda x: os.path.join(os.environ["KRULES_ROOT_DIR"], x), src))
 
     workdir = os.path.abspath(inspect.stack()[1].filename)
-    copy_dirs(
+    copy_resources(
         src, dst, override, make_recipes,
         workdir
     )

@@ -14,6 +14,7 @@ Are defined in **env.project** file and are part of the project itself (included
   Note that in order to complete the configuration you also need to set up the relative provider in **base/k8s**
   - **SUPPORTS_POSTGRESQL**: defaults to **0** (disabled). Set to *1* to build postgresql support for all ruleset contaners
   - **SUPPORTS_MYSQL**: defaults to **0** (disabled). Set to *1* to build mysql support for all ruleset contaners
+  - **RELEASE_DOCKER_REGISTRY**: Registry from which release image versions are pulled. By defult gcr.io/airspot
 
 ## Local development or separate deployment environments
 Are defined in **env.local** file which is excluded from the code repository
@@ -72,6 +73,10 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     supports_mysql = _get_var("SUPPORTS_MYSQL", lambda: "0")
     out.append(f"- **SUPPORTS_MYSQL**: {supports_mysql}")
     env_project.append(f"SUPPORTS_MYSQL={supports_mysql}")
+    # release docker registry
+    release_docker_registry = _get_var("RELEASE_DOCKER_REGISTRY", lambda: "gcr.io/airspot")
+    out.append(f"- **RELEASE_DOCKER_REGISTRY**: {release_docker_registry}")
+    env_project.append(f"RELEASE_DOCKER_REGISTRY={release_docker_registry}")
 
 
     open(os.path.join(dest, "env.project"), "w").write("\n".join(env_project))

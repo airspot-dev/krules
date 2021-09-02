@@ -52,6 +52,7 @@ def release():
 sane_utils.make_clean_recipe(
     globs=[
         "setup.py",
+        "dist/",
         "*.egg-info"
     ]
 )

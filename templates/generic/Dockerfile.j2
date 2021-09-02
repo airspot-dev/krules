@@ -1,0 +1,31 @@
+FROM {{ image_base }}
+
+WORKDIR /app
+ENV PYTHONPATH /app
+
+{% if supports_postgresql %}
+RUN apk add --no-cache --virtual .build-deps g++ python3-dev postgresql-dev build-base libffi-dev && \
+    apk add --no-cache --update python3 libpq && \
+    pip3 install --upgrade pip setuptools && \
+    pip3 install --no-cache-dir psycopg2==2.8.6 && \
+    apk del .build-deps
+{% endif %}
+{% if supports_mysql %}
+RUN apk add --virtual .build-deps mariadb-dev build-base python3-dev && \
+    pip3 install --no-cache-dir mysqlclient==2.0.3 && \
+    apk del .build-deps && apk add --no-cache mariadb-connector-c
+{% endif %}
+
+{% for backend in subjects_backends %}
+{% if release_version %}
+RUN pip3 install krules-subjects-storage-{{ backend }}=={{ release_version }}
+{% else %}
+ADD .subjects-{{ backend }}/{{ backend }} /.subjects-{{ backend }}
+RUN cd /.subjects-{{ backend }} && python3 setup.py develop
+{% endif %}
+{% endfor %}
+
+ADD env.py /app/env.py
+ADD main.py /app/main.py
+
+CMD python3 /app/main.py

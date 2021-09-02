@@ -79,7 +79,7 @@ def _get_image_base():
 
 
 def _prepare_commons():
-    sane_utils.copy_dirs(
+    sane_utils.copy_resources(
         src=[os.path.join(os.path.pardir, "common", "cfgp")],
         dst=".common"
     )
@@ -87,10 +87,10 @@ def _prepare_commons():
 
 def _preprare_krules_deps():
     if not RELEASE_VERSION:
-        sane_utils.copy_dirs(
+        sane_utils.copy_resources(
             map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
             dst=".krules-libs",
-            make_recipes=[
+            make_recipes_after=[
                 "clean", "setup.py"
             ]
         )

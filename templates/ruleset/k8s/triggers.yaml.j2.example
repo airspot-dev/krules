@@ -13,9 +13,9 @@ spec:
   subscriber:
     ref:
 {% if service_api == "knative" %}
-    apiVersion: serving.knative.dev/v1
+      apiVersion: serving.knative.dev/v1
 {% elif service_api == "base" %}
-    apiVersion: v1
+      apiVersion: v1
 {% endif %}
       kind: Service
       name: {{ app_name }}

@@ -54,10 +54,10 @@ sane_utils.make_build_recipe(
         "prepare_build"
     ],
     run_before=[
-        lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_dirs(
+        lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_resources(
             map(lambda x: os.path.join(DJANGOAPPS_LIBS_DIR, x), DJANGOAPPS_DEP_LIBS),
             dst=".djangoapps-libs",
-            make_recipes=[
+            make_recipes_after=[
                 "setup.py"
             ]
         ),

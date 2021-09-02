@@ -9,15 +9,20 @@ from sane import *
 
 sane_utils.load_env()
 
-
+RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 INSTALL_IPYTHON = int(os.environ.get("INSTALL_IPYTHON", "0"))
-
 SUBJECTS_BACKENDS = "SUBJECTS_BACKENDS" in os.environ and \
                     re.split('; |, ', os.environ["SUBJECTS_BACKENDS"]) or []
-
 SUPPORTS_POSTGRESQL = int(os.environ.get("SUPPORTS_POSTGRESQL", "0"))
 SUPPORTS_MYSQL = int(os.environ.get("SUPPORTS_MYSQL", "0"))
 
+# making changes to these files will result in a new build
+sane_utils.update_code_hash(
+    globs=[
+        "ipython_config.py",
+    ],
+    output_file=".code.digest"
+)
 
 # render the templates required by the build process
 sane_utils.make_render_resource_recipes(
@@ -30,6 +35,7 @@ sane_utils.make_render_resource_recipes(
         "subjects_backends": SUBJECTS_BACKENDS,
         "supports_postgresql": SUPPORTS_POSTGRESQL,
         "supports_mysql": SUPPORTS_MYSQL,
+        "release_version": RELEASE_VERSION,
     },
     hooks=[
         'prepare_build'
@@ -79,7 +85,8 @@ sane_utils.make_build_recipe(
                 condition=lambda: "RELEASE_VERSION" not in os.environ
             ) for backend in SUBJECTS_BACKENDS
         ],
-    ]
+    ],
+    code_digest_file=".code.digest",
 )
 
 # push image
