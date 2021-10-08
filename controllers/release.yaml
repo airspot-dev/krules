@@ -413,7 +413,7 @@ spec:
             serviceAccountName: krules-system
             containers:
               - name: webhook
-                image: gcr.io/airspot/krules-webhook:0.9.1
+                image: gcr.io/airspot/krules-webhook:0.9.2
                 ports:
                   - containerPort: 8443
                     name: webhook-api
@@ -481,7 +481,7 @@ spec:
             serviceAccountName: krules-system
             containers:
               - name: helper
-                image: gcr.io/airspot/krules-helper:0.9.1
+                image: gcr.io/airspot/krules-helper:0.9.2
                 ports: 
                   - containerPort: 8080
                     name: helper
