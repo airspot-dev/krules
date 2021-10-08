@@ -8,3 +8,5 @@ env/
 env.local
 .env.override
 env.override
+.build.success
+.digest
