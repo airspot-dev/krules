@@ -1,0 +1,2 @@
+# set version in RELEASE_VERSION environment variable when you are not in development mode
+0.9.2
