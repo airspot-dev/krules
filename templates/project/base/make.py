@@ -13,8 +13,6 @@ RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 INSTALL_IPYTHON = int(os.environ.get("INSTALL_IPYTHON", "0"))
 SUBJECTS_BACKENDS = "SUBJECTS_BACKENDS" in os.environ and \
                     re.split('; |, ', os.environ["SUBJECTS_BACKENDS"]) or []
-SUPPORTS_POSTGRESQL = int(os.environ.get("SUPPORTS_POSTGRESQL", "0"))
-SUPPORTS_MYSQL = int(os.environ.get("SUPPORTS_MYSQL", "0"))
 
 # making changes to these files will result in a new build
 sane_utils.update_code_hash(
@@ -33,8 +31,6 @@ sane_utils.make_render_resource_recipes(
         "image_base": sane_utils.get_image("ruleset-image-base"),
         "install_ipython": INSTALL_IPYTHON,
         "subjects_backends": SUBJECTS_BACKENDS,
-        "supports_postgresql": SUPPORTS_POSTGRESQL,
-        "supports_mysql": SUPPORTS_MYSQL,
         "release_version": RELEASE_VERSION,
     },
     hooks=[
@@ -77,7 +73,7 @@ sane_utils.make_build_recipe(
     ],
     run_before=[
         # KRules development environment only
-        # (when RELEASE_VERSION is not set)
+        # (when RELEASE_VERSION is not set KRULES_ROOT_DIR must be set)
         lambda: [
             sane_utils.copy_source(
                 src=f"subjects_storages/{backend}",

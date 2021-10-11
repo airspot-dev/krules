@@ -12,8 +12,6 @@ Are defined in **env.project** file and are part of the project itself (included
   or multiple choice (comma or space separated). In the latter case you need to adjust accordingly the **base/env.py**\
   file to specify the criterion by which one provider is used as an alternative to the other (usually according to the subject name).
   Note that in order to complete the configuration you also need to set up the relative provider in **base/k8s**
-  - **SUPPORTS_POSTGRESQL**: defaults to **0** (disabled). Set to *1* to build postgresql support for all ruleset contaners
-  - **SUPPORTS_MYSQL**: defaults to **0** (disabled). Set to *1* to build mysql support for all ruleset contaners
   - **RELEASE_DOCKER_REGISTRY**: Registry from which release image versions are pulled. By defult gcr.io/airspot
 
 ## Local development or separate deployment environments
@@ -65,14 +63,6 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     subjects_backend = _get_var("SUBJECTS_BACKENDS", lambda: "redis")
     out.append(f"- **SUBJECTS_BACKENDS**: {subjects_backend}")
     env_project.append(f"SUBJECTS_BACKENDS={subjects_backend}")
-    # postgresql support
-    supports_postgresql = _get_var("SUPPORTS_POSTGRESQL", lambda: "0")
-    out.append(f"- **SUPPORTS_POSTGRESQL**: {supports_postgresql}")
-    env_project.append(f"SUPPORTS_POSTGRESQL={supports_postgresql}")
-    # mysql support
-    supports_mysql = _get_var("SUPPORTS_MYSQL", lambda: "0")
-    out.append(f"- **SUPPORTS_MYSQL**: {supports_mysql}")
-    env_project.append(f"SUPPORTS_MYSQL={supports_mysql}")
     # release docker registry
     release_docker_registry = _get_var("RELEASE_DOCKER_REGISTRY", lambda: "gcr.io/airspot")
     out.append(f"- **RELEASE_DOCKER_REGISTRY**: {release_docker_registry}")
