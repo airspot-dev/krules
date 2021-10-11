@@ -24,7 +24,7 @@ setup(
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
     description="KRules redis subjects storage implementation",
-    licence="Apache Licence 2.0",
+    license="Apache Licence 2.0",
     keywords="krules subject redis",
     url="https://github.com/airspot-dev/krules-subjects-storage-redis.git",
     packages=find_packages(),
@@ -35,7 +35,6 @@ setup(
     ],
     install_requires=[
         'redis>=3.3.5',
-        'anyjson>=0.3.3',
 {% if release_version %}
         'krules-core=={{ release_version }}',
 {% endif %}
