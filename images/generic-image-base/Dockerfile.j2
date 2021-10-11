@@ -1,15 +1,18 @@
-FROM alpine:3.11.6
+FROM python:3.9-slim-bullseye
 MAINTAINER Airspot <info@airspot.tech>
 
-RUN apk add --no-cache --virtual .build-deps g++ python3-dev && \
-    apk add --no-cache build-base && \
-    apk add --no-cache --update python3 && \
-    pip3 install --upgrade pip setuptools
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+WORKDIR /app
+ENV PYTHONPATH /app
+
+RUN pip3 install --upgrade pip setuptools
 
 
 {% if release_version %}
 RUN pip3 install --no-cache-dir krules-env=={{ release_version }}
-RUN apk del .build-deps
 {% else %}
 
 {% for lib in dev_requirements %}
@@ -20,6 +23,5 @@ ADD .krules-libs krules-libs
 RUN cd /krules-libs/krules-core && python3 setup.py develop
 RUN cd /krules-libs/krules-dispatcher-cloudevents && python3 setup.py develop
 RUN cd /krules-libs/krules-env && python3 setup.py develop
-# ENV PYTHONPATH /krules-libs/krules-core:/krules-libs/krules-dispatcher-cloudevents:/krules-libs/krules-env
 {% endif %}
 

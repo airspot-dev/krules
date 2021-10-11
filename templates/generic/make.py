@@ -11,10 +11,8 @@ sane_utils.load_env()
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 SUBJECTS_BACKENDS = "SUBJECTS_BACKENDS" in os.environ and \
                     re.split('; |, ', os.environ["SUBJECTS_BACKENDS"]) or []
-SUPPORTS_POSTGRESQL = int(os.environ.get("SUPPORTS_POSTGRESQL", "0"))
-SUPPORTS_MYSQL = int(os.environ.get("SUPPORTS_MYSQL", "0"))
 
-
+# copy env.py file from project's base dir
 sane_utils.copy_resources(
     [os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "env.py")],
     dst=".",
@@ -39,8 +37,6 @@ sane_utils.make_render_resource_recipes(
     context_vars=lambda: {
         "image_base": sane_utils.get_image("generic-image-base"),
         "subjects_backends": SUBJECTS_BACKENDS,
-        "supports_postgresql": SUPPORTS_POSTGRESQL,
-        "supports_mysql": SUPPORTS_MYSQL,
         "release_version": RELEASE_VERSION,
     },
     hooks=[
