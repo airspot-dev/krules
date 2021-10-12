@@ -1,5 +1,7 @@
 FROM {{ image_base }}
 
+ADD env.py /app/
+
 {% for backend in subjects_backends %}
 {% if release_version %}
 RUN pip3 install krules-subjects-storage-{{ backend }}=={{ release_version }}
@@ -9,7 +11,3 @@ RUN cd /.subjects-{{ backend }} && python3 setup.py develop
 {% endif %}
 {% endfor %}
 
-ADD env.py /app/env.py
-ADD main.py /app/main.py
-
-CMD python3 /app/main.py

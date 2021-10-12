@@ -589,6 +589,28 @@ def copy_resources(src: typing.Iterable[str], dst: str,
                         Help.error(err.stderr.decode())
 
 
+def make_copy_resources_recipe(src: typing.Union[typing.Iterable[str], str],
+                               dst: str,
+                               render_first: bool,
+                               **recipe_kwargs):
+    make_recipes_before=[]
+    if render_first:
+        make_recipes_before.append('{src}')
+
+    if 'name' not in recipe_kwargs:
+        Help.error("You must provide a name for copy resources recipe")
+
+    workdir = os.path.abspath(inspect.stack()[1].filename)
+
+    @recipe(**recipe_kwargs)
+    def _recipe():
+        copy_resources(
+                src=src,
+                dst=".",
+                make_recipes_before=make_recipes_before,
+                workdir=workdir
+            )
+
 def copy_source(src: typing.Union[typing.Iterable[str], str],
                 dst: str,
                 condition: typing.Callable[[], bool] = lambda: True,
@@ -614,8 +636,22 @@ def copy_source(src: typing.Union[typing.Iterable[str], str],
 
     workdir = os.path.abspath(inspect.stack()[1].filename)
     copy_resources(
-        src, dst, override, make_recipes,
-        workdir
+        src, dst, override, make_recipes_before=(), make_recipes_after=make_recipes,
+        workdir=workdir,
     )
 
 
+def make_subprocess_run_recipe(cmd, **recipe_kwargs):
+
+    if 'name' not in recipe_kwargs:
+        Help.error("You must provide a name for subprocess run recipe")
+
+    @recipe(**recipe_kwargs)
+    def _recipe():
+        run_kwargs = {"check": True, "capture_output": True}
+        if isinstance(cmd, str):
+            run_kwargs["shell"] = True
+        out = run(
+            cmd, **run_kwargs
+        ).stdout
+        [Help.log(f"> {l}") for l in out.decode().splitlines()]

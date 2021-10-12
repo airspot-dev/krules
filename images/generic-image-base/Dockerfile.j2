@@ -8,7 +8,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 WORKDIR /app
 ENV PYTHONPATH /app
 
-RUN pip3 install --upgrade pip setuptools
+RUN pip3 install --upgrade pip setuptools wheel
 
 
 {% if release_version %}
@@ -19,7 +19,7 @@ RUN pip3 install --no-cache-dir krules-env=={{ release_version }}
 RUN pip3 install {{ lib }} {% if not loop.last %}\{%  endif %}
 {% endfor %}
 
-ADD .krules-libs krules-libs
+ADD .krules-libs /krules-libs
 RUN cd /krules-libs/krules-core && python3 setup.py develop
 RUN cd /krules-libs/krules-dispatcher-cloudevents && python3 setup.py develop
 RUN cd /krules-libs/krules-env && python3 setup.py develop

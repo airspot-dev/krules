@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import os
 import re
+import subprocess
 
 from krules_dev import sane_utils
 
 from sane import *
+from sane import _Help as Help
 
 sane_utils.load_env()
 
@@ -12,14 +14,6 @@ RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 SUBJECTS_BACKENDS = "SUBJECTS_BACKENDS" in os.environ and \
                     re.split('; |, ', os.environ["SUBJECTS_BACKENDS"]) or []
 
-# copy env.py file from project's base dir
-sane_utils.copy_resources(
-    [os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "env.py")],
-    dst=".",
-    make_recipes_before=[
-        "{src}",
-    ],
-)
 
 # making changes to these files will result in a new build
 sane_utils.update_code_hash(
@@ -27,6 +21,20 @@ sane_utils.update_code_hash(
         "*.py"
     ],
     output_file=".code.digest"
+)
+
+
+sane_utils.make_copy_resources_recipe(
+    name="copy_base_resources",
+    info="Copy resources from project's base",
+    src=[
+        os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "env.py")
+    ],
+    dst=".",
+    render_first=True,
+    hooks=[
+        'prepare_build'
+    ],
 )
 
 # render the templates required by the build process
@@ -44,15 +52,28 @@ sane_utils.make_render_resource_recipes(
     ]
 )
 
+
 # build ruleset image
 sane_utils.make_build_recipe(
     name="build",
     hook_deps=[
         "prepare_build"
     ],
+    run_before=[
+        # KRules development environment only
+        # (when RELEASE_VERSION is not set)
+        lambda: [
+            sane_utils.copy_source(
+                src=f"subjects_storages/{backend}",
+                dst=f".subjects-{backend}",
+                condition=lambda: "RELEASE_VERSION" not in os.environ
+            ) for backend in SUBJECTS_BACKENDS
+        ],
+    ],
     code_digest_file=".code.digest",
     success_file=".build.success",
 )
+
 
 # push ruleset image then save his digest
 sane_utils.make_push_recipe(
@@ -81,6 +102,11 @@ sane_utils.make_render_resource_recipes(
     ]
 )
 
+sane_utils.make_subprocess_run_recipe(
+    name="apply_base_resources",
+    info="Apply resources from project's base",
+    cmd=[os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "make.py"), "apply"]
+)
 
 # apply k8s resources
 sane_utils.make_apply_recipe(
@@ -123,7 +149,8 @@ sane_utils.make_clean_recipe(
         "k8s/*.yaml",
         ".digest",
         ".code.digest",
-        ".build.success"
+        ".build.success",
+        "env.py",
     ],
 )
 

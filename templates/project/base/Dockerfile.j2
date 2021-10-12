@@ -2,10 +2,8 @@ FROM {{ image_base }}
 
 ADD env.py /app/
 
-{% if install_ipython %}
 RUN pip3 install ipython
 ADD ipython_config.py /root/.ipython/profile_default/
-{% endif %}
 
 {% for backend in subjects_backends %}
 {% if release_version %}

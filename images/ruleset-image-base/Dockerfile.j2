@@ -1,11 +1,12 @@
-FROM python:3.9-slim-bullseye
+#FROM python:3.9-slim-bullseye
+FROM {{ image_base }}
 MAINTAINER Airspot <info@airspot.tech>
 
-ENV VIRTUAL_ENV=/opt/venv
-RUN python3 -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+#ENV VIRTUAL_ENV=/opt/venv
+#RUN python3 -m venv $VIRTUAL_ENV
+#ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-RUN pip3 install --upgrade pip setuptools
+#RUN pip3 install --upgrade pip setuptools
 
 RUN pip3 install --no-cache-dir python-dateutil gunicorn {% if release_version %}\
 {% for lib in krules_libs %}
