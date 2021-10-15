@@ -1,16 +1,6 @@
 FROM {{ image_base }}
 
-ADD env.py /app/
-
 RUN pip3 install ipython
 ADD ipython_config.py /root/.ipython/profile_default/
 
-{% for backend in subjects_backends %}
-{% if release_version %}
-RUN pip3 install krules-subjects-storage-{{ backend }}=={{ release_version }}
-{% else %}
-ADD .subjects-{{ backend }}/{{ backend }} /.subjects-{{ backend }}
-RUN cd /.subjects-{{ backend }} && python3 setup.py develop
-{% endif %}
-{% endfor %}
 

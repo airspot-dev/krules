@@ -8,6 +8,7 @@ name = "pypi"
 [dev-packages]
 krules-dev-support = {editable = true, path = "./dev_support/krules-dev-support"}
 twine = "*"
+dependency-injector = "==4.32.2"
 
 [requires]
 python_version = "3.8"

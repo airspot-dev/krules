@@ -32,7 +32,7 @@ sane_utils.make_render_resource_recipes(
         "release_version": RELEASE_VERSION
     },
     run_before=[
-        lambda: sane_utils.check_envvar_exists("RELEASE_VERSION")
+        lambda: sane_utils.check_env("RELEASE_VERSION")
     ],
     hooks=["source_config"]
 )

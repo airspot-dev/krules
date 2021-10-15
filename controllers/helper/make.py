@@ -82,8 +82,8 @@ sane_utils.make_render_resource_recipes(
         'k8s/*.yaml.j2'
     ], 
     context_vars=lambda: {
-        "namespace": sane_utils.check_envvar_exists("NAMESPACE"),
-        "name": sane_utils.check_envvar_exists("SERVICE_NAME"),
+        "namespace": sane_utils.check_env("NAMESPACE"),
+        "name": sane_utils.check_env("SERVICE_NAME"),
         "image": "RELEASE_VERSION" not in os.environ and
                   open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".digest"), "r").read()
                   or f"{os.environ['DOCKER_REGISTRY']}/{IMAGE_NAME}:{RELEASE_VERSION}",

@@ -37,11 +37,11 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "image_base": get_image_base(),
-        "site_name": sane_utils.check_envvar_exists("SITE_NAME"),
-        "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
-        "supports_postgres": bool(sane_utils.check_envvar_exists("DJANGO_BACKEND_POSTGRES")),
-        "supports_mysql": bool(sane_utils.check_envvar_exists("DJANGO_BACKEND_MYSQL")),
-        "supports_redis": bool(sane_utils.check_envvar_exists("SUPPORTS_REDIS")),
+        "site_name": sane_utils.check_env("SITE_NAME"),
+        "configuration_key": sane_utils.check_env("CONFIGURATION_KEY"),
+        "supports_postgres": bool(sane_utils.check_env("DJANGO_BACKEND_POSTGRES")),
+        "supports_mysql": bool(sane_utils.check_env("DJANGO_BACKEND_MYSQL")),
+        "supports_redis": bool(sane_utils.check_env("SUPPORTS_REDIS")),
         "djangoapps_libs": DJANGOAPPS_DEP_LIBS
     },
     hooks=['prepare_build']
@@ -79,8 +79,8 @@ sane_utils.make_render_resource_recipes(
         "k8s/*.j2"
     ],
     context_vars=lambda: {
-        "app_name": sane_utils.check_envvar_exists("APP_NAME"),
-        "namespace": sane_utils.check_envvar_exists("NAMESPACE"),
+        "app_name": sane_utils.check_env("APP_NAME"),
+        "namespace": sane_utils.check_env("NAMESPACE"),
     },
     hooks=[
         'prepare_deploy'

@@ -10,6 +10,7 @@ ENV PYTHONPATH /app
 
 RUN pip3 install --upgrade pip setuptools wheel
 
+ADD env.py /app/
 
 {% if release_version %}
 RUN pip3 install --no-cache-dir krules-env=={{ release_version }}
@@ -19,9 +20,17 @@ RUN pip3 install --no-cache-dir krules-env=={{ release_version }}
 RUN pip3 install {{ lib }} {% if not loop.last %}\{%  endif %}
 {% endfor %}
 
-ADD .krules-libs /krules-libs
-RUN cd /krules-libs/krules-core && python3 setup.py develop
-RUN cd /krules-libs/krules-dispatcher-cloudevents && python3 setup.py develop
-RUN cd /krules-libs/krules-env && python3 setup.py develop
+ADD .krules-libs /.krules-libs
+RUN cd /.krules-libs/krules-core && python3 setup.py develop
+RUN cd /.krules-libs/krules-dispatcher-cloudevents && python3 setup.py develop
+RUN cd /.krules-libs/krules-env && python3 setup.py develop
 {% endif %}
 
+{% for backend in subjects_backends %}
+{% if release_version %}
+RUN pip3 install krules-subjects-storage-{{ backend }}=={{ release_version }}
+{% else %}
+ADD .subjects-backends/{{ backend }} /.subjects-backends/{{ backend }}
+RUN cd /.subjects-backends/{{ backend }} && python3 setup.py develop
+{% endif %}
+{% endfor %}

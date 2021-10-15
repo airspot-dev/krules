@@ -8,10 +8,6 @@ It can be customized setting up environment variables at two different levels
 Are defined in **env.project** file and are part of the project itself (included in code repository)
 
   - **PROJECT_NAME**: Name of the project. If not set defaults to destination directory name
-  - **SUBJECTS_BACKENDS**: Defaults to **redis**. *mongodb* is also supported. They can be either be specified as single\
-  or multiple choice (comma or space separated). In the latter case you need to adjust accordingly the **base/env.py**\
-  file to specify the criterion by which one provider is used as an alternative to the other (usually according to the subject name).
-  Note that in order to complete the configuration you also need to set up the relative provider in **base/k8s**
   - **RELEASE_DOCKER_REGISTRY**: Registry from which release image versions are pulled. By defult gcr.io/airspot
 
 ## Local development or separate deployment environments
@@ -59,10 +55,6 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     project_name = _get_var("PROJECT_NAME", lambda: os.path.split(dest)[-1])
     out.append(f"- **PROJECT_NAME**: {project_name}")
     env_project.append(f"PROJECT_NAME={project_name}")
-    # subjects backend
-    subjects_backend = _get_var("SUBJECTS_BACKENDS", lambda: "redis")
-    out.append(f"- **SUBJECTS_BACKENDS**: {subjects_backend}")
-    env_project.append(f"SUBJECTS_BACKENDS={subjects_backend}")
     # release docker registry
     release_docker_registry = _get_var("RELEASE_DOCKER_REGISTRY", lambda: "gcr.io/airspot")
     out.append(f"- **RELEASE_DOCKER_REGISTRY**: {release_docker_registry}")

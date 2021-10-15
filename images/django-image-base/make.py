@@ -32,11 +32,11 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "image_base": image_base,
-        "site_name": sane_utils.check_envvar_exists("SITE_NAME"),
-        "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
-        "supports_postgres": bool(sane_utils.check_envvar_exists("DJANGO_BACKEND_POSTGRES")),
-        "supports_mysql": bool(sane_utils.check_envvar_exists("DJANGO_BACKEND_MYSQL")),
-        "supports_redis": bool(sane_utils.check_envvar_exists("SUPPORTS_REDIS")),
+        "site_name": sane_utils.check_env("SITE_NAME"),
+        "configuration_key": sane_utils.check_env("CONFIGURATION_KEY"),
+        "supports_postgres": bool(sane_utils.check_env("DJANGO_BACKEND_POSTGRES")),
+        "supports_mysql": bool(sane_utils.check_env("DJANGO_BACKEND_MYSQL")),
+        "supports_redis": bool(sane_utils.check_env("SUPPORTS_REDIS")),
 
     },
     hooks=['prepare_build']
@@ -44,12 +44,12 @@ sane_utils.make_render_resource_recipes(
 
 
 sane_utils.make_build_recipe(
-    target=sane_utils.check_envvar_exists('IMAGE_NAME'),
+    target=sane_utils.check_env('IMAGE_NAME'),
     hook_deps=["prepare_build"],
 )
 
 sane_utils.make_push_recipe(
-    target=sane_utils.check_envvar_exists("IMAGE_NAME"),
+    target=sane_utils.check_env("IMAGE_NAME"),
     digest_file=".digest",
     tag=os.environ.get("RELEASE_VERSION"),
     recipe_deps=["build"]

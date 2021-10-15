@@ -14,7 +14,7 @@ from sane import *
 from sane import _Help as Help
 
 
-def check_envvar_exists(name):
+def check_env(name):
     if name not in os.environ:
         Help.error(f'Environment variable {name} does not exists')
     return os.environ[name]
@@ -75,7 +75,7 @@ def get_buildable_image(location: str,
         return os.environ[environ_override]
     if use_release_version and 'RELEASE_VERSION' in os.environ:
         if docker_registry is None:
-            docker_registry = check_envvar_exists("DOCKER_REGISTRY")
+            docker_registry = check_env("DOCKER_REGISTRY")
         if name is None:
             name = f'krules-{dir_name}'
         return f'{docker_registry}/{name}:{os.environ["RELEASE_VERSION"]}'
@@ -98,7 +98,7 @@ def get_image(image, environ_override: typing.Optional[str] = None):
     It is a wrapper for the more specialized get_buildable_image function
     """
     if "RELEASE_VERSION" in os.environ:
-        docker_registry = check_envvar_exists("RELEASE_DOCKER_REGISTRY")
+        docker_registry = check_env("RELEASE_DOCKER_REGISTRY")
         return get_buildable_image(
             location="",
             dir_name=image,
@@ -221,7 +221,7 @@ def make_build_recipe(target: str = None,
     root_dir = os.path.dirname(abs_path)
 
     if target is None:
-        target = check_envvar_exists('IMAGE_NAME')
+        target = check_env('IMAGE_NAME')
 
     if 'name' not in recipe_kwargs:
         recipe_kwargs['name'] = 'build'
@@ -242,7 +242,7 @@ def make_build_recipe(target: str = None,
 
     @recipe(**recipe_kwargs)
     def build():
-        docker_registry = check_envvar_exists('DOCKER_REGISTRY')
+        docker_registry = check_env('DOCKER_REGISTRY')
         check_cmd(docker_cmd)
         target_image = f'{docker_registry}/{target}'.lower()
         Help.log(f'Building {target_image} from Dockerfile')
@@ -312,8 +312,8 @@ def make_push_recipe(digest_file: str = ".digest",
 
     @recipe(**recipe_kwargs)
     def push():
-        check_envvar_exists("IMAGE_NAME")
-        check_envvar_exists("DOCKER_REGISTRY")
+        check_env("IMAGE_NAME")
+        check_env("DOCKER_REGISTRY")
 
         for func in run_before:
             func()
@@ -382,7 +382,7 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                         **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
-    namespace = check_envvar_exists("NAMESPACE")
+    namespace = check_env("NAMESPACE")
     service_api = os.environ.get("SERVICE_API", "base")
     service_type = os.environ.get("SERVICE_TYPE", "ClusterIP")
     kubectl_cmd = kubectl_opts = kn_cmd = kn_opts = None
@@ -394,7 +394,7 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
         kn_opts = os.environ.get("KN_OPTS", "").split()
     else:
         Help.error(f"unknown service api {service_api}")
-    app_name = check_envvar_exists("APP_NAME")
+    app_name = check_env("APP_NAME")
 
     @recipe(**recipe_kwargs)
     def service():

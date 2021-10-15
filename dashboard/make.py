@@ -52,9 +52,9 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "image_base": image_base(),
-        "site_name": sane_utils.check_envvar_exists("SITE_NAME"),
-        "app_name": sane_utils.check_envvar_exists("APP_NAME"),
-        "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
+        "site_name": sane_utils.check_env("SITE_NAME"),
+        "app_name": sane_utils.check_env("APP_NAME"),
+        "configuration_key": sane_utils.check_env("CONFIGURATION_KEY"),
         "djangoapps_sources": djangoapps_sources,
         "release_version":  os.environ.get("RELEASE_VERSION", False)
     },
@@ -91,10 +91,10 @@ sane_utils.make_render_resource_recipes(
         "k8s/*.j2"
     ],
     context_vars=lambda: {
-        "app_name": sane_utils.check_envvar_exists("APP_NAME"),
-        "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
+        "app_name": sane_utils.check_env("APP_NAME"),
+        "configuration_key": sane_utils.check_env("CONFIGURATION_KEY"),
         "djangoapps_sources": djangoapps_sources,
-        "namespace": sane_utils.check_envvar_exists("NAMESPACE")
+        "namespace": sane_utils.check_env("NAMESPACE")
     },
     hooks=[
         'prepare_deploy'

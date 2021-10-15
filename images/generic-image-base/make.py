@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import re
 
 try:
     from krules_dev import sane_utils
@@ -15,6 +16,11 @@ sane_utils.load_env()
 KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir, os.path.pardir))
 KRULES_LIBS_DIR = os.path.join(KRULES_ROOT_DIR, "libs")
+
+SUBJECTS_BACKENDS = "SUBJECTS_BACKENDS" in os.environ and \
+                    re.split('; |, ', os.environ["SUBJECTS_BACKENDS"]) or []
+
+SUBJECTS_BACKENDS_DIR = os.path.join(KRULES_ROOT_DIR, "subjects_storages")
 
 KRULES_DEP_LIBS = [
     "krules-core",
@@ -34,7 +40,8 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars={
         "release_version": os.environ.get('RELEASE_VERSION'),
-        "dev_requirements": DEV_REQUIREMENTS
+        "dev_requirements": DEV_REQUIREMENTS,
+        "subjects_backends":  SUBJECTS_BACKENDS
     },
     hooks=['prepare_build']
 )
@@ -50,7 +57,15 @@ sane_utils.make_build_recipe(
             make_recipes_after=[
                 "clean", "setup.py"
             ]
+        ),
+        lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_resources(
+            map(lambda x: os.path.join(SUBJECTS_BACKENDS_DIR, x), SUBJECTS_BACKENDS),
+            dst=".subjects-backends",
+            make_recipes_after=[
+                "clean", "setup.py"
+            ]
         )
+
     ]
 )
 
@@ -65,6 +80,7 @@ sane_utils.make_clean_recipe(
         "Dockerfile",
         ".digest",
         ".krules-libs",
+        ".subjects-backends",
         ".build.success",
     ]
 )
