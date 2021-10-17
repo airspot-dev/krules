@@ -93,7 +93,7 @@ sane_utils.make_service_recipe(
     name="service",
     labels=lambda: {
         "krules.airspot.dev/app": sane_utils.check_env("APP_NAME"),
-        "krules.airspot.dev/type": "ruleset"
+        "krules.airspot.dev/type": "ruleset",
     },
     env={},
     # if SERVICE_API="knative" (requires kn client)

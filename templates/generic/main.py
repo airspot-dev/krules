@@ -8,6 +8,6 @@ from krules_core.providers import (
     event_router_factory,
 )
 
-service_config = configs_factory()["services"][os.environ["CE_SOURCE"]]
+service_config: dict = configs_factory()["services"][os.environ["CE_SOURCE"]]
 
 # Your code here..
