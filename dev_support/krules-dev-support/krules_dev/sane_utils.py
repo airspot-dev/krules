@@ -216,6 +216,7 @@ def make_build_recipe(target: str = None,
                       dockerfile: str = "Dockerfile",
                       code_digest_file: str = ".code.digest",
                       success_file: str = None,
+                      build_args: dict = {},
                       **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
@@ -234,6 +235,7 @@ def make_build_recipe(target: str = None,
 
     if 'conditions' not in recipe_kwargs:
         recipe_kwargs['conditions'] = []
+    #import pdb; pdb.set_trace()
     success_file = os.path.join(root_dir, success_file)
     code_digest_file = os.path.join(root_dir, code_digest_file)
     recipe_kwargs['conditions'].append(lambda: not os.path.exists(success_file))
@@ -252,9 +254,10 @@ def make_build_recipe(target: str = None,
             func()
 
         with pushd(root_dir):
+            _build_args = " ".join([f"--build-arg {v[0]}={v[1]}" for v in build_args.items()])
             try:
                 out = run(
-                    f'{docker_cmd} build -t {target_image} -f {dockerfile} .', shell=True,
+                    f'{docker_cmd} build -t {target_image} -f {dockerfile} {_build_args} .', shell=True,
                     check=True, capture_output=True
                 ).stdout
                 [Help.log(f"> {l}") for l in out.decode().splitlines()]
@@ -589,11 +592,12 @@ def copy_resources(src: typing.Iterable[str], dst: str,
                         Help.error(err.stderr.decode())
 
 
+# TODO: unused? -- remove?
 def make_copy_resources_recipe(src: typing.Union[typing.Iterable[str], str],
                                dst: str,
                                render_first: bool,
                                **recipe_kwargs):
-    make_recipes_before=[]
+    make_recipes_before = []
     if render_first:
         make_recipes_before.append('{src}')
 
@@ -611,34 +615,59 @@ def make_copy_resources_recipe(src: typing.Union[typing.Iterable[str], str],
                 workdir=workdir
             )
 
+
 def copy_source(src: typing.Union[typing.Iterable[str], str],
                 dst: str,
                 condition: typing.Callable[[], bool] = lambda: True,
                 override: bool = True,
-                make_recipes: typing.Iterable = ("clean", "setup.py")):
+                make_recipes: typing.Iterable = ("clean", "setup.py"),
+                workdir: str = None):
     """
-    Convenient function wrapping copy_dirs.
     It assumes paths relative to KRULES_ROOT_DIR
     :param src: 
     :param dst: 
     :param condition: 
     :param override: 
     :param make_recipes: 
-    :return: 
+    :param workdir:
+    :return:
     """
-    if "KRULES_ROOT_DIR" not in os.environ:
-        return
-    if not condition():
-        return
+    # if "KRULES_ROOT_DIR" not in os.environ:
+    #     return
+    # if not condition():
+    #     return
     if isinstance(src, str):
         src = [src]
-    src = list(map(lambda x: os.path.join(os.environ["KRULES_ROOT_DIR"], x), src))
+    src = list(map(lambda x: os.path.join(check_env("KRULES_ROOT_DIR"), x), src))
 
-    workdir = os.path.abspath(inspect.stack()[1].filename)
+    if workdir is None:
+        workdir = os.path.abspath(inspect.stack()[1].filename)
     copy_resources(
         src, dst, override, make_recipes_before=(), make_recipes_after=make_recipes,
         workdir=workdir,
     )
+
+def make_copy_source_recipe(location: str,
+                            src: typing.Union[typing.Iterable[str], str],
+                            dst: str,
+                            #conditions: typing.Callable[[], bool] = lambda: True,
+                            override: bool = True,
+                            make_recipes: typing.Iterable = ("clean", "setup.py"),
+                            workdir: str = None,
+                            **recipe_kwargs):
+    src = list(map(lambda x: os.path.join(location, x), src))
+    if workdir is None:
+        workdir = os.path.abspath(inspect.stack()[1].filename)
+    @recipe(**recipe_kwargs)
+    def _recipe():
+        copy_source(
+            src=src,
+            dst=dst,
+            #condition=condition,
+            override=override,
+            make_recipes=make_recipes,
+            workdir=workdir,
+        )
 
 
 def make_subprocess_run_recipe(cmd, **recipe_kwargs):

@@ -118,11 +118,10 @@ sane_utils.make_clean_recipe(
     name="clean",
     globs=[
         "Dockerfile",
-        "k8s/*.yaml",
+        #"k8s/*.yaml",
         ".digest",
         ".code.digest",
         ".build.success",
-        "env.py",
     ],
 )
 

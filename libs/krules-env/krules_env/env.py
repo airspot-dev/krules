@@ -120,6 +120,11 @@ def init():
             logger.warning("No application env.py found!")
         else:
             raise ex
+    try:
+        import ruleset_init
+    except ModuleNotFoundError as ex:
+        if not ex.name == "ruleset_init":
+            raise ex
 
     try:
         m_rules = importlib.import_module("ruleset")
