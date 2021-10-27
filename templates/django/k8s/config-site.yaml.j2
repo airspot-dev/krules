@@ -14,7 +14,7 @@ spec:
     site_settings:
       secret_key: $DJANGO_SECRET_KEY
       allowed_hosts:
-        - *  ## CHANGE ME ##
+        - "*"  ## CHANGE ME ##
       installed_apps:
         - django.contrib.admin
         - django.contrib.auth
@@ -24,28 +24,26 @@ spec:
         - django.contrib.staticfiles
         - jsoneditor
         - prettyjson
-        - rest_framework
+#        - rest_framework
         - krules_djangoapps_common
         - krules_djangoapps_scheduler
         - krules_djangoapps_procevents
-#      middleware:
-#        - django.middleware.security.SecurityMiddleware
-#        - whitenoise.middleware.WhiteNoiseMiddleware
-#        - django.contrib.sessions.middleware.SessionMiddleware
-#        - django.middleware.common.CommonMiddleware
-#        - django.middleware.csrf.CsrfViewMiddleware
-#        - django.contrib.auth.middleware.AuthenticationMiddleware
-#        - django.contrib.messages.middleware.MessageMiddleware
-#        - django.middleware.clickjacking.XFrameOptionsMiddleware
-#
-#      loglevel: "info"
-#      debug: "False"
-#      language_code: "en-us"
-#      time_zone: "UTC"
+      middleware:
+        - django.middleware.security.SecurityMiddleware
+        - whitenoise.middleware.WhiteNoiseMiddleware
+        - django.contrib.sessions.middleware.SessionMiddleware
+        - django.middleware.common.CommonMiddleware
+        - django.middleware.csrf.CsrfViewMiddleware
+        - django.contrib.auth.middleware.AuthenticationMiddleware
+        - django.contrib.messages.middleware.MessageMiddleware
+        - django.middleware.clickjacking.XFrameOptionsMiddleware
+
+      loglevel: "info"
+      debug: "False"
+      language_code: "en-us"
+      time_zone: "UTC"
   container:
     env:
-      - name: TIME_ZONE
-        value: Europe/Rome
       - name: DJANGO_SECRET_KEY
         valueFrom:
           secretKeyRef:

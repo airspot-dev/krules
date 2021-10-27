@@ -1,0 +1,42 @@
+FROM {{ image_base }}
+
+ARG site_name="djsite"
+ARG configuration_key="django"
+
+ADD requirements.txt /app/django-requirements.txt
+
+#RUN CRYPTOGRAPHY_DONT_BUILD_RUST=1 pip3 install --no-cache-dir -r /app/django-requirements.txt
+RUN pip3 install --no-cache-dir -r /app/django-requirements.txt
+
+{% if use_postgresql %}
+RUN pip3 install --no-cache-dir psycopg2-binary
+{% endif %}
+
+{% if use_mysql %}
+RUN apt update && apt install -y libmariadb-dev g++ && pip3 install mysqlclient && apt remove -y libmariadb-dev g++
+{% endif %}
+
+{% for django_app in krules_djangoapps %}
+{% if release_version %}
+RUN pip3 install {{ django_app }}=={{ release_version }}
+{% else %}
+ADD .krules-djangoapps/{{ django_app }} /.krules-djangoapps/{{ django_app }}
+RUN cd /.krules-djangoapps/{{ django_app }} && python3 setup.py develop
+{% endif %}
+{% endfor %}
+
+
+ENV SITE_NAME=${site_name}
+ENV CONFIGURATION_KEY ${configuration_key}
+ENV DJANGO_SETTINGS_MODULE ${site_name}.settings
+
+RUN django-admin startproject ${site_name} .
+
+ADD site/asgi.py /app/${site_name}/
+ADD site/settings.py /app/${site_name}/
+ADD site/urls.py /app/${site_name}/
+
+
+ADD django_run.sh /app/
+RUN chmod +x django_run.sh
+CMD ["/app/django_run.sh"]

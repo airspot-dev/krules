@@ -1,0 +1,33 @@
+apiVersion: sources.knative.dev/v1
+kind: ContainerSource
+metadata:
+  name: heartbeats
+  namespace: {{ namespace }}
+spec:
+  template:
+    spec:
+      containers:
+        - image: gcr.io/airspot/heartbeats
+          name: heartbeats
+          args:
+            - --period=2
+            - --eventType=scheduler.heartbeat
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+  sink:
+    ref:
+{% if service_api == "knative" %}
+      apiVersion: serving.knative.dev/v1
+{% elif service_api == "base" %}
+      apiVersion: v1
+{% endif %}
+      kind: Service
+      name: {{ app_name }}
+---

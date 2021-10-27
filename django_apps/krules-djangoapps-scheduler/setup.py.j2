@@ -6,7 +6,9 @@ def read(fname):
 
 setup(
     name='krules-djangoapps-scheduler',
+{% if release_version %}
     version="{{ release_version }}",
+{% endif %}
     author="Airspot",
     author_email="info@arispot.tech",
     license="Apache Licence 2.0",

@@ -1,0 +1,28 @@
+apiVersion: krules.airspot.dev/v1alpha1
+kind: ConfigurationProvider
+metadata:
+  name: config-django-orm
+  namespace: {{ namespace }}
+spec:
+  key: {{ configuration_key }}.site_settings.databases
+  appliesTo:
+    configs.krules.airspot.dev/django-orm: inject
+  data:
+    default:
+      ENGINE: django.db.backends.postgresql_psycopg2
+      NAME: tmp_04
+      USER: $DATABASE_USER
+      PASSWORD: $DATABASE_PASSWORD
+      HOST: 172.26.160.3
+  container:
+    env:
+      - name: DATABASE_USER
+        valueFrom:
+          secretKeyRef:
+            name: postgresql-auth
+            key: user
+      - name: DATABASE_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: postgresql-auth
+            key: password

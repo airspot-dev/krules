@@ -7,6 +7,7 @@ from krules_core.providers import configs_factory
 krules_env.init()
 
 configuration_key = os.environ.get("CONFIGURATION_KEY", "django")
+site_name = os.environ.get("SITE_NAME", "djsite")
 
 site_config = configs_factory().get(configuration_key, {}).get("site_settings", {})
 
@@ -58,7 +59,7 @@ MIDDLEWARE = site_config.get(
     ]
 )
 
-ROOT_URLCONF = os.environ.get("ROOT_URLCONF", site_config.get("root_urlconf", '{{ site_name }}.urls'))
+ROOT_URLCONF = os.environ.get("ROOT_URLCONF", site_config.get("root_urlconf", f'{site_name}.urls'))
 
 TEMPLATES = [
     {

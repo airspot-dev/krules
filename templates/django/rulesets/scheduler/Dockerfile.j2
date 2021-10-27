@@ -1,0 +1,34 @@
+FROM {{ image_base }}
+
+ARG site_name="djsite"
+ARG configuration_key="django"
+
+RUN pip3 install --no-cache-dir Django==3.2.8
+
+{% if use_postgresql %}
+RUN pip3 install --no-cache-dir psycopg2-binary
+{% endif %}
+
+{% if use_mysql %}
+RUN apt update && apt install -y libmariadb-dev g++ && pip3 install mysqlclient && apt remove -y libmariadb-dev g++
+{% endif %}
+
+{% for django_app in krules_djangoapps %}
+{% if release_version %}
+RUN pip3 install {{ django_app }}=={{ release_version }}
+{% else %}
+ADD .krules-djangoapps/{{ django_app }} /.krules-djangoapps/{{ django_app }}
+RUN cd /.krules-djangoapps/{{ django_app }} && python3 setup.py develop
+{% endif %}
+{% endfor %}
+
+ENV SITE_NAME=${site_name}
+ENV CONFIGURATION_KEY ${configuration_key}
+ENV DJANGO_SETTINGS_MODULE ${site_name}.settings
+
+RUN pip3 install pykube-ng==21.10.0
+
+ADD site/settings.py /app/${site_name}/
+ADD __init__.py /app/
+ADD ruleset.py /app/
+

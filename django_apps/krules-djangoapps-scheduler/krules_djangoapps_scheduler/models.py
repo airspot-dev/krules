@@ -1,9 +1,10 @@
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
+from krules_core.providers import subject_factory
 from krules_djangoapps_common.fields import EmptyObjectJSONField
-from krules_djangoapps_common.k8s import get_api, ContainerSource
-import pykube
+#from krules_djangoapps_common.k8s import get_api, ContainerSource
 from uuid import uuid4
 
 
@@ -24,19 +25,14 @@ class ScheduledEvent(models.Model):
 
 class SchedulerConfig(models.Model):
 
-    period = models.IntegerField(default=5)
+    period = models.IntegerField(default=2)
 
     def __str__(self):
         return "period: %d" % self.period
 
+    def save(self, *args, **kwargs):
+        subject = subject_factory("djangomodel:schedulerconfig")
+        subject.set_ext("djangomodel", "schedulerconfig")
+        subject.set("period", self.period)
+        super().save(*args, **kwargs)
 
-@receiver(post_save, sender=SchedulerConfig)
-def update_heartbeat(sender, instance, created, **kwargs):
-
-    api = get_api()
-    try:
-        obj = ContainerSource.objects(api).get_by_name("heartbeats")
-        obj.obj["spec"]["template"]["spec"]["containers"][0]["args"][0] = "--period=%d" % instance.period
-        obj.update()
-    except pykube.exceptions.ObjectDoesNotExist:
-        pass

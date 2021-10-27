@@ -46,21 +46,23 @@ def load_env():
 
     # look for a project file
     p = Path(cur_dir)
+    traversed_p = []
     while True:
+        traversed_p.insert(0, p)
         is_project_dir = bool(sum(1 for x in p.glob("env.project")))
         is_root = p.parent == p
         if is_project_dir:
             os.environ["KRULES_PROJECT_DIR"] = str(p)
-            f = os.path.join(p, "env.project")
-            Help.log("Loading project environment for {}".format(p))
-            _load_dir_env(p)
             break
         if is_root:
             break
         p = p.parent
 
-    Help.log("Loading environment for {}".format(cur_dir))
-    _load_dir_env(cur_dir)
+    for p in traversed_p:
+        Help.log("Loading environment for {}".format(p))
+        _load_dir_env(p)
+
+
 
 
 def get_buildable_image(location: str,
@@ -380,6 +382,7 @@ def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[t
 
 def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                         labels: typing.Union[dict, typing.Callable] = {},
+                        service_account: str = None,
                         kn_extra: tuple = (),
                         env: typing.Union[dict, typing.Callable[[], dict]] = {},
                         **recipe_kwargs):
@@ -458,6 +461,8 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                                 }
                             }
                         }
+                        if service_account:
+                            deployment["spec"]["template"]["spec"]["serviceAccountName"] = service_account
                         out = run([
                             kubectl_cmd, *kubectl_opts, "-n", namespace, "apply", "-f", "-",
                         ], input=yaml.dump(deployment, Dumper=yaml.SafeDumper).encode("utf-8"), check=True, capture_output=True).stdout
@@ -484,7 +489,9 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                         [Help.log(f"> {l}") for l in out.decode().splitlines()]
                     else:
                         Help.log(f"creating knative service {app_name}")
-
+                        service_account_args = ()
+                        if service_account:
+                            service_account_args = ("--service-account", service_account)
                         out = run([
                             kn_cmd, *kn_opts, "-n", namespace, "service", "create", app_name,
                             "--image", _image,
@@ -499,6 +506,7 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                                     ("--env", f"{name}={value}") for name, value in _env.items()
                                 ], ())
                             ),
+                            *service_account_args,
                             *kn_extra,
                         ], check=True, capture_output=True).stdout
                         [Help.log(f"> {l}") for l in out.decode().splitlines()]

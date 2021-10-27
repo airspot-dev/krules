@@ -121,9 +121,9 @@ def init():
         else:
             raise ex
     try:
-        import ruleset_init
+        import __init__
     except ModuleNotFoundError as ex:
-        if not ex.name == "ruleset_init":
+        if not ex.name == "__init__":
             raise ex
 
     try:
