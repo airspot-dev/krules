@@ -13,14 +13,14 @@ from sane import sane_run
 sane_utils.load_env()
 
 
-KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
+KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir, os.path.pardir))
-KRULES_LIBS_DIR = os.path.join(KRULES_ROOT_DIR, "libs")
+KRULES_LIBS_DIR = os.path.join(KRULES_REPO_DIR, "libs")
 
 SUBJECTS_BACKENDS = "SUBJECTS_BACKENDS" in os.environ and \
                     re.split('; |, ', os.environ["SUBJECTS_BACKENDS"]) or []
 
-SUBJECTS_BACKENDS_DIR = os.path.join(KRULES_ROOT_DIR, "subjects_storages")
+SUBJECTS_BACKENDS_DIR = os.path.join(KRULES_REPO_DIR, "subjects_storages")
 
 KRULES_DEP_LIBS = [
     "krules-core",

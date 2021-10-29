@@ -5,7 +5,7 @@ import sys
 
 from dotenv import load_dotenv
 
-load_dotenv("../.env.local")  # for KRULES_ROOT_DIR
+load_dotenv("../.env.local")  # for KRULES_REPO_DIR
 
 sys.path.append("..")
 sys.path.append(os.path.join("..", "apps", "krules-djangoapps-common"))

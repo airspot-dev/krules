@@ -96,7 +96,7 @@ def get_buildable_image(location: str,
 def get_image(image, environ_override: typing.Optional[str] = None):
     """
     Convenient method for guessing the image name if we have a RELEASE_VERSION defined
-    or using the KRrules source repo located in KRULES_ROOT_DIR.
+    or using the KRrules source repo located in KRULES_REPO_DIR.
     It is a wrapper for the more specialized get_buildable_image function
     """
     if "RELEASE_VERSION" in os.environ:
@@ -107,15 +107,15 @@ def get_image(image, environ_override: typing.Optional[str] = None):
             environ_override=environ_override,
             docker_registry=docker_registry,
         )
-    if "KRULES_ROOT_DIR" in os.environ:
+    if "KRULES_REPO_DIR" in os.environ:
         return get_buildable_image(
-            location=os.path.join(os.environ["KRULES_ROOT_DIR"], "images"),
+            location=os.path.join(os.environ["KRULES_REPO_DIR"], "images"),
             dir_name=image,
             environ_override=environ_override,
         )
     if environ_override is not None and environ_override in os.environ:
         return os.environ[environ_override]
-    Help.error("One of RELEASE_VERSION or KRULES_ROOT_DIR needed")
+    Help.error("One of RELEASE_VERSION or KRULES_REPO_DIR needed")
 
 
 def get_project_base(location):
@@ -148,7 +148,7 @@ def update_code_hash(globs: list,
     files = []
     with pushd(root_dir):
         for file in globs:
-            files.extend(glob(file))
+            files.extend(glob(file, recursive=True))
 
         hash = hashlib.md5()
         for file in files:
@@ -626,12 +626,11 @@ def make_copy_resources_recipe(src: typing.Union[typing.Iterable[str], str],
 
 def copy_source(src: typing.Union[typing.Iterable[str], str],
                 dst: str,
-                condition: typing.Callable[[], bool] = lambda: True,
                 override: bool = True,
                 make_recipes: typing.Iterable = ("clean", "setup.py"),
                 workdir: str = None):
     """
-    It assumes paths relative to KRULES_ROOT_DIR
+    It assumes paths relative to KRULES_REPO_DIR
     :param src: 
     :param dst: 
     :param condition: 
@@ -640,13 +639,9 @@ def copy_source(src: typing.Union[typing.Iterable[str], str],
     :param workdir:
     :return:
     """
-    # if "KRULES_ROOT_DIR" not in os.environ:
-    #     return
-    # if not condition():
-    #     return
     if isinstance(src, str):
         src = [src]
-    src = list(map(lambda x: os.path.join(check_env("KRULES_ROOT_DIR"), x), src))
+    #src = list(map(lambda x: os.path.join(check_env("KRULES_REPO_DIR"), x), src))
 
     if workdir is None:
         workdir = os.path.abspath(inspect.stack()[1].filename)
@@ -658,7 +653,6 @@ def copy_source(src: typing.Union[typing.Iterable[str], str],
 def make_copy_source_recipe(location: str,
                             src: typing.Union[typing.Iterable[str], str],
                             dst: str,
-                            #conditions: typing.Callable[[], bool] = lambda: True,
                             override: bool = True,
                             make_recipes: typing.Iterable = ("clean", "setup.py"),
                             workdir: str = None,
@@ -671,7 +665,6 @@ def make_copy_source_recipe(location: str,
         copy_source(
             src=src,
             dst=dst,
-            #condition=condition,
             override=override,
             make_recipes=make_recipes,
             workdir=workdir,

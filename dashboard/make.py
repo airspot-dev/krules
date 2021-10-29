@@ -9,7 +9,7 @@ import os
 
 sane_utils.load_env()
 
-KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
+KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir))
 ENABLE_DJANGOAPP_PROCEVENTS = int(os.environ.get("ENABLE_DJANGOAPP_PROCEVENTS", "0"))
 ENABLE_DJANGOAPP_SCHEDULER = int(os.environ.get("ENABLE_DJANGOAPP_SCHEDULER", "0"))
@@ -39,7 +39,7 @@ if ENABLE_DJANGOAPP_SCHEDULER:
 
 
 image_base = lambda: sane_utils.get_buildable_image(
-    location=os.path.join(KRULES_ROOT_DIR, "images"),
+    location=os.path.join(KRULES_REPO_DIR, "images"),
     dir_name="django-image-base",
     use_release_version=True,
     environ_override="IMAGE_BASE",

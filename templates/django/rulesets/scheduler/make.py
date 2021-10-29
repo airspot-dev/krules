@@ -22,11 +22,12 @@ sane_utils.update_code_hash(
 
 sane_utils.make_copy_source_recipe(
     name="prepare_djangoapps",
-    location="django_apps",
+    location=os.path.join(os.environ.get("KRULES_REPO_DIR", ""), "django_apps"),
     src=KRULES_DJANGO_APPS,
     dst=".krules-djangoapps",
+    make_recipes=("clean", "setup.py"),
     conditions=[
-        lambda: "RELEASE_VERSION" not in os.environ and "KRULES_ROOT_DIR" in os.environ
+        lambda: "RELEASE_VERSION" not in os.environ and "KRULES_REPO_DIR" in os.environ
     ]
 )
 
@@ -127,7 +128,7 @@ sane_utils.make_clean_recipe(
 #        "k8s/*.yaml",
         ".digest",
         ".code.digest",
-        ".djangoapps-libs",
+        ".krules-djangoapps",
         ".build.success",
     ],
 )

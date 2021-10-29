@@ -18,9 +18,6 @@ __You must set at least one to "1"!__
 - **DJANGO_BACKEND_POSTGRESQL**: PostgreSQL support
 - **DJANGO_BACKEND_MYSQL=1**: MySql support
 
-Also, as some additional rulesets will be deployed it is possible to set this variable as well
-
-- **RULESETS_SERVICE_TYPE**: Defaults to 'base'
 """
 
 import os

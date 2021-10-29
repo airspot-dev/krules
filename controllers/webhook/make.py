@@ -14,9 +14,9 @@ from sane import sane_run, recipe
 
 sane_utils.load_env()
 
-KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
+KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir, os.path.pardir))
-KRULES_LIBS_DIR = os.path.join(KRULES_ROOT_DIR, "libs")
+KRULES_LIBS_DIR = os.path.join(KRULES_REPO_DIR, "libs")
 
 APP_DIR = "app"
 
@@ -73,7 +73,7 @@ def _get_ns_injection_lbl():
 
 def _get_image_base():
     return sane_utils.get_buildable_image(
-        location=os.path.join(KRULES_ROOT_DIR, "images"),
+        location=os.path.join(KRULES_REPO_DIR, "images"),
         dir_name="generic-image-base",
     )
 

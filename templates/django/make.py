@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from os import DirEntry
 
 from krules_dev import sane_utils
 
@@ -6,27 +7,32 @@ from sane import *
 
 sane_utils.load_env()
 
-KRULES_DJANGO_APPS = [
+KRULES_DJANGOAPPS = [
     "krules-djangoapps-common",
     "krules-djangoapps-procevents",
     "krules-djangoapps-scheduler",
 ]
 
+d: DirEntry
+USER_DJANGOAPPS = [d.name for d in os.scandir("apps") if d.is_dir() and d.name != '__pycache__']
+
 sane_utils.update_code_hash(
     globs=[
         "requirements.txt",
+        *list(map(lambda x: f"apps/{x}/**/*.py", USER_DJANGOAPPS)),
         "*.py",
     ],
     output_file=".code.digest"
 )
 
 sane_utils.make_copy_source_recipe(
-    name="prepare_djangoapps",
-    location="django_apps",
-    src=KRULES_DJANGO_APPS,
+    name="prepare_krules_djangoapps",
+    location=os.path.join(os.environ.get("KRULES_REPO_DIR", ""), "django_apps"),
+    src=KRULES_DJANGOAPPS,
     dst=".krules-djangoapps",
+    make_recipes=("clean", "setup.py"),
     conditions=[
-        lambda: "RELEASE_VERSION" not in os.environ and "KRULES_ROOT_DIR" in os.environ
+        lambda: "RELEASE_VERSION" not in os.environ and "KRULES_REPO_DIR" in os.environ
     ]
 )
 
@@ -37,7 +43,8 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "image_base": sane_utils.get_image("generic-image-base"),
-        "krules_djangoapps": KRULES_DJANGO_APPS,
+        "krules_djangoapps": KRULES_DJANGOAPPS,
+        "user_djangoapps": USER_DJANGOAPPS,
         "use_postgresql": bool(sane_utils.check_env("DJANGO_BACKEND_POSTGRESQL")),
         "use_mysql": bool(sane_utils.check_env("DJANGO_BACKEND_MYSQL")),
     },
@@ -45,14 +52,14 @@ sane_utils.make_render_resource_recipes(
         'prepare_build'
     ],
     recipe_deps=[
-        "prepare_djangoapps"
+        "prepare_krules_djangoapps",
     ]
 )
 
 sane_utils.make_build_recipe(
     name="build",
     hook_deps=[
-        "prepare_build"
+        "prepare_build",
     ],
     build_args={
         "site_name": sane_utils.check_env("SITE_NAME"),
@@ -121,8 +128,8 @@ sane_utils.make_service_recipe(
         # "--cluster-local",   # uncomment to make publically available
     ),
     recipe_deps=[
+        "apply",
         "push",
-        "apply"
     ],
 )
 
@@ -135,6 +142,7 @@ sane_utils.make_clean_recipe(
         ".code.digest",
         ".build.success",
         ".krules-djangoapps",
+        ".user-djangoapps",
     ],
 )
 
