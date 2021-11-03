@@ -13,8 +13,10 @@ KRULES_DJANGOAPPS = [
     "krules-djangoapps-scheduler",
 ]
 
+APPS_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), "apps")
+
 d: DirEntry
-USER_DJANGOAPPS = [d.name for d in os.scandir("apps") if d.is_dir() and d.name != '__pycache__']
+USER_DJANGOAPPS = [d.name for d in os.scandir(APPS_DIR) if d.is_dir() and d.name != '__pycache__']
 
 sane_utils.update_code_hash(
     globs=[

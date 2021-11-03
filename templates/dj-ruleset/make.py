@@ -9,7 +9,7 @@ sane_utils.load_env()
 
 
 USER_DJANGOAPPS = [
-
+    # your django applications in django/apps folder
 ]
 
 

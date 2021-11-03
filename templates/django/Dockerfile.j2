@@ -27,6 +27,7 @@ RUN cd /.krules-djangoapps/{{ django_app }} && python3 setup.py develop
 
 {% for user_app in user_djangoapps %}
 ADD apps/{{ user_app }} /app/{{ user_app }}
+RUN cd /app/{{ user_app }} && test -f requirements.txt && pip3 install -r requirements.txt || echo "no reqs for {{ user_app }}"
 {% endfor %}
 
 ENV SITE_NAME=${site_name}
