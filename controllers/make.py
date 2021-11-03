@@ -1,23 +1,19 @@
 #!/usr/bin/env python
 import glob
 import os
-import shutil
 import subprocess
+import sys
 
 KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir))
+sys.path.append(os.path.join(KRULES_REPO_DIR, "dev_support", "krules-dev-support"))
 
-try:
-    from krules_dev import sane_utils
-except ImportError:
-    print('\033[91mkrules local development support is not installed... run "pip install krules-dev-support"\033[0m')
-    exit(-1)
+from krules_dev import sane_utils
 
 from sane import *
 from sane import _Help as Help
 
 sane_utils.load_env()
-
 
 def _get_namespace():
     if not "NAMESPACE" in os.environ:

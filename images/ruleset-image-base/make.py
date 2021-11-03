@@ -1,19 +1,17 @@
 #!/usr/bin/env python
 import os
-
-try:
-    from krules_dev import sane_utils
-except ImportError:
-    print('\033[91mkrules-dev is not installed... run "pip install krules-dev-support"\033[0m')
-    exit(-1)
-
-from sane import sane_run
-
-sane_utils.load_env()
+import sys
 
 
 KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir, os.path.pardir))
+sys.path.append(os.path.join(KRULES_REPO_DIR, "dev_support", "krules-dev-support"))
+
+from krules_dev import sane_utils
+
+from sane import sane_run
+
+sane_utils.load_env()
 
 KRULES_LIBS_DIR = os.path.join(KRULES_REPO_DIR, "libs")
 
@@ -66,6 +64,7 @@ sane_utils.make_build_recipe(
 
 sane_utils.make_push_recipe(
     name="push",
+    tag=os.environ["RELEASE_VERSION"],
     digest_file=".digest",
     recipe_deps=["build"],
 )

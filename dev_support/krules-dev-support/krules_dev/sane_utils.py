@@ -293,6 +293,7 @@ def make_push_recipe(digest_file: str = ".digest",
 
     docker_registry = os.environ.get('DOCKER_REGISTRY')
     target_image = f"{docker_registry}/{target}".lower()
+
     if tag:
         _tag = f'{target_image}:{tag}'
     else:

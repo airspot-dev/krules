@@ -1,4 +1,0 @@
-.djangoapps-libs
-k8s/triggers.yaml
-k8s/heartbeat.yaml
-settings.py

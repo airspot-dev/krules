@@ -1,21 +1,17 @@
 #!/usr/bin/env python
 import os
-import shutil
-import subprocess
+import sys
 
-try:
-    from krules_dev import sane_utils
-except ImportError:
-    print('\033[91mkrules local development support is not installed... run "pip install krules-dev-support"\033[0m')
-    exit(-1)
+KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                                 os.path.pardir, os.path.pardir ))
+sys.path.append(os.path.join(KRULES_REPO_DIR, "dev_support", "krules-dev-support"))
 
+from krules_dev import sane_utils
 
-from sane import sane_run, recipe
+from sane import *
 
 sane_utils.load_env()
 
-KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                                 os.path.pardir, os.path.pardir))
 KRULES_LIBS_DIR = os.path.join(KRULES_REPO_DIR, "libs")
 
 APP_DIR = "app"
@@ -124,6 +120,7 @@ sane_utils.make_build_recipe(
 
 sane_utils.make_push_recipe(
     name="push",
+    tag=os.environ.get("RELEASE_VERSION"),
     target=IMAGE_NAME,
     recipe_deps=["build"],
     digest_file=".digest"

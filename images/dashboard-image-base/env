@@ -1,5 +1,0 @@
-APP_NAME="dashboard"
-IMAGE_NAME="krules-dashboard-image-base"
-CONFIGURATION_KEY="django"
-SITE_NAME="djsite"
-SERVICE_API="knative"

@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 import subprocess
 from glob import glob
+import sys
 
 from sane import *
 from sane import _Help as Help
 
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(ROOT_DIR))
+
 from krules_dev import sane_utils
 
-ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+sane_utils.load_env()
 
 sane_utils.make_render_resource_recipes(
     globs=["setup.py.j2"],
@@ -40,7 +44,12 @@ def release():
 
 
 sane_utils.make_clean_recipe(
-    globs=["setup.py", "dist", "*.eggs", "*.egg-info"]
+    globs=[
+        "setup.py",
+        "dist",
+        ".eggs",
+        "*.egg-info"
+    ]
 )
 
 sane_run()

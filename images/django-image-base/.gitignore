@@ -1,5 +1,0 @@
-.build.out
-.build.success
-.digest
-Dockerfile
-site/*.py

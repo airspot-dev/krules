@@ -72,6 +72,11 @@ spec:
                         properties:
                           name:
                             type: string
+                      persistentVolumeClaim:
+                        type: object
+                        properties:
+                          claimName:
+                            type: string
                     oneOf:
                       - required:
                           - name
@@ -79,6 +84,9 @@ spec:
                       - required:
                           - name
                           - configMap
+                      - required:
+                          - name
+                          - persistentVolumeClaim
 
                     x-kubernetes-preserve-unknown-fields: true
 
@@ -413,7 +421,7 @@ spec:
             serviceAccountName: krules-system
             containers:
               - name: webhook
-                image: gcr.io/airspot/krules-webhook:0.9.2
+                image: gcr.io/airspot/krules-webhook:0.10
                 ports:
                   - containerPort: 8443
                     name: webhook-api
@@ -481,7 +489,7 @@ spec:
             serviceAccountName: krules-system
             containers:
               - name: helper
-                image: gcr.io/airspot/krules-helper:0.9.2
+                image: gcr.io/airspot/krules-helper:0.10
                 ports: 
                   - containerPort: 8080
                     name: helper

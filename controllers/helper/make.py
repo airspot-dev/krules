@@ -1,18 +1,17 @@
 #!/usr/bin/env python
+import os
+import sys
 
-try:
-    from krules_dev import sane_utils
-except ImportError:
-    print('\033[91mkrules local development support is not installed... run "pip install krules-dev-support"\033[0m')
-    exit(-1)
+KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                                 os.path.pardir, os.path.pardir ))
+sys.path.append(os.path.join(KRULES_REPO_DIR, "dev_support", "krules-dev-support"))
+
+from krules_dev import sane_utils
 
 from sane import *
 
 sane_utils.load_env()
 
-
-KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                                 os.path.pardir, os.path.pardir))
 KRULES_LIBS_DIR = os.path.join(KRULES_REPO_DIR, "libs")
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
