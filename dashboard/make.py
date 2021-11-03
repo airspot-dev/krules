@@ -9,7 +9,7 @@ import os
 
 sane_utils.load_env()
 
-KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
+KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir))
 ENABLE_DJANGOAPP_PROCEVENTS = int(os.environ.get("ENABLE_DJANGOAPP_PROCEVENTS", "0"))
 ENABLE_DJANGOAPP_SCHEDULER = int(os.environ.get("ENABLE_DJANGOAPP_SCHEDULER", "0"))
@@ -39,7 +39,7 @@ if ENABLE_DJANGOAPP_SCHEDULER:
 
 
 image_base = lambda: sane_utils.get_buildable_image(
-    location=os.path.join(KRULES_ROOT_DIR, "images"),
+    location=os.path.join(KRULES_REPO_DIR, "images"),
     dir_name="django-image-base",
     use_release_version=True,
     environ_override="IMAGE_BASE",
@@ -52,9 +52,9 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "image_base": image_base(),
-        "site_name": sane_utils.check_envvar_exists("SITE_NAME"),
-        "app_name": sane_utils.check_envvar_exists("APP_NAME"),
-        "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
+        "site_name": sane_utils.check_env("SITE_NAME"),
+        "app_name": sane_utils.check_env("APP_NAME"),
+        "configuration_key": sane_utils.check_env("CONFIGURATION_KEY"),
         "djangoapps_sources": djangoapps_sources,
         "release_version":  os.environ.get("RELEASE_VERSION", False)
     },
@@ -91,10 +91,10 @@ sane_utils.make_render_resource_recipes(
         "k8s/*.j2"
     ],
     context_vars=lambda: {
-        "app_name": sane_utils.check_envvar_exists("APP_NAME"),
-        "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
+        "app_name": sane_utils.check_env("APP_NAME"),
+        "configuration_key": sane_utils.check_env("CONFIGURATION_KEY"),
         "djangoapps_sources": djangoapps_sources,
-        "namespace": sane_utils.check_envvar_exists("NAMESPACE")
+        "namespace": sane_utils.check_env("NAMESPACE")
     },
     hooks=[
         'prepare_deploy'

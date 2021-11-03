@@ -8,21 +8,6 @@ from sane import *
 
 sane_utils.load_env()
 
-RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
-SUBJECTS_BACKENDS = "SUBJECTS_BACKENDS" in os.environ and \
-                    re.split('; |, ', os.environ["SUBJECTS_BACKENDS"]) or []
-SUPPORTS_POSTGRESQL = int(os.environ.get("SUPPORTS_POSTGRESQL", "0"))
-SUPPORTS_MYSQL = int(os.environ.get("SUPPORTS_MYSQL", "0"))
-
-
-sane_utils.copy_resources(
-    [os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "env.py")],
-    dst=".",
-    make_recipes_before=[
-        "{src}",
-    ],
-)
-
 # making changes to these files will result in a new build
 sane_utils.update_code_hash(
     globs=[
@@ -31,6 +16,7 @@ sane_utils.update_code_hash(
     output_file=".code.digest"
 )
 
+
 # render the templates required by the build process
 sane_utils.make_render_resource_recipes(
     globs=[
@@ -38,15 +24,12 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "image_base": sane_utils.get_image("generic-image-base"),
-        "subjects_backends": SUBJECTS_BACKENDS,
-        "supports_postgresql": SUPPORTS_POSTGRESQL,
-        "supports_mysql": SUPPORTS_MYSQL,
-        "release_version": RELEASE_VERSION,
     },
     hooks=[
         'prepare_build'
     ]
 )
+
 
 # build ruleset image
 sane_utils.make_build_recipe(
@@ -57,6 +40,7 @@ sane_utils.make_build_recipe(
     code_digest_file=".code.digest",
     success_file=".build.success",
 )
+
 
 # push ruleset image then save his digest
 sane_utils.make_push_recipe(
@@ -85,6 +69,16 @@ sane_utils.make_render_resource_recipes(
     ]
 )
 
+sane_utils.make_subprocess_run_recipe(
+    name="apply_base_resources",
+    info="Apply resources from project's base",
+    cmd=[
+        os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "make.py"), "apply"
+    ],
+    hooks=[
+        "prepare_deploy"
+    ]
+)
 
 # apply k8s resources
 sane_utils.make_apply_recipe(
@@ -103,7 +97,7 @@ sane_utils.make_service_recipe(
     name="service",
     labels=lambda: {
         "krules.airspot.dev/app": os.environ["APP_NAME"],
-        "krules.airspot.dev/type": "generic"
+        "krules.airspot.dev/type": "generic",
     },
     env={},
     # if SERVICE_API="knative" (requires kn client)
@@ -124,10 +118,10 @@ sane_utils.make_clean_recipe(
     name="clean",
     globs=[
         "Dockerfile",
-        "k8s/*.yaml",
+        #"k8s/*.yaml",
         ".digest",
         ".code.digest",
-        ".build.success"
+        ".build.success",
     ],
 )
 

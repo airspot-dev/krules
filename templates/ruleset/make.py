@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import os
+import re
+
 
 from krules_dev import sane_utils
 
 from sane import *
-
 
 sane_utils.load_env()
 
@@ -22,7 +22,7 @@ sane_utils.make_render_resource_recipes(
         "Dockerfile.j2",
     ],
     context_vars=lambda: {
-        "image_base": sane_utils.get_project_base("base"),
+        "image_base": sane_utils.get_image("ruleset-image-base"),
     },
     hooks=[
         'prepare_build'
@@ -54,9 +54,9 @@ sane_utils.make_render_resource_recipes(
         "k8s/*.j2"
     ],
     context_vars=lambda: {
-        "app_name": os.environ["APP_NAME"],
-        "namespace": os.environ["NAMESPACE"],
-        "service_api": os.environ["SERVICE_API"],
+        "app_name": sane_utils.check_env("APP_NAME"),
+        "namespace": sane_utils.check_env("NAMESPACE"),
+        "service_api": sane_utils.check_env("SERVICE_API"),
     },
     hooks=[
         'prepare_deploy'
@@ -66,6 +66,16 @@ sane_utils.make_render_resource_recipes(
     ]
 )
 
+sane_utils.make_subprocess_run_recipe(
+    name="apply_base_resources",
+    info="Apply resources from project's base",
+    cmd=[
+        os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "make.py"), "apply"
+    ],
+    hooks=[
+        'prepare_deploy'
+    ],
+)
 
 # apply k8s resources
 sane_utils.make_apply_recipe(
@@ -78,13 +88,12 @@ sane_utils.make_apply_recipe(
     ],
 )
 
-
 # update or create service according to SERVICE_API environment variable (base/knative)
 sane_utils.make_service_recipe(
     name="service",
     labels=lambda: {
-        "krules.airspot.dev/app": os.environ["APP_NAME"],
-        "krules.airspot.dev/type": "ruleset"
+        "krules.airspot.dev/app": sane_utils.check_env("APP_NAME"),
+        "krules.airspot.dev/type": "ruleset",
     },
     env={},
     # if SERVICE_API="knative" (requires kn client)
@@ -98,7 +107,6 @@ sane_utils.make_service_recipe(
         "apply"
     ],
 )
-
 
 # clean
 sane_utils.make_clean_recipe(

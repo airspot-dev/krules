@@ -14,7 +14,7 @@ from sane import *
 from sane import _Help as Help
 
 
-def check_envvar_exists(name):
+def check_env(name):
     if name not in os.environ:
         Help.error(f'Environment variable {name} does not exists')
     return os.environ[name]
@@ -46,21 +46,23 @@ def load_env():
 
     # look for a project file
     p = Path(cur_dir)
+    traversed_p = []
     while True:
+        traversed_p.insert(0, p)
         is_project_dir = bool(sum(1 for x in p.glob("env.project")))
         is_root = p.parent == p
         if is_project_dir:
             os.environ["KRULES_PROJECT_DIR"] = str(p)
-            f = os.path.join(p, "env.project")
-            Help.log("Loading project environment for {}".format(p))
-            _load_dir_env(p)
             break
         if is_root:
             break
         p = p.parent
 
-    Help.log("Loading environment for {}".format(cur_dir))
-    _load_dir_env(cur_dir)
+    for p in traversed_p:
+        Help.log("Loading environment for {}".format(p))
+        _load_dir_env(p)
+
+
 
 
 def get_buildable_image(location: str,
@@ -75,7 +77,7 @@ def get_buildable_image(location: str,
         return os.environ[environ_override]
     if use_release_version and 'RELEASE_VERSION' in os.environ:
         if docker_registry is None:
-            docker_registry = check_envvar_exists("DOCKER_REGISTRY")
+            docker_registry = check_env("DOCKER_REGISTRY")
         if name is None:
             name = f'krules-{dir_name}'
         return f'{docker_registry}/{name}:{os.environ["RELEASE_VERSION"]}'
@@ -94,26 +96,26 @@ def get_buildable_image(location: str,
 def get_image(image, environ_override: typing.Optional[str] = None):
     """
     Convenient method for guessing the image name if we have a RELEASE_VERSION defined
-    or using the KRrules source repo located in KRULES_ROOT_DIR.
+    or using the KRrules source repo located in KRULES_REPO_DIR.
     It is a wrapper for the more specialized get_buildable_image function
     """
     if "RELEASE_VERSION" in os.environ:
-        docker_registry = check_envvar_exists("RELEASE_DOCKER_REGISTRY")
+        docker_registry = check_env("RELEASE_DOCKER_REGISTRY")
         return get_buildable_image(
             location="",
             dir_name=image,
             environ_override=environ_override,
             docker_registry=docker_registry,
         )
-    if "KRULES_ROOT_DIR" in os.environ:
+    if "KRULES_REPO_DIR" in os.environ:
         return get_buildable_image(
-            location=os.path.join(os.environ["KRULES_ROOT_DIR"], "images"),
+            location=os.path.join(os.environ["KRULES_REPO_DIR"], "images"),
             dir_name=image,
             environ_override=environ_override,
         )
     if environ_override is not None and environ_override in os.environ:
         return os.environ[environ_override]
-    Help.error("One of RELEASE_VERSION or KRULES_ROOT_DIR needed")
+    Help.error("One of RELEASE_VERSION or KRULES_REPO_DIR needed")
 
 
 def get_project_base(location):
@@ -146,7 +148,7 @@ def update_code_hash(globs: list,
     files = []
     with pushd(root_dir):
         for file in globs:
-            files.extend(glob(file))
+            files.extend(glob(file, recursive=True))
 
         hash = hashlib.md5()
         for file in files:
@@ -216,12 +218,13 @@ def make_build_recipe(target: str = None,
                       dockerfile: str = "Dockerfile",
                       code_digest_file: str = ".code.digest",
                       success_file: str = None,
+                      build_args: dict = {},
                       **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
 
     if target is None:
-        target = check_envvar_exists('IMAGE_NAME')
+        target = check_env('IMAGE_NAME')
 
     if 'name' not in recipe_kwargs:
         recipe_kwargs['name'] = 'build'
@@ -234,6 +237,7 @@ def make_build_recipe(target: str = None,
 
     if 'conditions' not in recipe_kwargs:
         recipe_kwargs['conditions'] = []
+    #import pdb; pdb.set_trace()
     success_file = os.path.join(root_dir, success_file)
     code_digest_file = os.path.join(root_dir, code_digest_file)
     recipe_kwargs['conditions'].append(lambda: not os.path.exists(success_file))
@@ -242,7 +246,7 @@ def make_build_recipe(target: str = None,
 
     @recipe(**recipe_kwargs)
     def build():
-        docker_registry = check_envvar_exists('DOCKER_REGISTRY')
+        docker_registry = check_env('DOCKER_REGISTRY')
         check_cmd(docker_cmd)
         target_image = f'{docker_registry}/{target}'.lower()
         Help.log(f'Building {target_image} from Dockerfile')
@@ -252,9 +256,10 @@ def make_build_recipe(target: str = None,
             func()
 
         with pushd(root_dir):
+            _build_args = " ".join([f"--build-arg {v[0]}={v[1]}" for v in build_args.items()])
             try:
                 out = run(
-                    f'{docker_cmd} build -t {target_image} -f {dockerfile} .', shell=True,
+                    f'{docker_cmd} build -t {target_image} -f {dockerfile} {_build_args} .', shell=True,
                     check=True, capture_output=True
                 ).stdout
                 [Help.log(f"> {l}") for l in out.decode().splitlines()]
@@ -312,8 +317,8 @@ def make_push_recipe(digest_file: str = ".digest",
 
     @recipe(**recipe_kwargs)
     def push():
-        check_envvar_exists("IMAGE_NAME")
-        check_envvar_exists("DOCKER_REGISTRY")
+        check_env("IMAGE_NAME")
+        check_env("DOCKER_REGISTRY")
 
         for func in run_before:
             func()
@@ -377,12 +382,13 @@ def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[t
 
 def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                         labels: typing.Union[dict, typing.Callable] = {},
+                        service_account: str = None,
                         kn_extra: tuple = (),
                         env: typing.Union[dict, typing.Callable[[], dict]] = {},
                         **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
-    namespace = check_envvar_exists("NAMESPACE")
+    namespace = check_env("NAMESPACE")
     service_api = os.environ.get("SERVICE_API", "base")
     service_type = os.environ.get("SERVICE_TYPE", "ClusterIP")
     kubectl_cmd = kubectl_opts = kn_cmd = kn_opts = None
@@ -394,7 +400,7 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
         kn_opts = os.environ.get("KN_OPTS", "").split()
     else:
         Help.error(f"unknown service api {service_api}")
-    app_name = check_envvar_exists("APP_NAME")
+    app_name = check_env("APP_NAME")
 
     @recipe(**recipe_kwargs)
     def service():
@@ -455,6 +461,8 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                                 }
                             }
                         }
+                        if service_account:
+                            deployment["spec"]["template"]["spec"]["serviceAccountName"] = service_account
                         out = run([
                             kubectl_cmd, *kubectl_opts, "-n", namespace, "apply", "-f", "-",
                         ], input=yaml.dump(deployment, Dumper=yaml.SafeDumper).encode("utf-8"), check=True, capture_output=True).stdout
@@ -481,7 +489,9 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                         [Help.log(f"> {l}") for l in out.decode().splitlines()]
                     else:
                         Help.log(f"creating knative service {app_name}")
-
+                        service_account_args = ()
+                        if service_account:
+                            service_account_args = ("--service-account", service_account)
                         out = run([
                             kn_cmd, *kn_opts, "-n", namespace, "service", "create", app_name,
                             "--image", _image,
@@ -496,6 +506,7 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                                     ("--env", f"{name}={value}") for name, value in _env.items()
                                 ], ())
                             ),
+                            *service_account_args,
                             *kn_extra,
                         ], check=True, capture_output=True).stdout
                         [Help.log(f"> {l}") for l in out.decode().splitlines()]
@@ -589,33 +600,88 @@ def copy_resources(src: typing.Iterable[str], dst: str,
                         Help.error(err.stderr.decode())
 
 
+# TODO: unused? -- remove?
+def make_copy_resources_recipe(src: typing.Union[typing.Iterable[str], str],
+                               dst: str,
+                               render_first: bool,
+                               **recipe_kwargs):
+    make_recipes_before = []
+    if render_first:
+        make_recipes_before.append('{src}')
+
+    if 'name' not in recipe_kwargs:
+        Help.error("You must provide a name for copy resources recipe")
+
+    workdir = os.path.abspath(inspect.stack()[1].filename)
+
+    @recipe(**recipe_kwargs)
+    def _recipe():
+        copy_resources(
+                src=src,
+                dst=".",
+                make_recipes_before=make_recipes_before,
+                workdir=workdir
+            )
+
+
 def copy_source(src: typing.Union[typing.Iterable[str], str],
                 dst: str,
-                condition: typing.Callable[[], bool] = lambda: True,
                 override: bool = True,
-                make_recipes: typing.Iterable = ("clean", "setup.py")):
+                make_recipes: typing.Iterable = ("clean", "setup.py"),
+                workdir: str = None):
     """
-    Convenient function wrapping copy_dirs.
-    It assumes paths relative to KRULES_ROOT_DIR
+    It assumes paths relative to KRULES_REPO_DIR
     :param src: 
     :param dst: 
     :param condition: 
     :param override: 
     :param make_recipes: 
-    :return: 
+    :param workdir:
+    :return:
     """
-    if "KRULES_ROOT_DIR" not in os.environ:
-        return
-    if not condition():
-        return
     if isinstance(src, str):
         src = [src]
-    src = list(map(lambda x: os.path.join(os.environ["KRULES_ROOT_DIR"], x), src))
+    #src = list(map(lambda x: os.path.join(check_env("KRULES_REPO_DIR"), x), src))
 
-    workdir = os.path.abspath(inspect.stack()[1].filename)
+    if workdir is None:
+        workdir = os.path.abspath(inspect.stack()[1].filename)
     copy_resources(
-        src, dst, override, make_recipes,
-        workdir
+        src, dst, override, make_recipes_before=(), make_recipes_after=make_recipes,
+        workdir=workdir,
     )
 
+def make_copy_source_recipe(location: str,
+                            src: typing.Union[typing.Iterable[str], str],
+                            dst: str,
+                            override: bool = True,
+                            make_recipes: typing.Iterable = ("clean", "setup.py"),
+                            workdir: str = None,
+                            **recipe_kwargs):
+    src = list(map(lambda x: os.path.join(location, x), src))
+    if workdir is None:
+        workdir = os.path.abspath(inspect.stack()[1].filename)
+    @recipe(**recipe_kwargs)
+    def _recipe():
+        copy_source(
+            src=src,
+            dst=dst,
+            override=override,
+            make_recipes=make_recipes,
+            workdir=workdir,
+        )
 
+
+def make_subprocess_run_recipe(cmd, **recipe_kwargs):
+
+    if 'name' not in recipe_kwargs:
+        Help.error("You must provide a name for subprocess run recipe")
+
+    @recipe(**recipe_kwargs)
+    def _recipe():
+        run_kwargs = {"check": True, "capture_output": True}
+        if isinstance(cmd, str):
+            run_kwargs["shell"] = True
+        out = run(
+            cmd, **run_kwargs
+        ).stdout
+        [Help.log(f"> {l}") for l in out.decode().splitlines()]

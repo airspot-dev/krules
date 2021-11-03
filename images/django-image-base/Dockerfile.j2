@@ -2,28 +2,18 @@ FROM {{ image_base }}
 
 ADD requirements.txt /app/requirements-django-base.txt
 
-RUN apk add --no-cache --virtual .build-deps g++ python3-dev openssl-dev build-base libffi-dev && \
-    pip3 install --upgrade pip setuptools && \
-    CRYPTOGRAPHY_DONT_BUILD_RUST=1 pip3 install --no-cache-dir -r /app/requirements-django-base.txt && \
-    apk del .build-deps
+RUN CRYPTOGRAPHY_DONT_BUILD_RUST=1 pip3 install --no-cache-dir -r /app/requirements-django-base.txt
 
 {% if supports_postgres %}
-RUN apk add --no-cache --virtual .build-deps g++ python3-dev postgresql-dev build-base libffi-dev && \
-    apk add --no-cache --update python3 libpq && \
-    pip3 install --upgrade pip setuptools && \
-    pip3 install --no-cache-dir psycopg2==2.8.6 && \
-    apk del .build-deps
+RUN pip3 install --no-cache-dir psycopg2-binary
 {% endif %}
 
 {% if supports_mysql %}
-
-RUN apk add --virtual .build-deps mariadb-dev build-base python3-dev && \
-    pip3 install --no-cache-dir mysqlclient==2.0.3 django-mysql==3.11.1 && \
-    apk del .build-deps && apk add --no-cache mariadb-connector-c
+RUN apt update && apt install -y libmariadb-dev g++ && pip3 install mysqlclient && apt remove -y libmariadb-dev g++
 {% endif %}
 
 {%  if supports_redis %}
-RUN pip3 install --no-cache-dir redis==3.5.3
+RUN pip3 install --no-cache-dir redis
 {%  endif %}
 
 WORKDIR /app

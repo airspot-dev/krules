@@ -14,9 +14,9 @@ from sane import *
 from sane import _Help as Help
 
 
-KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
+KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir))
-KRULES_LIBS_DIR = os.path.join(KRULES_ROOT_DIR, "libs")
+KRULES_LIBS_DIR = os.path.join(KRULES_REPO_DIR, "libs")
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 SOURCE_DIR = os.path.join(ROOT_DIR, "source")
@@ -32,7 +32,7 @@ sane_utils.make_render_resource_recipes(
         "release_version": RELEASE_VERSION
     },
     run_before=[
-        lambda: sane_utils.check_envvar_exists("RELEASE_VERSION")
+        lambda: sane_utils.check_env("RELEASE_VERSION")
     ],
     hooks=["source_config"]
 )

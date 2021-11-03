@@ -3,3 +3,5 @@
 .build.success
 .digest
 Dockerfile
+.krules-libs
+.subjects-backends

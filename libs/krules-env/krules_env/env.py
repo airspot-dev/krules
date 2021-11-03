@@ -115,8 +115,16 @@ def init():
         import env
         if "init" in dir(env) and callable(env.init):
             env.init()
-    except ModuleNotFoundError:
-        logger.warning("No application env.py found!")
+    except ModuleNotFoundError as ex:
+        if ex.name == "env":
+            logger.warning("No application env.py found!")
+        else:
+            raise ex
+    try:
+        import __init__
+    except ModuleNotFoundError as ex:
+        if not ex.name == "__init__":
+            raise ex
 
     try:
         m_rules = importlib.import_module("ruleset")

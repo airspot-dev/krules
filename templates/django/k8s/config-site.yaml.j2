@@ -1,0 +1,51 @@
+apiVersion: krules.airspot.dev/v1alpha1
+kind: ConfigurationProvider
+metadata:
+  name: config-{{ app_name }}-site
+  namespace: {{ namespace }}
+spec:
+  key: {{ configuration_key }}
+  appliesTo:
+    krules.airspot.dev/app: {{ app_name }}
+  data:
+    url_settings:
+      enable_admin: True
+      root_redirect: admin:index
+    site_settings:
+      secret_key: $DJANGO_SECRET_KEY
+      allowed_hosts:
+        - "*"  ## CHANGE ME ##
+      installed_apps:
+        - django.contrib.admin
+        - django.contrib.auth
+        - django.contrib.contenttypes
+        - django.contrib.sessions
+        - django.contrib.messages
+        - django.contrib.staticfiles
+        - jsoneditor
+        - prettyjson
+#        - rest_framework
+        - krules_djangoapps_common
+        - krules_djangoapps_scheduler
+        - krules_djangoapps_procevents
+      middleware:
+        - django.middleware.security.SecurityMiddleware
+        - whitenoise.middleware.WhiteNoiseMiddleware
+        - django.contrib.sessions.middleware.SessionMiddleware
+        - django.middleware.common.CommonMiddleware
+        - django.middleware.csrf.CsrfViewMiddleware
+        - django.contrib.auth.middleware.AuthenticationMiddleware
+        - django.contrib.messages.middleware.MessageMiddleware
+        - django.middleware.clickjacking.XFrameOptionsMiddleware
+
+      loglevel: "info"
+      debug: "False"
+      language_code: "en-us"
+      time_zone: "UTC"
+  container:
+    env:
+      - name: DJANGO_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: {{ app_name }}-secrets
+            key: secret-key

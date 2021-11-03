@@ -59,6 +59,11 @@ spec:
                         properties:
                           name:
                             type: string
+                      persistentVolumeClaim:
+                        type: object
+                        properties:
+                          claimName:
+                            type: string
                     oneOf:
                       - required:
                           - name
@@ -66,6 +71,9 @@ spec:
                       - required:
                           - name
                           - configMap
+                      - required:
+                          - name
+                          - persistentVolumeClaim
 
                     x-kubernetes-preserve-unknown-fields: true
 

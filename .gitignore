@@ -2,9 +2,13 @@
 .idea/
 **/sane.py
 **/__pycache__
+**/*.egg-info/
+**/dist/
 venv/
 env/
 .env.local
 env.local
-.env.override
-env.override
+#.env.override
+#env.override
+.build.success
+.digest

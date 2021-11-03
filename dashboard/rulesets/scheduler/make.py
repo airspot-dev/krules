@@ -12,10 +12,10 @@ from sane import *
 sane_utils.load_env()
 
 
-KRULES_ROOT_DIR = os.environ.get("KRULES_ROOT_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
+KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir, os.path.pardir, os.path.pardir))
 
-DJANGOAPPS_LIBS_DIR = os.path.join(KRULES_ROOT_DIR, "dashboard", "apps")
+DJANGOAPPS_LIBS_DIR = os.path.join(KRULES_REPO_DIR, "dashboard", "apps")
 
 DJANGOAPPS_DEP_LIBS = [
     "krules-djangoapps-common",
@@ -25,7 +25,7 @@ DJANGOAPPS_DEP_LIBS = [
 
 def get_image_base():
     return sane_utils.get_buildable_image(
-        location=os.path.join(KRULES_ROOT_DIR, "images"),
+        location=os.path.join(KRULES_REPO_DIR, "images"),
         dir_name="ruleset-image-base",
         use_release_version=True,
         environ_override="SCHEDULER_IMAGE_BASE",
@@ -37,11 +37,11 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "image_base": get_image_base(),
-        "site_name": sane_utils.check_envvar_exists("SITE_NAME"),
-        "configuration_key": sane_utils.check_envvar_exists("CONFIGURATION_KEY"),
-        "supports_postgres": bool(sane_utils.check_envvar_exists("DJANGO_BACKEND_POSTGRES")),
-        "supports_mysql": bool(sane_utils.check_envvar_exists("DJANGO_BACKEND_MYSQL")),
-        "supports_redis": bool(sane_utils.check_envvar_exists("SUPPORTS_REDIS")),
+        "site_name": sane_utils.check_env("SITE_NAME"),
+        "configuration_key": sane_utils.check_env("CONFIGURATION_KEY"),
+        "supports_postgres": bool(sane_utils.check_env("DJANGO_BACKEND_POSTGRES")),
+        "supports_mysql": bool(sane_utils.check_env("DJANGO_BACKEND_MYSQL")),
+        "supports_redis": bool(sane_utils.check_env("SUPPORTS_REDIS")),
         "djangoapps_libs": DJANGOAPPS_DEP_LIBS
     },
     hooks=['prepare_build']
@@ -79,8 +79,8 @@ sane_utils.make_render_resource_recipes(
         "k8s/*.j2"
     ],
     context_vars=lambda: {
-        "app_name": sane_utils.check_envvar_exists("APP_NAME"),
-        "namespace": sane_utils.check_envvar_exists("NAMESPACE"),
+        "app_name": sane_utils.check_env("APP_NAME"),
+        "namespace": sane_utils.check_env("NAMESPACE"),
     },
     hooks=[
         'prepare_deploy'
