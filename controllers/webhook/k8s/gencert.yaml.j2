@@ -71,7 +71,7 @@ spec:
     spec:
       containers:
         - name: create
-          image: docker.io/jettech/kube-webhook-certgen:v1.5.1
+          image: jettech/kube-webhook-certgen:v1.5.2
           imagePullPolicy: IfNotPresent
           args:
             - create
@@ -97,11 +97,11 @@ spec:
     spec:
       containers:
         - name: patch
-          image: docker.io/jettech/kube-webhook-certgen:v1.5.1
+          image: gcr.io/airspot/jettech-kube-webhook-certgen-patched
           imagePullPolicy: IfNotPresent
           args:
             - patch
-            - --webhook-name={{ name }}
+            - --webhook-name={{ name }}.krules.airspot.dev
             - --namespace={{ namespace }}
             - --secret-name={{ name }}-tls
             - --patch-failure-policy=Fail

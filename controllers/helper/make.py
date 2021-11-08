@@ -70,6 +70,7 @@ sane_utils.make_build_recipe(
 
 sane_utils.make_push_recipe(
     name="push",
+    tag=os.environ.get("RELEASE_VERSION"),
     target=IMAGE_NAME,
     digest_file=".digest",
     recipe_deps=["build"],
