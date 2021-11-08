@@ -69,7 +69,7 @@ sane_utils.make_build_recipe(
 
 sane_utils.make_push_recipe(
     name="push",
-    tag=os.environ["RELEASE_VERSION"],
+    tag=os.environ.get("RELEASE_VERSION"),
     digest_file=".digest",
     recipe_deps=["build"],
 )
