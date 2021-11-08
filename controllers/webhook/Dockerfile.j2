@@ -25,6 +25,8 @@ RUN cd /krules-libs/{{ lib }} && python3 setup.py develop
 ADD /app /app
 ADD .common /app
 
+ADD env.py /app
+
 ENV PYTHONPATH /app
 ENV FLASK_APP /app/main.py
 ENV FLASK_ENV production
