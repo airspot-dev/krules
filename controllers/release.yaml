@@ -193,7 +193,7 @@ roleRef:
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: webhook
+  name: webhook.krules.airspot.dev
 webhooks:
   - name: webhook.krules-system.svc
     sideEffects: None
@@ -235,7 +235,7 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: webhook
+  name: webhook.krules.airspot.dev
 webhooks:
   - name: webhook.krules-system.svc
     sideEffects: None
@@ -361,7 +361,7 @@ spec:
     spec:
       containers:
         - name: create
-          image: docker.io/jettech/kube-webhook-certgen:v1.5.1
+          image: jettech/kube-webhook-certgen:v1.5.2
           imagePullPolicy: IfNotPresent
           args:
             - create
@@ -387,11 +387,11 @@ spec:
     spec:
       containers:
         - name: patch
-          image: docker.io/jettech/kube-webhook-certgen:v1.5.1
+          image: gcr.io/airspot/jettech-kube-webhook-certgen-patched
           imagePullPolicy: IfNotPresent
           args:
             - patch
-            - --webhook-name=webhook
+            - --webhook-name=webhook.krules.airspot.dev
             - --namespace=krules-system
             - --secret-name=webhook-tls
             - --patch-failure-policy=Fail
