@@ -56,6 +56,7 @@ sane_utils.make_render_resource_recipes(
 # build image
 sane_utils.make_build_recipe(
     name="build",
+    target=f"{os.environ['PROJECT_NAME']}-base",
     hook_deps=[
         "prepare_build"
     ],
@@ -65,19 +66,23 @@ sane_utils.make_build_recipe(
 # push image
 sane_utils.make_push_recipe(
     name="push",
+    target=f"{os.environ['PROJECT_NAME']}-base",
     recipe_deps=[
         "build"
     ],
 )
 
 
-@recipe(recipe_deps=["push", "apply"], conditions=[lambda: True])
-def test_ishell():
+@recipe(
+    info="Run an ipython shell on the cluster environment",
+    recipe_deps=["push", "apply"],
+    conditions=[lambda: True])
+def ishell():
     import uuid
     args = [
         sane_utils.check_cmd(os.environ["KUBECTL_CMD"]),
         "-n", os.environ["NAMESPACE"],
-        "run", f"test-ishell-{uuid.uuid4().hex[0:6]}", "--rm", "-ti",
+        "run", f"ishell-{uuid.uuid4().hex[0:6]}", "--rm", "-ti",
         "--image", open(os.path.join(os.path.abspath(os.path.dirname(__file__)), ".digest"), "r").read().strip(),
         "--labels", "krules.airspot.dev/type=generic",
         "ipython"
