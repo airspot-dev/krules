@@ -11,7 +11,7 @@ spec:
       - generic
   data:
     url: redis://:$REDIS_AUTH@redis:6379/1
-    key_prefix: {{ app_name }}
+    key_prefix: {{ namespace }}
   container:
     env:
     - name: REDIS_AUTH
