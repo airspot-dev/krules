@@ -56,7 +56,6 @@ sane_utils.make_render_resource_recipes(
 # build image
 sane_utils.make_build_recipe(
     name="build",
-    target=f"{os.environ['PROJECT_NAME']}-base",
     hook_deps=[
         "prepare_build"
     ],
@@ -66,7 +65,6 @@ sane_utils.make_build_recipe(
 # push image
 sane_utils.make_push_recipe(
     name="push",
-    target=f"{os.environ['PROJECT_NAME']}-base",
     recipe_deps=[
         "build"
     ],
