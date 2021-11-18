@@ -53,6 +53,6 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
         out.append(f"- **SERVICE_TYPE**: {service_type}")
         env_override_file.append(f"SERVICE_TYPE={service_type}")
 
-    open(os.path.join(dest, ".env"), "w").write("\n".join(env_override_file))
+    open(os.path.join(dest, ".env.override"), "w").write("\n".join(env_override_file))
 
     return True
