@@ -40,7 +40,7 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     out.append(f"- **SERVICE_API**: {service_api}")
     env_file.append(f"SERVICE_API={service_api}")
     # service type
-    service_type = _get_var("SERVICE_TYPE", lambda: "")
+    service_type = _get_var("SERVICE_TYPE", lambda: "ClusterIP")
     out.append(f"- **SERVICE_TYPE**: {service_type}")
     env_file.append(f"SERVICE_TYPE={service_type}")
 

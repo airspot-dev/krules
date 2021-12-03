@@ -49,7 +49,7 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     env_override_file.append(f"SERVICE_API={service_api}")
     # service type
     if service_api != "knative":
-        service_type = _get_var("SERVICE_TYPE", lambda: "")
+        service_type = _get_var("SERVICE_TYPE", lambda: "ClusterIP")
         out.append(f"- **SERVICE_TYPE**: {service_type}")
         env_override_file.append(f"SERVICE_TYPE={service_type}")
 
