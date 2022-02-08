@@ -76,7 +76,9 @@ class CloudEventsDispatcher(BaseDispatcher):
         m = marshaller.NewHTTPMarshaller([binary.NewBinaryHTTPCloudEventConverter()])
 
         headers, body = m.ToRequest(event, converters.TypeBinary, lambda x: json.dumps(x, cls=_JSONEncoder))
-        # headers['Ce-Originid'] = str(_event_info.get("Originid", _id))
+
+        if "ce-datacontenttype" in headers:
+            del headers["ce-datacontenttype"]
 
         if callable(self._dispatch_url):
             dispatch_url = self._dispatch_url(subject, event_type)

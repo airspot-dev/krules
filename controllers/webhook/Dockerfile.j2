@@ -18,7 +18,7 @@ RUN pip3 install --no-cache-dir \
 {% else %}  {# no release_version #}
 ADD .krules-libs /krules-libs
 {% for lib in krules_dep_libs %}
-RUN cd /krules-libs/{{ lib }} && python3 setup.py develop
+RUN cd /krules-libs/{{ lib }} && pip install --upgrade .
 {% endfor %}
 {% endif %}
 

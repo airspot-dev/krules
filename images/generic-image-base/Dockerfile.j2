@@ -20,9 +20,9 @@ RUN pip3 install {{ lib }} {% if not loop.last %}\{%  endif %}
 {% endfor %}
 
 ADD .krules-libs /.krules-libs
-RUN cd /.krules-libs/krules-core && python3 setup.py develop
-RUN cd /.krules-libs/krules-dispatcher-cloudevents && python3 setup.py develop
-RUN cd /.krules-libs/krules-env && python3 setup.py develop
+RUN cd /.krules-libs/krules-core && pip3 install --upgrade --no-cache-dir .
+RUN cd /.krules-libs/krules-dispatcher-cloudevents && pip3 install --upgrade --no-cache-dir .
+RUN cd /.krules-libs/krules-env && pip3 install --upgrade --no-cache-dir .
 {% endif %}
 
 {% for backend in subjects_backends %}

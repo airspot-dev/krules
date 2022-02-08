@@ -8,14 +8,26 @@ from sane import *
 
 sane_utils.load_env()
 
+USER_BASELIBS = [
+    # code you want to add to the container copied from base/libs directory
+]
+
 # making changes to these files will result in a new build
 sane_utils.update_code_hash(
     globs=[
-        "*.py"
+        "*.py",
+        *list(map(lambda x: f"{os.environ['KRULES_PROJECT_DIR']}/base/{x}/**/*.py", USER_BASELIBS)),
     ],
     output_file=".code.digest"
 )
 
+# copy base libs
+sane_utils.make_copy_source_recipe(
+    name="prepare_user_baselibs",
+    location=os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "libs"),
+    src=USER_BASELIBS,
+    dst=".user-baselibs",
+)
 
 # render the templates required by the build process
 sane_utils.make_render_resource_recipes(
@@ -24,9 +36,13 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "image_base": sane_utils.get_image("generic-image-base"),
+        "user_baselibs": USER_BASELIBS,
     },
     hooks=[
         'prepare_build'
+    ],
+    recipe_deps=[
+        "prepare_user_baselibs",
     ]
 )
 
@@ -122,6 +138,7 @@ sane_utils.make_clean_recipe(
         ".digest",
         ".code.digest",
         ".build.success",
+        ".user-baselibs",
     ],
 )
 

@@ -21,6 +21,7 @@ sane_utils.update_code_hash(
     output_file=".code.digest"
 )
 
+# copy base libs
 sane_utils.make_copy_source_recipe(
     name="prepare_user_baselibs",
     location=os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "libs"),
