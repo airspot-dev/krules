@@ -1,3 +1,5 @@
 env.local
 .env.local
 k8s/*.yaml
+Dockerfile
+
