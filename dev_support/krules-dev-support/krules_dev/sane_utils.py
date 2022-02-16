@@ -140,6 +140,7 @@ def get_project_base(location):
 
 
 def update_code_hash(globs: list,
+                     out_dir: str = ".build",
                      output_file: str = ".code.digest"):
 
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
@@ -150,14 +151,15 @@ def update_code_hash(globs: list,
         for file in globs:
             files.extend(glob(file, recursive=True))
 
-        hash = hashlib.md5()
+        code_hash = hashlib.md5()
         for file in files:
             if os.path.isfile(file):
-                hash.update(open(file, "rb").read())
-        open(output_file, "w").write(hash.hexdigest())
+                code_hash.update(open(file, "rb").read())
+        open(os.path.join(out_dir, output_file), "w").write(code_hash.hexdigest())
 
 
 def make_render_resource_recipes(globs: list,
+                                 out_dir: str = ".build",
                                  context_vars: typing.Union[dict, typing.Callable[[], dict]] = {},
                                  run_before: typing.Sequence[typing.Callable] = (),
                                  **recipe_kwargs):
@@ -170,11 +172,9 @@ def make_render_resource_recipes(globs: list,
             context_vars = context_vars()
         return context_vars
 
-
-
     def _make_render_resource_recipe(j2_template):
 
-        resource_file = j2_template.split(".j2")[0]
+        resource_file = os.path.join(out_dir, os.path.split(j2_template)[1].split(".j2")[0])
         resource_older_than_template = (
             Help.file_condition(
                 sources=[os.path.join(root_dir, j2_template)],
@@ -215,6 +215,7 @@ def make_render_resource_recipes(globs: list,
 
 def make_build_recipe(target: str = None,
                       run_before: typing.Sequence[typing.Callable] = (),
+                      out_dir: str = ".build",
                       dockerfile: str = "Dockerfile",
                       code_digest_file: str = ".code.digest",
                       success_file: str = None,
@@ -259,7 +260,7 @@ def make_build_recipe(target: str = None,
             _build_args = " ".join([f"--build-arg {v[0]}={v[1]}" for v in build_args.items()])
             try:
                 out = run(
-                    f'{docker_cmd} build -t {target_image} -f {dockerfile} {_build_args} .', shell=True,
+                    f'{docker_cmd} build -t {target_image} -f {os.path.join(out_dir, dockerfile)} {_build_args} .', shell=True,
                     check=True, capture_output=True
                 ).stdout
                 [Help.log(f"> {l}") for l in out.decode().splitlines()]
@@ -654,6 +655,7 @@ def copy_source(src: typing.Union[typing.Iterable[str], str],
 def make_copy_source_recipe(location: str,
                             src: typing.Union[typing.Iterable[str], str],
                             dst: str,
+                            out_dir: str = ".build",
                             override: bool = True,
                             make_recipes: typing.Iterable = ("clean", "setup.py"),
                             workdir: str = None,
@@ -665,7 +667,7 @@ def make_copy_source_recipe(location: str,
     def _recipe():
         copy_source(
             src=src,
-            dst=dst,
+            dst=os.path.join(out_dir, dst),
             override=override,
             make_recipes=make_recipes,
             workdir=workdir,

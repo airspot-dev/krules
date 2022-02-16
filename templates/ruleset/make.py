@@ -38,6 +38,7 @@ sane_utils.make_render_resource_recipes(
     context_vars=lambda: {
         "image_base": sane_utils.get_image("ruleset-image-base"),
         "user_baselibs": USER_BASELIBS,
+        "out_dir": ".build",
     },
     hooks=[
         'prepare_build'
@@ -71,6 +72,7 @@ sane_utils.make_render_resource_recipes(
     globs=[
         "k8s/*.j2"
     ],
+    out_dir="k8s",
     context_vars=lambda: {
         "app_name": sane_utils.check_env("APP_NAME"),
         "namespace": sane_utils.check_env("NAMESPACE"),
@@ -130,12 +132,8 @@ sane_utils.make_service_recipe(
 sane_utils.make_clean_recipe(
     name="clean",
     globs=[
-        "Dockerfile",
         "k8s/*.yaml",
-        ".digest",
-        ".code.digest",
-        ".build.success",
-        ".user-baselibs",
+        ".build/*"
     ],
 )
 

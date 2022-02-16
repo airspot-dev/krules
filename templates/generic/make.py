@@ -36,6 +36,7 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "image_base": sane_utils.get_image("generic-image-base"),
+        "out_dir": ".build",
         "user_baselibs": USER_BASELIBS,
     },
     hooks=[
@@ -77,6 +78,7 @@ sane_utils.make_render_resource_recipes(
         "namespace": os.environ["NAMESPACE"],
         "service_api": os.environ["SERVICE_API"],
     },
+    out_dir="k8s",
     hooks=[
         'prepare_deploy'
     ],
