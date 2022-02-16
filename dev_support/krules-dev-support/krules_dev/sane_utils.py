@@ -145,6 +145,7 @@ def update_code_hash(globs: list,
 
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     files = []
     with pushd(root_dir):
@@ -165,6 +166,7 @@ def make_render_resource_recipes(globs: list,
                                  **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     def _context_vars():
         nonlocal context_vars
@@ -223,6 +225,7 @@ def make_build_recipe(target: str = None,
                       **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     if target is None:
         target = check_env('IMAGE_NAME')
@@ -239,8 +242,8 @@ def make_build_recipe(target: str = None,
     if 'conditions' not in recipe_kwargs:
         recipe_kwargs['conditions'] = []
     #import pdb; pdb.set_trace()
-    success_file = os.path.join(root_dir, success_file)
-    code_digest_file = os.path.join(root_dir, code_digest_file)
+    success_file = os.path.join(root_dir, out_dir, success_file)
+    code_digest_file = os.path.join(root_dir, out_dir, code_digest_file)
     recipe_kwargs['conditions'].append(lambda: not os.path.exists(success_file))
     recipe_kwargs['conditions'].append(lambda: os.path.exists(code_digest_file) and
                                                open(success_file).read() != open(code_digest_file).read())
@@ -277,6 +280,7 @@ def make_build_recipe(target: str = None,
 
 
 def make_push_recipe(digest_file: str = ".digest",
+                     out_dir: str = ".build",
                      tag: str = os.environ.get("RELEASE_VERSION"),
                      target: str = None,
                      run_before: typing.Sequence[typing.Callable] = (),
@@ -285,6 +289,7 @@ def make_push_recipe(digest_file: str = ".digest",
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
     docker_cmd = os.environ.get("DOCKER_CMD", check_cmd("docker"))
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     if 'name' not in recipe_kwargs:
         recipe_kwargs['name'] = "push"
@@ -344,7 +349,7 @@ def make_push_recipe(digest_file: str = ".digest",
                     f'{docker_cmd} inspect --format="{{{{index .RepoDigests 0}}}}" {_tag}',
                     shell=True, capture_output=True
                 ).stdout
-                with open(digest_file, "wb") as f:
+                with open(os.path.join(out_dir, digest_file), "wb") as f:
                     f.write(out)
             except CalledProcessError as ex:
                 Help.error(ex.stderr.decode())
@@ -383,6 +388,7 @@ def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[t
 
 
 def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
+                        out_dir: str = ".build",
                         labels: typing.Union[dict, typing.Callable] = {},
                         service_account: str = None,
                         kn_extra: tuple = (),
@@ -412,7 +418,7 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
             #print(f"*********> {root_dir}")
             _image = callable(image) and image() or image
             if _image is None:
-                _image = open(".digest", "r").read().rstrip()
+                _image = open(os.path.join(out_dir, ".digest"), "r").read().rstrip()
             _env = callable(env) and env() or env
             _labels = callable(labels) and labels() or labels
             try:
