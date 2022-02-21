@@ -82,7 +82,7 @@ def ishell():
         sane_utils.check_cmd(os.environ["KUBECTL_CMD"]),
         "-n", os.environ["NAMESPACE"],
         "run", f"ishell-{uuid.uuid4().hex[0:6]}", "--rm", "-ti",
-        "--image", open(os.path.join(os.path.abspath(os.path.dirname(__file__)), ".digest"), "r").read().strip(),
+        "--image", open(os.path.join(os.path.abspath(os.path.dirname(__file__)), ".build/.digest"), "r").read().strip(),
         "--labels", "krules.airspot.dev/type=generic",
         "ipython"
     ]

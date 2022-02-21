@@ -67,7 +67,7 @@ def load_env():
 
 def get_buildable_image(location: str,
                         dir_name: str,
-                        out_dir:str = ".build",
+                        out_dir: str = ".build",
                         name=None,
                         use_release_version=True,
                         docker_registry=None,
@@ -84,7 +84,7 @@ def get_buildable_image(location: str,
         return f'{docker_registry}/{name}:{os.environ["RELEASE_VERSION"]}'
     try:
         build_dir = os.path.join(location, dir_name)
-        Help.log(f"Ensuring {digest_file} in {dir_name}")
+        Help.log(f"Ensuring {os.path.join(out_dir, digest_file)} in {dir_name}")
         run([
             os.path.join(build_dir, "make.py"), push_cmd
         ], env={"PATH": os.environ["PATH"]}, capture_output=True, check=True)
@@ -167,7 +167,6 @@ def make_render_resource_recipes(globs: list,
                                  **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
-    Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     def _context_vars():
         nonlocal context_vars
@@ -194,6 +193,7 @@ def make_render_resource_recipes(globs: list,
         @recipe(**recipe_kwargs)
         def render_resource():
             with pushd(root_dir):
+                Path(out_dir).mkdir(parents=True, exist_ok=True)
                 for func in run_before:
                     func()
                 from jinja2 import Template
