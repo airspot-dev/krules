@@ -80,7 +80,8 @@ sane_utils.make_push_recipe(
 sane_utils.make_render_resource_recipes(
     globs=[
         'k8s/*.yaml.j2'
-    ], 
+    ],
+    out_dir="",
     context_vars=lambda: {
         "namespace": sane_utils.check_env("NAMESPACE"),
         "name": sane_utils.check_env("SERVICE_NAME"),

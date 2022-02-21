@@ -33,6 +33,7 @@ sane_utils.make_render_resource_recipes(
     context_vars=lambda: {
         "namespace": _get_namespace()
     },
+    out_dir="",
     hooks=[
         'render_resource'
     ]

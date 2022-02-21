@@ -123,12 +123,7 @@ sane_utils.make_service_recipe(
 
 sane_utils.make_clean_recipe(
     globs=[
-        "Dockerfile",
-#        "k8s/*.yaml",
-        ".digest",
-        ".code.digest",
-        ".krules-djangoapps",
-        ".build.success",
+        ".build/",
     ],
 )
 

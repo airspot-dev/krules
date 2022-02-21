@@ -26,7 +26,8 @@ sane_utils.make_render_resource_recipes(
     },
     hooks=[
         'prepare_resources'
-    ]
+    ],
+    out_dir="k8s"
 )
 
 # apply k8s resources

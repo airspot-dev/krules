@@ -24,7 +24,8 @@ sane_utils.make_render_resource_recipes(
     },
     hooks=[
         "prepare_setup"
-    ]
+    ],
+    out_dir=""
 )
 
 @recipe(info="Make develop installation", hook_deps=["prepare_setup"])

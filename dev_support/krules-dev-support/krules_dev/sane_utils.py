@@ -67,6 +67,7 @@ def load_env():
 
 def get_buildable_image(location: str,
                         dir_name: str,
+                        out_dir:str = ".build",
                         name=None,
                         use_release_version=True,
                         docker_registry=None,
@@ -87,7 +88,7 @@ def get_buildable_image(location: str,
         run([
             os.path.join(build_dir, "make.py"), push_cmd
         ], env={"PATH": os.environ["PATH"]}, capture_output=True, check=True)
-        with open(os.path.join(build_dir, digest_file), "r") as f:
+        with open(os.path.join(build_dir, out_dir, digest_file), "r") as f:
             return f.read().strip()
     except CalledProcessError as ex:
         Help.error(ex.stdout.decode())

@@ -25,7 +25,8 @@ sane_utils.make_render_resource_recipes(
     },
     hooks=[
         "prepare_setup"
-    ]
+    ],
+    out_dir=""
 )
 
 
