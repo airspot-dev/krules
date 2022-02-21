@@ -76,11 +76,7 @@ sane_utils.make_push_recipe(
 
 sane_utils.make_clean_recipe(
     globs=[
-        "Dockerfile",
-        ".digest",
-        ".krules-libs",
-        ".subjects-backends",
-        ".build.success",
+        ".build/",
     ]
 )
 

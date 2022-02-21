@@ -97,9 +97,7 @@ def ishell():
 sane_utils.make_clean_recipe(
     name="clean",
     globs=[
-        "Dockerfile",
-        #"k8s/*.yaml",
-        ".digest",
+        ".build/",
     ],
 )
 

@@ -133,7 +133,7 @@ sane_utils.make_clean_recipe(
     name="clean",
     globs=[
         "k8s/*.yaml",
-        ".build/*"
+        ".build/"
     ],
 )
 

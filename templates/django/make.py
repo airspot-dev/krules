@@ -140,7 +140,7 @@ sane_utils.make_service_recipe(
 sane_utils.make_clean_recipe(
     name="clean",
     globs=[
-        ".build/*",
+        ".build/",
     ],
 )
 
