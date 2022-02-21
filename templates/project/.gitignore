@@ -1,7 +1,5 @@
 env.local
 .env.local
-.build.success
-.digest
-.code.digest
+.build/*
 #env.py
 #k8s/*.yaml

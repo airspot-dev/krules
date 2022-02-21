@@ -19,7 +19,7 @@ RUN pip3 install --no-cache-dir krules-env=={{ release_version }}
 RUN pip3 install {{ lib }} {% if not loop.last %}\{%  endif %}
 {% endfor %}
 
-ADD .krules-libs /.krules-libs
+ADD .build/.krules-libs /.krules-libs
 RUN cd /.krules-libs/krules-core && pip3 install --upgrade --no-cache-dir .
 RUN cd /.krules-libs/krules-dispatcher-cloudevents && pip3 install --upgrade --no-cache-dir .
 RUN cd /.krules-libs/krules-env && pip3 install --upgrade --no-cache-dir .
@@ -29,7 +29,7 @@ RUN cd /.krules-libs/krules-env && pip3 install --upgrade --no-cache-dir .
 {% if release_version %}
 RUN pip3 install krules-subjects-storage-{{ backend }}=={{ release_version }}
 {% else %}
-ADD .subjects-backends/{{ backend }} /.subjects-backends/{{ backend }}
+ADD .build/.subjects-backends/{{ backend }} /.subjects-backends/{{ backend }}
 RUN cd /.subjects-backends/{{ backend }} && python3 setup.py develop
 {% endif %}
 {% endfor %}

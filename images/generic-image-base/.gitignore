@@ -1,7 +1,1 @@
-.krules-libs
-.build.out
-.build.success
-.digest
-Dockerfile
-.krules-libs
-.subjects-backends
+.build/

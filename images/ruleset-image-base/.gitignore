@@ -1,6 +1,2 @@
 .idea/
-.krules-libs/
-Dockerfile
-.digest
-.build.out
-.build.success
+.build/

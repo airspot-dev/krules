@@ -1,4 +1,2 @@
-Dockerfile
-.build.success
-.digest
+.build/*
 k8s/*.yaml
