@@ -37,6 +37,7 @@ sane_utils.make_render_resource_recipes(
         "user_djangoapps": USER_DJANGOAPPS,
         "use_postgresql": bool(sane_utils.check_env("DJANGO_BACKEND_POSTGRESQL")),
         "use_mysql": bool(sane_utils.check_env("DJANGO_BACKEND_MYSQL")),
+        "out_dir": ".build"
     },
     hooks=[
         'prepare_build'
@@ -77,6 +78,7 @@ sane_utils.make_render_resource_recipes(
         "namespace": sane_utils.check_env("NAMESPACE"),
         "service_api": sane_utils.check_env("SERVICE_API"),
     },
+    out_dir="",
     hooks=[
         "prepare_deploy",
     ],

@@ -14,7 +14,7 @@ RUN apt update && apt install -y libmariadb-dev g++ && pip3 install mysqlclient 
 {% endif %}
 
 {% for user_app in user_djangoapps %}
-ADD .user-djangoapps/{{ user_app }} /app/{{ user_app }}
+ADD {{ out_dir }}/.user-djangoapps/{{ user_app }} /app/{{ user_app }}
 RUN cd /app/{{ user_app }} && test -f requirements.txt && pip3 install -r requirements.txt || echo "no reqs for {{ user_app }}"
 {% endfor %}
 
