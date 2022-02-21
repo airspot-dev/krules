@@ -15,6 +15,7 @@ sane_utils.make_render_resource_recipes(
     globs=[
         "setup.py.j2",
     ],
+    out_dir="",
     context_vars=lambda: {
         'release_version': os.environ.get("RELEASE_VERSION"),
     },

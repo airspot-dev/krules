@@ -135,12 +135,8 @@ sane_utils.make_service_recipe(
 sane_utils.make_clean_recipe(
     name="clean",
     globs=[
-        "Dockerfile",
         #"k8s/*.yaml",
-        ".digest",
-        ".code.digest",
-        ".build.success",
-        ".user-baselibs",
+        ".build/"
     ],
 )
 

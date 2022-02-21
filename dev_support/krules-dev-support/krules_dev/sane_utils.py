@@ -241,7 +241,6 @@ def make_build_recipe(target: str = None,
 
     if 'conditions' not in recipe_kwargs:
         recipe_kwargs['conditions'] = []
-    #import pdb; pdb.set_trace()
     success_file = os.path.join(root_dir, out_dir, success_file)
     code_digest_file = os.path.join(root_dir, out_dir, code_digest_file)
     recipe_kwargs['conditions'].append(lambda: not os.path.exists(success_file))
