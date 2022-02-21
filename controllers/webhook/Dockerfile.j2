@@ -16,14 +16,14 @@ RUN pip3 install --no-cache-dir \
 {% endfor %}
 
 {% else %}  {# no release_version #}
-ADD .krules-libs /krules-libs
+ADD .build/.krules-libs /krules-libs
 {% for lib in krules_dep_libs %}
 RUN cd /krules-libs/{{ lib }} && pip install --upgrade .
 {% endfor %}
 {% endif %}
 
 ADD /app /app
-ADD .common /app
+ADD .build/.common /app
 
 ADD env.py /app
 

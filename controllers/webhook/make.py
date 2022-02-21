@@ -77,7 +77,7 @@ def _get_image_base():
 def _prepare_commons():
     sane_utils.copy_resources(
         src=[os.path.join(os.path.pardir, "common", "cfgp")],
-        dst=".common"
+        dst=".build/.common"
     )
 
 
@@ -85,7 +85,7 @@ def _preprare_krules_deps():
     if not RELEASE_VERSION:
         sane_utils.copy_resources(
             map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
-            dst=".krules-libs",
+            dst=".build/.krules-libs",
             make_recipes_after=[
                 "clean", "setup.py"
             ]
@@ -135,7 +135,7 @@ sane_utils.make_render_resource_recipes(
         "ns_injection_lbl": _get_ns_injection_lbl(),
         "name": SERVICE_NAME,
         "image": "RELEASE_VERSION" not in os.environ and
-                  open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".digest"), "r").read()
+                  open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".build/.digest"), "r").read()
                   or f"{os.environ['DOCKER_REGISTRY']}/{IMAGE_NAME}:{RELEASE_VERSION}",
         "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
     },
@@ -160,12 +160,8 @@ sane_utils.make_apply_recipe(
 
 sane_utils.make_clean_recipe(
     globs=[
-        ".common",
         "k8s/*.yaml",
-        ".krules-libs",
-        "Dockerfile",
-        ".digest",
-        ".build.out",
+        ".build/",
     ]
 )
 
