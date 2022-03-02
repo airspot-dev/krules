@@ -19,6 +19,7 @@ sane_utils.make_render_resource_recipes(
         "release_version": os.environ.get("RELEASE_VERSION"),
     },
     hooks=["prepare_setup"],
+    out_dir=""
 )
 
 @recipe(info="Make develop installation", hook_deps=["prepare_setup"])
