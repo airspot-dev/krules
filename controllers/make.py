@@ -33,7 +33,7 @@ sane_utils.make_render_resource_recipes(
     context_vars=lambda: {
         "namespace": _get_namespace()
     },
-    out_dir="",
+    out_dir="k8s",
     hooks=[
         'render_resource'
     ]

@@ -139,7 +139,7 @@ sane_utils.make_render_resource_recipes(
                   or f"{os.environ['DOCKER_REGISTRY']}/{IMAGE_NAME}:{RELEASE_VERSION}",
         "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
     },
-    out_dir="",
+    out_dir="k8s",
     hooks=['render_resource'],
 )
 
