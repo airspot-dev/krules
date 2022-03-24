@@ -7,6 +7,10 @@ from sane import *
 
 sane_utils.load_env()
 
+USER_BASELIBS = [
+    # your libs in base
+]
+
 
 USER_DJANGOAPPS = [
     # your django applications in django/apps folder
@@ -17,8 +21,16 @@ sane_utils.update_code_hash(
     globs=[
         "*.py",
         *list(map(lambda x: f"{os.environ['KRULES_PROJECT_DIR']}/django/apps/{x}/**/*.py", USER_DJANGOAPPS)),
+        *list(map(lambda x: f"{os.environ['KRULES_PROJECT_DIR']}/base/{x}/**/*.py", USER_BASELIBS)),
     ],
     output_file=".code.digest"
+)
+
+sane_utils.make_copy_source_recipe(
+    name="prepare_user_baselibs",
+    location=os.path.join(os.environ["KRULES_PROJECT_DIR"], "base", "libs"),
+    src=USER_BASELIBS,
+    dst=".user-baselibs",
 )
 
 sane_utils.make_copy_source_recipe(
@@ -44,6 +56,7 @@ sane_utils.make_render_resource_recipes(
     ],
     recipe_deps=[
         "prepare_user_djangoapps",
+        "prepare_user_baselibs",
     ]
 )
 
@@ -78,10 +91,10 @@ sane_utils.make_render_resource_recipes(
         "namespace": sane_utils.check_env("NAMESPACE"),
         "service_api": sane_utils.check_env("SERVICE_API"),
     },
-    out_dir="",
     hooks=[
         "prepare_deploy",
     ],
+    out_dir="k8s",
 )
 
 sane_utils.make_subprocess_run_recipe(
@@ -123,12 +136,8 @@ sane_utils.make_service_recipe(
 
 sane_utils.make_clean_recipe(
     globs=[
-        "Dockerfile",
-#        "k8s/*.yaml",
-        ".digest",
-        ".code.digest",
-        ".build.success",
-        ".user-djangoapps",
+        "k8s/*.yaml",
+        ".build",
     ],
 )
 
