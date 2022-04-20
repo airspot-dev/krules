@@ -1,7 +1,7 @@
 #from k8s_functions import K8sObjectsQuery
 import copy
 
-from k8s_functions import K8sObjectsQuery
+from k8s_functions import K8sObjectsQuery, ConfigurationProvider
 from krules_core import RuleConst as Const
 from krules_core.base_functions import *
 
@@ -18,11 +18,75 @@ processing = Const.PROCESSING
 class ApplyConfiguration(K8sObjectsQuery):
 
     @staticmethod
-    def _update_configuration_if_match(configuration, dest, root_expr, preserve_name, _log=[]):
+    def _update_features_labels(configuration, dest):
+
+        if "labels" not in dest['metadata']:
+            dest['metadata']['labels'] = {}
+
+        labels = dest['metadata']['labels']
+        features = configuration.get("spec", {}).get("extensions", {}).get("features", {})
+
+        # clean previous
+        # search for <feature>/...
+        to_delete = []
+        for feature_k in features:
+            for label in labels:
+                if label.startswith(f"{feature_k}/"):
+                    to_delete.append(label)
+        for label in to_delete:
+            del labels[label]
+
+        # add features labels
+        new_labels = {}
+        for feature_k in features:
+            for feature in features[feature_k]:
+                new_labels[f"features.{feature_k}/{feature}"] = "enabled"  #features[feature_k][feature]
+
+        labels.update(new_labels)
+
+        return new_labels
+
+    def _update_configuration_if_match(self, configuration, dest, root_expr, preserve_name, _log=[]):
+
 
         appliesTo = configuration["spec"].get("appliesTo", {})
-        match = True
         labels = dest.get("metadata", {}).get("labels", {})
+        match = self.applies_to(appliesTo, labels)
+
+        if match:
+            features_labels = ApplyConfiguration._update_features_labels(configuration, dest)
+            _log.append({
+                "cfgp": configuration.get("metadata").get("name"),
+                "features_labels": features_labels
+            })
+            if len(features_labels):
+                api = self.get_api_client()
+                for feature_lbl in features_labels:
+                    prefix, name = feature_lbl.split("/")
+                    selector = {
+                        f"{prefix[len('features.'):]}/provides-feature": name,
+                    }
+                    _log.append({
+                        "selector": selector
+                    })
+                    cfgps = ConfigurationProvider.objects(api).filter(
+                        namespace=dest.get("metadata").get("namespace"),
+                        selector=selector
+                    )
+                    for cfgp in cfgps:
+                        _log.append({
+                            "found": cfgp.name
+                        })
+                        appliesTo = cfgp.obj.get("spec").get("appliesTo")
+                        if self.applies_to(appliesTo, labels):
+                            apply_configuration(cfgp.obj, dest=dest, root_expr=root_expr, preserve_name=preserve_name,
+                                                _log=_log)
+
+            apply_configuration(configuration=configuration, dest=dest,
+                                root_expr=root_expr, preserve_name=preserve_name, _log=_log)
+
+    def applies_to(self, appliesTo, labels):
+        match = True
         for k, v in appliesTo.items():
             if k not in labels:
                 match = False
@@ -35,11 +99,7 @@ class ApplyConfiguration(K8sObjectsQuery):
                 if labels[k] != v:
                     match = False
                     break
-
-        if match:
-            apply_configuration(configuration=configuration, dest=dest,
-                                root_expr=root_expr, preserve_name=preserve_name, _log=_log)
-
+        return match
 
     def execute(self, root_expr, preserve_name, **kwargs):
 

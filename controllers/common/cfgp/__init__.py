@@ -19,9 +19,9 @@ def _hashed(*args, length=10):
 
 def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserve_name: bool, _log=[]):
 
-    _log.append(
-        ("dest_before", copy.deepcopy(dest))
-    )
+    #_log.append(
+    #    ("dest_before", copy.deepcopy(dest))
+    #)
 
     configuration_name = configuration.get("metadata").get("name")
     configuration_key = configuration.get("spec").get("key")
@@ -51,9 +51,9 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
     mount_path = "/krules/config/" + "/".join(configuration_key.split("."))
 
     template = jp.match1(root_expr, dest)
-    _log.append(("root_expr", root_expr))
-    _log.append(("dest", dest))
-    _log.append(("template", template))
+    #_log.append(("root_expr", root_expr))
+    #_log.append(("dest", dest))
+    #_log.append(("template", template))
     if not preserve_name:
         new_name = f"{destination_name}-{_hashed(prev_applied, configuration_name, configuration_hash)}"
         template.get("metadata", {})["name"] = new_name

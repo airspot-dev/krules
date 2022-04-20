@@ -90,14 +90,19 @@ def k8s_event_create(api, producer, action, message, reason, type,
 
 class K8sRuleFunctionBase(RuleFunctionBase):
 
-    def _get_object(self, apiversion, kind):
-
+    def get_api_client(self):
         api = self.payload.get("_k8s_api_client")
         if api is None:
             config = pykube.KubeConfig.from_env()
             api = pykube.HTTPClient(config)
             self.payload["_k8s_api_client"] = api
 
+        return api
+
+
+    def _get_object(self, apiversion, kind):
+
+        api = self.get_api_client()
         if apiversion is None and "apiversion" in self.subject.get_ext_props():
             apiversion = self.subject.get_ext("apiversion")
 

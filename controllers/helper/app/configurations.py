@@ -257,6 +257,8 @@ create_configuration_rulesdata = [
                             payload["request"]["object"]["spec"].get("data", {}),
                             payload["request"]["object"]["spec"].get("container", {}),
                             payload["request"]["object"]["spec"].get("volumes", {}),
+                            # PLAYGROUND
+                            payload["request"]["object"]["spec"].get("extensions", {}).get("features")
                         )
                     )
                 ),
