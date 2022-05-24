@@ -5,12 +5,14 @@ import typing
 from socket import gethostname
 
 import yaml
+
+from features import update_features_labels
 from k8s_functions import *
 from krules_core import RuleConst as Const
 from krules_core.base_functions import *
 from krules_core.event_types import SUBJECT_PROPERTY_CHANGED
 
-from cfgp import _hashed, apply_configuration
+from cfgp import _hashed, apply_configuration, check_applies_to
 
 rulename = Const.RULENAME
 subscribe_to = Const.SUBSCRIBE_TO
@@ -116,9 +118,40 @@ class CreateConfigMap(K8sObjectCreate):
 
 class ApplyConfigurationToExistingResources(K8sObjectsQuery):
 
+
     def _apply_configuration_wrapper(self, configuration, obj, root_expr, preserve_name):
 
-        self.payload["__log"] = []
+        _log = self.payload["__log"] = []
+
+        labels = obj.obj.get("metadata", {}).get("labels", {})
+
+        features_labels = update_features_labels(configuration, obj.obj)
+        _log.append({
+            "cfgp": configuration.get("metadata").get("name"),
+            "features_labels": features_labels
+        })
+        if len(features_labels):
+            api = self.get_api_client()
+            for feature_lbl in features_labels:
+                prefix, name = feature_lbl.split("/")
+                selector = {
+                    f"{prefix[len('features.'):]}/provides-feature": name,
+                }
+                _log.append({
+                    "selector": selector
+                })
+                cfgps = ConfigurationProvider.objects(api).filter(
+                    namespace=obj.obj.get("metadata").get("namespace"),
+                    selector=selector
+                )
+                for cfgp in cfgps:
+                    _log.append({
+                        "found": cfgp.name
+                    })
+                    appliesTo = cfgp.obj.get("spec").get("appliesTo")
+                    if check_applies_to(appliesTo, labels):
+                        apply_configuration(cfgp.obj, dest=obj.obj, root_expr=root_expr, preserve_name=preserve_name,
+                                            _log=_log)
 
         apply_configuration(configuration, obj.obj, root_expr=root_expr, preserve_name=preserve_name,
                             _log=self.payload["__log"])

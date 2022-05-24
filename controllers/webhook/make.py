@@ -76,7 +76,10 @@ def _get_image_base():
 
 def _prepare_commons():
     sane_utils.copy_resources(
-        src=[os.path.join(os.path.pardir, "common", "cfgp")],
+        src=[
+            os.path.join(os.path.pardir, "common", "cfgp"),
+            os.path.join(os.path.pardir, "common", "features"),
+        ],
         dst=".build/.common"
     )
 

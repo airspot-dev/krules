@@ -135,3 +135,20 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
     prev_applied[configuration_name] = configuration_hash
     annotations["config.krules.airspot.dev/applied"] = yaml.dump(prev_applied, Dumper=yaml.SafeDumper)
 
+
+def check_applies_to(appliesTo, labels):
+
+    match = True
+    for k, v in appliesTo.items():
+        if k not in labels:
+            match = False
+            break
+        if isinstance(v, type([])):
+            if labels[k] not in v:
+                match = False
+                break
+        else:
+            if labels[k] != v:
+                match = False
+                break
+    return match

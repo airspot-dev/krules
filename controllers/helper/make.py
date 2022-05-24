@@ -21,6 +21,9 @@ SERVICE_NAME = os.environ.get("SERVICE_NAME", "webhook")
 IMAGE_NAME = os.environ.get("IMAGE_NAME", SERVICE_NAME)
 RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
+KRULES_DEP_LIBS = [
+    "krules-k8s-functions",
+]
 
 if "RELEASE_VERSION" in os.environ:
     os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")
@@ -43,9 +46,23 @@ def _get_image_base():
 
 def _prepare_commons():
     sane_utils.copy_resources(
-        src=[os.path.join(ROOT_DIR, os.path.pardir, "common", "cfgp")],
+        src=[
+            os.path.join(ROOT_DIR, os.path.pardir, "common", "cfgp"),
+            os.path.join(ROOT_DIR, os.path.pardir, "common", "features"),
+        ],
         dst=".build/.common"
     )
+
+def _preprare_krules_deps():
+    if not RELEASE_VERSION:
+        sane_utils.copy_resources(
+            map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
+            dst=".build/.krules-libs",
+            make_recipes_after=[
+                "clean", "setup.py"
+            ]
+        )
+
 
 
 sane_utils.make_render_resource_recipes(
@@ -54,6 +71,9 @@ sane_utils.make_render_resource_recipes(
     ], 
     context_vars=lambda: {
         "image_base": _get_image_base(),
+        "release_version": RELEASE_VERSION,
+        "krules_dep_libs": KRULES_DEP_LIBS,
+
     }, 
     hooks=['prepare_build']
 )
@@ -62,7 +82,8 @@ sane_utils.make_build_recipe(
     name="build",
     target=IMAGE_NAME,
     run_before=[
-        _prepare_commons
+        _prepare_commons,
+        _preprare_krules_deps,
     ],
     hook_deps=["prepare_build"]
 )

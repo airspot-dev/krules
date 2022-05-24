@@ -5,7 +5,8 @@ from k8s_functions import K8sObjectsQuery, ConfigurationProvider
 from krules_core import RuleConst as Const
 from krules_core.base_functions import *
 
-from cfgp import apply_configuration
+from features import update_features_labels
+from cfgp import apply_configuration, check_applies_to
 from . import MakePatch
 
 rulename = Const.RULENAME
@@ -17,34 +18,34 @@ processing = Const.PROCESSING
 
 class ApplyConfiguration(K8sObjectsQuery):
 
-    @staticmethod
-    def _update_features_labels(configuration, dest):
-
-        if "labels" not in dest['metadata']:
-            dest['metadata']['labels'] = {}
-
-        labels = dest['metadata']['labels']
-        features = configuration.get("spec", {}).get("extensions", {}).get("features", {})
-
-        # clean previous
-        # search for <feature>/...
-        to_delete = []
-        for feature_k in features:
-            for label in labels:
-                if label.startswith(f"{feature_k}/"):
-                    to_delete.append(label)
-        for label in to_delete:
-            del labels[label]
-
-        # add features labels
-        new_labels = {}
-        for feature_k in features:
-            for feature in features[feature_k]:
-                new_labels[f"features.{feature_k}/{feature}"] = "enabled"  #features[feature_k][feature]
-
-        labels.update(new_labels)
-
-        return new_labels
+    # @staticmethod
+    # def _update_features_labels(configuration, dest):
+    #
+    #     if "labels" not in dest['metadata']:
+    #         dest['metadata']['labels'] = {}
+    #
+    #     labels = dest['metadata']['labels']
+    #     features = configuration.get("spec", {}).get("extensions", {}).get("features", {})
+    #
+    #     # clean previous
+    #     # search for <feature>/...
+    #     to_delete = []
+    #     for feature_k in features:
+    #         for label in labels:
+    #             if label.startswith(f"{feature_k}/"):
+    #                 to_delete.append(label)
+    #     for label in to_delete:
+    #         del labels[label]
+    #
+    #     # add features labels
+    #     new_labels = {}
+    #     for feature_k in features:
+    #         for feature in features[feature_k]:
+    #             new_labels[f"features.{feature_k}/{feature}"] = "enabled"  #features[feature_k][feature]
+    #
+    #     labels.update(new_labels)
+    #
+    #     return new_labels
 
     def _update_configuration_if_match(self, configuration, dest, root_expr, preserve_name, _log=[]):
 
@@ -54,7 +55,7 @@ class ApplyConfiguration(K8sObjectsQuery):
         match = self.applies_to(appliesTo, labels)
 
         if match:
-            features_labels = ApplyConfiguration._update_features_labels(configuration, dest)
+            features_labels = update_features_labels(configuration, dest)
             _log.append({
                 "cfgp": configuration.get("metadata").get("name"),
                 "features_labels": features_labels
@@ -78,7 +79,7 @@ class ApplyConfiguration(K8sObjectsQuery):
                             "found": cfgp.name
                         })
                         appliesTo = cfgp.obj.get("spec").get("appliesTo")
-                        if self.applies_to(appliesTo, labels):
+                        if check_applies_to(appliesTo, labels):
                             apply_configuration(cfgp.obj, dest=dest, root_expr=root_expr, preserve_name=preserve_name,
                                                 _log=_log)
 

@@ -46,6 +46,7 @@ from krules_core.providers import event_router_factory, configs_factory
 #         self._result = self.func(subject)
 #         return self._result
 #
+
 #     def __repr__(self):
 #         if not hasattr(self, "_result"):
 #             return "[not called]"

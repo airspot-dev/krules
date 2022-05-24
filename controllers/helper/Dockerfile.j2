@@ -1,5 +1,19 @@
 FROM {{ image_base }}
 
+{% if release_version and krules_dep_libs|length %}
+RUN pip3 install --no-cache-dir \
+{% for lib in krules_dep_libs %}
+    {{ lib }}=={{ release_version }} {% if not loop.last %}\{%  endif %}
+
+{% endfor %}
+
+{% else %}  {# no release_version #}
+ADD .build/.krules-libs /krules-libs
+{% for lib in krules_dep_libs %}
+RUN cd /krules-libs/{{ lib }} && pip install --upgrade .
+{% endfor %}
+{% endif %}
+
 ADD env.py /app
 
 ADD /app /app
