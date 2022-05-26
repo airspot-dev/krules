@@ -109,7 +109,7 @@ class ApplyConfiguration(K8sObjectsQuery):
         self.payload["_log"] = []
 
         super().execute(
-            apiversion="krules.airspot.dev/v1alpha1", kind="ConfigurationProvider",
+            apiversion="krules.dev/v1alpha1", kind="ConfigurationProvider",
             namespace=self.payload["request"]["namespace"],
             foreach=lambda obj: self._update_configuration_if_match(
                 configuration=obj.obj,

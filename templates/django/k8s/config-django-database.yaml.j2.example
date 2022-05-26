@@ -1,4 +1,4 @@
-apiVersion: krules.airspot.dev/v1alpha1
+apiVersion: krules.dev/v1alpha1
 kind: ConfigurationProvider
 metadata:
   name: config-django-orm
@@ -6,7 +6,7 @@ metadata:
 spec:
   key: {{ configuration_key }}.site_settings.databases
   appliesTo:
-    configs.krules.airspot.dev/django-orm: inject
+    config.krules.dev/django-orm: inject
   data:
     default:
       ENGINE: django.db.backends.postgresql_psycopg2

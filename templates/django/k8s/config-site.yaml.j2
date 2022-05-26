@@ -1,4 +1,4 @@
-apiVersion: krules.airspot.dev/v1alpha1
+apiVersion: krules.dev/v1alpha1
 kind: ConfigurationProvider
 metadata:
   name: config-{{ app_name }}-site
@@ -6,7 +6,7 @@ metadata:
 spec:
   key: {{ configuration_key }}
   appliesTo:
-    krules.airspot.dev/app: {{ app_name }}
+    krules.dev/app: {{ app_name }}
   data:
     url_settings:
       enable_admin: True

@@ -12,7 +12,7 @@ processing = Const.PROCESSING
 
 DEFAULT_BROKER = "default"
 PROCEVENTS_BROKER = "procevents"
-LBL_INJECTED = "krules.airspot.dev/injected"
+LBL_INJECTED = "krules.dev/injected"
 
 
 class K8sQueryResourceDoesNotExists(K8sObjectsQuery):

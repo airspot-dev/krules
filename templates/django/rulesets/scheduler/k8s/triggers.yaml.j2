@@ -4,7 +4,7 @@ metadata:
   name: {{ app_name }}-schedule
   namespace: {{ namespace }}
   labels:
-    "krules.airspot.dev/app": {{ app_name }}
+    "krules.dev/app": {{ app_name }}
 spec:
   broker: default
   filter:
@@ -26,7 +26,7 @@ metadata:
   name: {{ app_name }}-unschedule
   namespace: {{ namespace }}
   labels:
-    "krules.airspot.dev/app": {{ app_name }}
+    "krules.dev/app": {{ app_name }}
 spec:
   broker: default
   filter:
@@ -48,7 +48,7 @@ metadata:
   name: {{ app_name }}-set-period
   namespace: {{ namespace }}
   labels:
-    "krules.airspot.dev/app": {{ app_name }}
+    "krules.dev/app": {{ app_name }}
 spec:
   broker: default
   filter:

@@ -1,4 +1,4 @@
-apiVersion: krules.airspot.dev/v1alpha1
+apiVersion: krules.dev/v1alpha1
 kind: ConfigurationProvider
 metadata:
   name: config-krules-subjects-redis
@@ -6,7 +6,7 @@ metadata:
 spec:
   key: subjects-backends.redis
   appliesTo:
-    krules.airspot.dev/type:
+    krules.dev/type:
       - ruleset
       - generic
   data:

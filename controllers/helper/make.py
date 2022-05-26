@@ -32,7 +32,8 @@ if "RELEASE_VERSION" in os.environ:
     os.environ.pop("DEBUG_PROCEVENTS_SINK", None)
 else:
     if not "NAMESPACE" in os.environ:
-        os.environ["NAMESPACE"] = "krules-system-dev"
+        dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
+        os.environ["NAMESPACE"] = f"krules-system-{dev_target}"
 
 DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
 
@@ -123,8 +124,7 @@ def render_resource():
 sane_utils.make_service_recipe(
     image=lambda: open(".digest", "r").read().rstrip(),
     labels={
-        "krules.airspot.dev/app": "{APP_NAME}",
-        "config.krules.airspot.dev/django-orm": "inject",
+        "krules.dev/app": "{APP_NAME}",
     },
     kn_extra=(
       "--scale", "1",

@@ -1,4 +1,4 @@
-apiVersion: krules.airspot.dev/v1alpha1
+apiVersion: krules.dev/v1alpha1
 kind: ConfigurationProvider
 metadata:
   name: config-ruleset-{{ app_name }}
@@ -6,6 +6,6 @@ metadata:
 spec:
   key: rulesets.{{ app_name }}
   appliesTo:
-    krules.airspot.dev/app: {{ app_name }}
+    krules.dev/app: {{ app_name }}
   data: {}
   container: {}

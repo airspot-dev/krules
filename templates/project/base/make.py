@@ -83,7 +83,7 @@ def ishell():
         "-n", os.environ["NAMESPACE"],
         "run", f"ishell-{uuid.uuid4().hex[0:6]}", "--rm", "-ti",
         "--image", open(os.path.join(os.path.abspath(os.path.dirname(__file__)), ".build/.digest"), "r").read().strip(),
-        "--labels", "krules.airspot.dev/type=generic",
+        "--labels", "krules.dev/type=generic",
         "ipython"
     ]
     if "KUBECTL_OPTS" in os.environ and os.environ["KUBECTL_OPTS"]:

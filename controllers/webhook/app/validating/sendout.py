@@ -53,7 +53,7 @@ rulesdata = [
                 ),
                 Filter(
                     lambda payload:
-                        "config.krules.airspot.dev/provider" in payload["request"]["oldObject"]["metadata"].get("labels", {})
+                        "config.krules.dev/provider" in payload["request"]["oldObject"]["metadata"].get("labels", {})
                 )
             ],
             processing: [

@@ -120,9 +120,9 @@ sane_utils.make_apply_recipe(
 sane_utils.make_service_recipe(
     name="service",
     labels=lambda: {
-        "krules.airspot.dev/app": sane_utils.check_env("APP_NAME"),
-        "krules.airspot.dev/type": "generic",
-        "configs.krules.airspot.dev/django-orm": "inject",
+        "krules.dev/app": sane_utils.check_env("APP_NAME"),
+        "krules.dev/type": "generic",
+        "config.krules.dev/django-orm": "inject",
     },
     env={},
     # if SERVICE_API="knative" (requires kn client)

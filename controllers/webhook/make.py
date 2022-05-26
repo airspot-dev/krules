@@ -40,7 +40,8 @@ DEP_LIBS = [
 if "RELEASE_VERSION" not in os.environ:
     KRULES_DEP_LIBS = KRULES_DEV_DEP_LIBS + KRULES_DEP_LIBS
     if "NAMESPACE" not in os.environ:
-        os.environ["NAMESPACE"] = "krules-system-dev"
+        dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
+        os.environ["NAMESPACE"] = f"krules-system-{dev_target}"
 else:
     os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")
     if "NAMESPACE" not in os.environ:
@@ -52,16 +53,18 @@ def _get_namespace():
         if "RELEASE_VERSION" in os.environ:
             return "krules-system"
         else:
-            return "krules-system-dev"
+            dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
+            return f"krules-system-{dev_target}"
     return os.environ["NAMESPACE"]
 
 
 def _get_ns_injection_lbl():
     if not "NS_INJECTION_LBL" in os.environ:
         if "RELEASE_VERSION" in os.environ:
-            return "krules.airspot.dev"
+            return "krules.dev"
         else:
-            return "dev.krules.airspot.dev"
+            dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
+            return f"{dev_target}.krules.dev"
     return os.environ["NS_INJECTION_LBL"]
 
 
@@ -99,7 +102,7 @@ sane_utils.make_render_resource_recipes(
     globs=[
         "Dockerfile.j2"
     ],
-    context_vars={
+    context_vars=lambda: {
         "release_version": RELEASE_VERSION,
         "image_base": _get_image_base(),
         "krules_dep_libs": KRULES_DEP_LIBS,

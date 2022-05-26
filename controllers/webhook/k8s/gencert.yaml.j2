@@ -101,7 +101,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - patch
-            - --webhook-name={{ name }}.krules.airspot.dev
+            - --webhook-name={{ name }}.krules.dev
             - --namespace={{ namespace }}
             - --secret-name={{ name }}-tls
             - --patch-failure-policy=Fail

@@ -20,7 +20,8 @@ def _get_namespace():
         if "RELEASE_VERSION" in os.environ:
             return "krules-system"
         else:
-            return "krules-system-dev"
+            dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
+            return f"krules-system-{dev_target}"
     return os.environ["NAMESPACE"]
 
 #CONTROLLERS_HELPER_SERVICE_NAME = os.environ.get("CONTROLLERS_HELPER_SERVICE_NAME", "krules-helper")

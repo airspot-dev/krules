@@ -121,9 +121,9 @@ sane_utils.make_apply_recipe(
 sane_utils.make_service_recipe(
     name="service",
     labels={
-        "krules.airspot.dev/app": sane_utils.check_env("APP_NAME"),
-        "krules.airspot.dev/type": "ruleset",
-        "configs.krules.airspot.dev/django-orm": "inject",
+        "krules.dev/app": sane_utils.check_env("APP_NAME"),
+        "krules.dev/type": "ruleset",
+        "config.krules.dev/django-orm": "inject",
     },
     env={},
     kn_extra=(

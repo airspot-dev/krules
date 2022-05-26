@@ -1,7 +1,7 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: {{ name }}.krules.airspot.dev
+  name: {{ name }}.krules.dev
 webhooks:
   - name: {{ name }}.{{ namespace }}.svc
     sideEffects: None
@@ -43,7 +43,7 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: {{ name }}.krules.airspot.dev
+  name: {{ name }}.krules.dev
 webhooks:
   - name: {{ name }}.{{ namespace }}.svc
     sideEffects: None
@@ -69,7 +69,7 @@ webhooks:
         operations:
           - CREATE
           - UPDATE
-      - apiGroups: ["krules.airspot.dev"]
+      - apiGroups: ["krules.dev"]
         apiVersions: ["*"]
         resources: ["configurationproviders"]
         scope: "Namespaced"

@@ -40,7 +40,7 @@ class SetK8sObjectPropertyAnnotation(RuleFunctionBase):
         annotations = metadata.setdefault("annotations", {})
 
         props = yaml.load(
-            annotations.setdefault("airspot.krules.dev/props", "{}"),
+            annotations.setdefault("krules.dev/props", "{}"),
             Loader=yaml.SafeLoader
         )
 
@@ -50,14 +50,12 @@ class SetK8sObjectPropertyAnnotation(RuleFunctionBase):
             value = value(old_value)
 
         if old_value != value:
-            subject = f'k8s:{obj.get("apiVersion")}:{obj.get("kind")}:{obj.get("metadata", {}).get("name")}'
-            subject = self.subject
             props[property_name] = value
-            annotations["airspot.krules.dev/props"] = yaml.dump(props, Dumper=yaml.SafeDumper)
+            annotations["krules.dev/props"] = yaml.dump(props, Dumper=yaml.SafeDumper)
 
             self.router.route(
                 event_type=SUBJECT_PROPERTY_CHANGED,
-                subject=subject,
+                subject=self.subject,
                 payload={
                     "property_name": property_name,
                     "value": value,
@@ -105,7 +103,7 @@ class CreateConfigMap(K8sObjectCreate):
                 "name": cm_name,
                 "namespace": namespace,
                 "labels": {
-                    "config.krules.airspot.dev/provider": provider_name,
+                    "config.krules.dev/provider": provider_name,
                 },
             },
             "data": {
@@ -361,20 +359,20 @@ create_configuration_rulesdata = [
         subscribe_to: "validate-configmap-delete",
         ruledata: {
             filters: [
-                PayloadMatchOne('request.oldObject.metadata.labels."config.krules.airspot.dev/provider"',
+                PayloadMatchOne('request.oldObject.metadata.labels."config.krules.dev/provider"',
                                 payload_dest="provider_name"),
                 Filter(
                     # ensure we have an updated version
                     lambda: time.sleep(10) or True
                 ),
                 K8sObjectsQuery(
-                    apiversion="krules.airspot.dev/v1alpha1",
+                    apiversion="krules.dev/v1alpha1",
                     kind="ConfigurationProvider",
                     namespace=lambda payload: payload["request"]["namespace"],
                     returns=lambda payload: lambda qobjs: (
                         payload.setdefault("provider_object", qobjs.get(name=payload["provider_name"]).obj)
                         and yaml.load(
-                            payload["provider_object"]["metadata"]["annotations"]["airspot.krules.dev/props"],
+                            payload["provider_object"]["metadata"]["annotations"]["krules.dev/props"],
                             Loader=yaml.SafeLoader,
                         )["cm_name"] == payload["request"]["oldObject"]["metadata"]["name"]
                     )
@@ -401,7 +399,7 @@ create_configuration_rulesdata = [
                     namespace=lambda payload: payload["request"]["namespace"],
                     name=lambda payload: (
                         yaml.load(
-                            payload["request"]["oldObject"]["metadata"].get("annotations", {}).get("airspot.krules.dev/props"),
+                            payload["request"]["oldObject"]["metadata"].get("annotations", {}).get("krules.dev/props"),
                             Loader=yaml.SafeLoader,
                         )["cm_name"]
                     )
