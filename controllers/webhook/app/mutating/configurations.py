@@ -174,8 +174,8 @@ rulesdata = [
     {
         rulename: "check-scfgp-target",
         subscribe_to: [
-            "mutate-scfgp-create",
-            "mutate-scfgp-update",
+            "mutate-serviceconfigurationprovider-create",
+            "mutate-serviceconfigurationprovider-update",
         ],
         ruledata: {
             processing: [

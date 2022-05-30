@@ -21,7 +21,7 @@ processing = Const.PROCESSING
 
 MUTATION_EVENT_TYPES = []
 
-for el in ["pod", "deployment", "kservice", "scfgp", "fcfgp"]:
+for el in ["pod", "deployment", "kservice", "serviceconfigurationprovider", "featureconfigurationprovider"]:
     MUTATION_EVENT_TYPES.extend((
         f"mutate-{el}-create",
         f"mutate-{el}-update",
