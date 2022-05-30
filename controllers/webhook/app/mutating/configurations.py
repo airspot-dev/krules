@@ -1,5 +1,4 @@
 #from k8s_functions import K8sObjectsQuery
-import copy
 
 from k8s_functions import K8sObjectsQuery, ConfigurationProvider
 from krules_core import RuleConst as Const
@@ -7,7 +6,6 @@ from krules_core.base_functions import *
 
 from features import update_features_labels
 from cfgp import apply_configuration, check_applies_to
-from . import MakePatch
 
 rulename = Const.RULENAME
 subscribe_to = Const.SUBSCRIBE_TO
@@ -18,37 +16,7 @@ processing = Const.PROCESSING
 
 class ApplyConfiguration(K8sObjectsQuery):
 
-    # @staticmethod
-    # def _update_features_labels(configuration, dest):
-    #
-    #     if "labels" not in dest['metadata']:
-    #         dest['metadata']['labels'] = {}
-    #
-    #     labels = dest['metadata']['labels']
-    #     features = configuration.get("spec", {}).get("extensions", {}).get("features", {})
-    #
-    #     # clean previous
-    #     # search for <feature>/...
-    #     to_delete = []
-    #     for feature_k in features:
-    #         for label in labels:
-    #             if label.startswith(f"{feature_k}/"):
-    #                 to_delete.append(label)
-    #     for label in to_delete:
-    #         del labels[label]
-    #
-    #     # add features labels
-    #     new_labels = {}
-    #     for feature_k in features:
-    #         for feature in features[feature_k]:
-    #             new_labels[f"features.{feature_k}/{feature}"] = "enabled"  #features[feature_k][feature]
-    #
-    #     labels.update(new_labels)
-    #
-    #     return new_labels
-
     def _update_configuration_if_match(self, configuration, dest, root_expr, preserve_name, _log=[]):
-
 
         appliesTo = configuration["spec"].get("appliesTo", {})
         labels = dest.get("metadata", {}).get("labels", {})
@@ -121,6 +89,27 @@ class ApplyConfiguration(K8sObjectsQuery):
         )
 
 
+class CheckTarget(RuleFunctionBase):
+
+    def execute(self):
+
+        dst = self.payload["__mutated_object"]
+        target = dst["spec"].get("target", dst["metadata"].get("name"))
+        if "_log_checktarget" not in self.payload:
+            self.payload["_log_checktarget"] = []
+        _logs = self.payload["_log_checktarget"]
+        if target is not None:
+            _logs.append(f"target is not None: {target}")
+            try:
+                app_label, name = target.split(":")
+                _logs.append(f"split: {app_label}, {name}")
+            except ValueError:
+                _logs.append("ValueError")
+                name = target
+                app_label = "krules.dev/app"
+            _logs.append(f"set: {app_label}, {name}")
+            dst["spec"]["target"] = ":".join([app_label, name])
+
 rulesdata = [
     """
     Apply configurations to pods only when not owned by other objects
@@ -176,6 +165,21 @@ rulesdata = [
                     root_expr="$.spec.template",
                     preserve_name=True,
                 )
+            ]
+        }
+    },
+    """
+    Check and update serviceconfigurationproviders target/.metadata.name 
+    """,
+    {
+        rulename: "check-scfgp-target",
+        subscribe_to: [
+            "mutate-scfgp-create",
+            "mutate-scfgp-update",
+        ],
+        ruledata: {
+            processing: [
+                CheckTarget()
             ]
         }
     },

@@ -16,7 +16,7 @@ spec:
             labels:
                 app: {{ name }}
         spec:
-            serviceAccountName: krules-system
+            serviceAccountName: {{ svc_acc_name }}
             containers:
               - name: helper
                 image: {{ image }}

@@ -15,24 +15,27 @@ from sane import _Help as Help
 
 sane_utils.load_env()
 
-def _get_namespace():
-    if not "NAMESPACE" in os.environ:
-        if "RELEASE_VERSION" in os.environ:
-            return "krules-system"
-        else:
-            dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
-            return f"krules-system-{dev_target}"
-    return os.environ["NAMESPACE"]
+if not "NAMESPACE" in os.environ:
+    if "RELEASE_VERSION" in os.environ:
+        os.environ["NAMESPACE"] = "krules-system"
+    else:
+        dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
+        os.environ["NAMESPACE"] = f"krules-system-{dev_target}"
 
-#CONTROLLERS_HELPER_SERVICE_NAME = os.environ.get("CONTROLLERS_HELPER_SERVICE_NAME", "krules-helper")
-#CONTROLLERS_WEBHOOK_SERVICE_NAME = os.environ.get("CONTROLLERS_WEBHOOK_SERVICE_NAME", "krules-webhook")
+if "SVC_ACC_NAME" not in os.environ:
+    if "RELEASE_VERSION" in os.environ:
+        os.environ["SVC_ACC_NAME"] = "krules-system"
+    else:
+        dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
+        os.environ["SVC_ACC_NAME"] = f"krules-system-{dev_target}"
 
 sane_utils.make_render_resource_recipes(
     globs=[
         f'k8s/*.yaml.j2'
     ],
     context_vars=lambda: {
-        "namespace": _get_namespace()
+        "namespace": sane_utils.check_env("NAMESPACE"),
+        "svc_acc_name": sane_utils.check_env("SVC_ACC_NAME")
     },
     out_dir="k8s",
     hooks=[

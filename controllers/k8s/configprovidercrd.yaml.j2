@@ -11,9 +11,8 @@ spec:
     kind: ConfigurationProvider
     shortNames:
       - configprovider
-      - cfgprovider
-      - cfgprov
       - cfgp
+      - cfgp2
   versions:
     - name: v1alpha1
       served: true
@@ -102,6 +101,7 @@ spec:
               properties:
                 applied_to:
                   type: string
+              x-kubernetes-preserve-unknown-fields: true
           required:
             - apiVersion
             - kind
@@ -113,3 +113,208 @@ spec:
         name: APPLIES
         type: string
 ---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: serviceconfigurationproviders.krules.dev
+spec:
+  group: krules.dev
+  scope: Namespaced
+  names:
+    plural: serviceconfigurationproviders
+    singular: serviceconfigurationprovider
+    kind: ServiceConfigurationProvider
+    shortNames:
+      - svcconfigprovider
+      - scfgp
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              properties:
+                target:
+                  type: string
+                data:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                container:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                extraVolumes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      secret:
+                        type: object
+                        properties:
+                          secretName:
+                            type: string
+                      configMap:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                      persistentVolumeClaim:
+                        type: object
+                        properties:
+                          claimName:
+                            type: string
+                        x-kubernetes-preserve-unknown-fields: true
+                    oneOf:
+                      - required:
+                          - name
+                          - secret
+                      - required:
+                          - name
+                          - configMap
+                      - required:
+                          - name
+                          - persistentVolumeClaim
+
+                    x-kubernetes-preserve-unknown-fields: true
+
+                features:
+                  type: array
+                  items:
+                    type: string
+                extensions:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+
+
+              anyOf:
+                - required:
+                  - data
+                - required:
+                  - container
+                - required:
+                  - extraVolumes
+
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+          required:
+            - apiVersion
+            - kind
+            #- metadata
+            - spec
+
+#      additionalPrinterColumns:
+#      - jsonPath: .spec.appliesTo
+#        name: APPLIES
+#        type: string
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: featureconfigurationproviders.krules.dev
+spec:
+  group: krules.dev
+  scope: Namespaced
+  names:
+    plural: featureconfigurationproviders
+    singular: featureconfigurationprovider
+    kind: FeatureConfigurationProvider
+    shortNames:
+      - featconfigprovider
+      - fcfgp
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              properties:
+                data:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                container:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                extraVolumes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      secret:
+                        type: object
+                        properties:
+                          secretName:
+                            type: string
+                      configMap:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                      persistentVolumeClaim:
+                        type: object
+                        properties:
+                          claimName:
+                            type: string
+                        x-kubernetes-preserve-unknown-fields: true
+                    oneOf:
+                      - required:
+                          - name
+                          - secret
+                      - required:
+                          - name
+                          - configMap
+                      - required:
+                          - name
+                          - persistentVolumeClaim
+
+                    x-kubernetes-preserve-unknown-fields: true
+
+                extensions:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+
+
+              anyOf:
+                - required:
+                  - data
+                - required:
+                  - container
+                - required:
+                  - extraVolumes
+
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+          required:
+            - apiVersion
+            - kind
+            - metadata
+            - spec
+
+#      additionalPrinterColumns:
+#      - jsonPath: .spec.appliesTo
+#        name: APPLIES
+#        type: string

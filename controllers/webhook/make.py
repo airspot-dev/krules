@@ -37,6 +37,7 @@ DEP_LIBS = [
     "gunicorn==20.0.4"
 ]
 
+
 if "RELEASE_VERSION" not in os.environ:
     KRULES_DEP_LIBS = KRULES_DEV_DEP_LIBS + KRULES_DEP_LIBS
     if "NAMESPACE" not in os.environ:
@@ -48,26 +49,19 @@ else:
         os.environ["NAMESPACE"] = "krules-system"
     os.environ.pop("DEBUG_PROCEVENTS_SINK", None)
 
-def _get_namespace():
-    if not "NAMESPACE" in os.environ:
-        if "RELEASE_VERSION" in os.environ:
-            return "krules-system"
-        else:
-            dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
-            return f"krules-system-{dev_target}"
-    return os.environ["NAMESPACE"]
+if "SVC_ACC_NAME" not in os.environ:
+    if "RELEASE_VERSION" in os.environ:
+        os.environ["SVC_ACC_NAME"] = "krules-system"
+    else:
+        dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
+        os.environ["SVC_ACC_NAME"] = f"krules-system-{dev_target}"
 
-
-def _get_ns_injection_lbl():
-    if not "NS_INJECTION_LBL" in os.environ:
-        if "RELEASE_VERSION" in os.environ:
-            return "krules.dev"
-        else:
-            dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
-            return f"{dev_target}.krules.dev"
-    return os.environ["NS_INJECTION_LBL"]
-
-
+if not "NS_INJECTION_LBL" in os.environ:
+    if "RELEASE_VERSION" in os.environ:
+        os.environ["NS_INJECTION_LBL"] = "krules.dev"
+    else:
+        dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
+        os.environ["NS_INJECTION_LBL"] = f"{dev_target}.krules.dev"
 
 
 def _get_image_base():
@@ -97,6 +91,13 @@ def _preprare_krules_deps():
             ]
         )
 
+sane_utils.update_code_hash(
+    globs=[
+        "app/**/*.py",
+    ],
+    output_file=".code.digest",
+)
+
 
 sane_utils.make_render_resource_recipes(
     globs=[
@@ -121,7 +122,8 @@ sane_utils.make_build_recipe(
         _prepare_commons,
         _preprare_krules_deps,
     ],
-    hook_deps=["prepare_build"]
+    hook_deps=["prepare_build"],
+    code_digest_file=".code.digest",
 )
 
 sane_utils.make_push_recipe(
@@ -138,7 +140,8 @@ sane_utils.make_render_resource_recipes(
     ],
     context_vars=lambda: {
         "namespace": sane_utils.check_env("NAMESPACE"),
-        "ns_injection_lbl": _get_ns_injection_lbl(),
+        "ns_injection_lbl": sane_utils.check_env("NS_INJECTION_LBL"),
+        "svc_acc_name": sane_utils.check_env("SVC_ACC_NAME"),
         "name": SERVICE_NAME,
         "image": "RELEASE_VERSION" not in os.environ and
                   open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".build/.digest"), "r").read()

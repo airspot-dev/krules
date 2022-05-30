@@ -40,6 +40,10 @@ def _get_subject_from_request(request):
     prefix = kind.lower()
     if kind == "Service" and group == "serving.knative.dev":
         prefix = "kservice"
+    elif kind == "ServiceConfigurationProvider" and group == "krules.dev":
+        prefix = "scfgp"
+    elif kind == "FeatureConfigurationProvider" and group == "krules.dev":
+        prefix = "fcfgp"
 
     return prefix, subject_factory(f"{prefix}:{name}", event_info=event_info)
 

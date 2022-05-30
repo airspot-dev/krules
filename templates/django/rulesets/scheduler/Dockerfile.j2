@@ -3,7 +3,7 @@ FROM {{ image_base }}
 ARG site_name="djsite"
 ARG configuration_key="django"
 
-RUN pip3 install --no-cache-dir Django==3.2.8
+RUN pip3 install --no-cache-dir Django==4.0.4
 
 {% if use_postgresql %}
 RUN pip3 install --no-cache-dir psycopg2-binary

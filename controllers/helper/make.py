@@ -37,6 +37,12 @@ else:
 
 DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
 
+if "SVC_ACC_NAME" not in os.environ:
+    if "RELEASE_VERSION" in os.environ:
+        os.environ["SVC_ACC_NAME"] = "krules-system"
+    else:
+        dev_target = os.environ.get("KRULES_DEV_TARGET", "dev")
+        os.environ["SVC_ACC_NAME"] = f"krules-system-{dev_target}"
 
 def _get_image_base():
     return sane_utils.get_buildable_image(
@@ -107,6 +113,7 @@ sane_utils.make_render_resource_recipes(
     context_vars=lambda: {
         "namespace": sane_utils.check_env("NAMESPACE"),
         "name": sane_utils.check_env("SERVICE_NAME"),
+        "svc_acc_name": sane_utils.check_env("SVC_ACC_NAME"),
         "image": "RELEASE_VERSION" not in os.environ and
                   open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".build/.digest"), "r").read()
                   or f"{os.environ['DOCKER_REGISTRY']}/{IMAGE_NAME}:{RELEASE_VERSION}",
