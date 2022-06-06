@@ -22,8 +22,10 @@ spec:
                 ports:
                   - containerPort: 8443
                     name: webhook-api
-                {% if debug_procevents_sink %}
                 env:
+                  - name: SVC_ACC_NAME
+                    value: {{ svc_acc_name }}
+                {% if debug_procevents_sink %}
                   - name: PUBLISH_PROCEVENTS_LEVEL
                     value: "2"
                   - name: PUBLISH_PROCEVENTS_MATCHING

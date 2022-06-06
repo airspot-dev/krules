@@ -95,19 +95,12 @@ class CheckTarget(RuleFunctionBase):
 
         dst = self.payload["__mutated_object"]
         target = dst["spec"].get("target", dst["metadata"].get("name"))
-        if "_log_checktarget" not in self.payload:
-            self.payload["_log_checktarget"] = []
-        _logs = self.payload["_log_checktarget"]
         if target is not None:
-            _logs.append(f"target is not None: {target}")
             try:
                 app_label, name = target.split(":")
-                _logs.append(f"split: {app_label}, {name}")
             except ValueError:
-                _logs.append("ValueError")
                 name = target
                 app_label = "krules.dev/app"
-            _logs.append(f"set: {app_label}, {name}")
             dst["spec"]["target"] = ":".join([app_label, name])
 
 rulesdata = [

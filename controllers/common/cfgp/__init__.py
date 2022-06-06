@@ -35,7 +35,7 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
     )
 
     annotations = dest.get("metadata", {}).setdefault("annotations", {})
-    prev_applied = yaml.load(annotations.setdefault("config.krules.airspot.dev/applied", "{}"), Loader=yaml.SafeLoader)
+    prev_applied = yaml.load(annotations.setdefault("config.krules.dev/applied", "{}"), Loader=yaml.SafeLoader)
     prev_configuration_hash = prev_applied.get(configuration_name)
 
     if prev_configuration_hash == configuration_hash:
@@ -133,7 +133,7 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
     volumes.extend(extra_volumes)
 
     prev_applied[configuration_name] = configuration_hash
-    annotations["config.krules.airspot.dev/applied"] = yaml.dump(prev_applied, Dumper=yaml.SafeDumper)
+    annotations["config.krules.dev/applied"] = yaml.dump(prev_applied, Dumper=yaml.SafeDumper)
 
 
 def check_applies_to(appliesTo, labels):

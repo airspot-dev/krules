@@ -21,7 +21,6 @@ filters = Const.FILTERS
 processing = Const.PROCESSING
 
 
-# TODO: move in k8s_functions
 class SetK8sObjectPropertyAnnotation(RuleFunctionBase):
     """
     Act as a reactive property but using object annotations
@@ -68,13 +67,11 @@ class SetK8sObjectPropertyAnnotation(RuleFunctionBase):
 class K8sObjectPatchAnnotations(K8sObjectUpdate):
 
     def execute(self, **kwargs):
-
         obj = self.payload["request"]["object"]
         old_obj = self.payload["request"]["oldObject"]
 
-        if old_obj is not None and \
-            old_obj.get("metadata", {}).get("annotations", {}) != obj.get("metadata", {}).get("annotations", {}):
-
+        if old_obj is None or \
+                old_obj.get("metadata", {}).get("annotations", {}) != obj.get("metadata", {}).get("annotations", {}):
             patch = {
                 "metadata": {
                     "annotations": obj.get("metadata", {}).get("annotations", {})
@@ -116,7 +113,6 @@ class CreateConfigMap(K8sObjectCreate):
 
 class ApplyConfigurationToExistingResources(K8sObjectsQuery):
 
-
     def _apply_configuration_wrapper(self, configuration, obj, root_expr, preserve_name):
 
         _log = self.payload["__log"] = []
@@ -126,7 +122,8 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
         features_labels = update_features_labels(configuration, obj.obj)
         _log.append({
             "cfgp": configuration.get("metadata").get("name"),
-            "features_labels": features_labels
+            "features_labels": features_labels,
+            "updated_labels": obj.obj.get("metadata").get("labels"),
         })
         if len(features_labels):
             api = self.get_api_client()
@@ -155,10 +152,7 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
                             _log=self.payload["__log"])
 
         try:
-            self.payload["__log"].append(
-                ("before_update", obj.obj)
-            )
-            obj.update(is_strategic=False)
+            obj.update(is_strategic=True)
         except pykube.exceptions.HTTPError as ex:
 
             k8s_event_create(
@@ -203,17 +197,16 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
             else:
                 selector[k] = v
 
-
         super().execute(
             apiversion=apiversion, kind=kind,
             namespace=configuration["metadata"]["namespace"],
             selector=selector,
             foreach=lambda obj: (
-                filter_function(obj) and (
-                    self._apply_configuration_wrapper(
-                        configuration, obj, root_expr=root_expr, preserve_name=preserve_name,
-                    ),
-                )
+                    filter_function(obj) and (
+                self._apply_configuration_wrapper(
+                    configuration, obj, root_expr=root_expr, preserve_name=preserve_name,
+                ),
+            )
             )
         )
 
@@ -266,7 +259,6 @@ apply_configuration_rulesdata = [
 
 ]
 
-
 create_configuration_rulesdata = [
     """
     Annotate properties to react
@@ -278,6 +270,15 @@ create_configuration_rulesdata = [
             "validate-configurationprovider-update",
         ],
         ruledata: {
+            filters: [
+                K8sObjectsQuery(
+                    apiversion=lambda payload: payload["request"]["object"]["apiVersion"],
+                    kind=lambda payload: payload["request"]["object"]["kind"],
+                    namespace=lambda payload: payload["request"]["namespace"],
+                    returns=lambda payload:
+                    lambda qobjs: time.sleep(1) or qobjs.get_or_none(name=payload["request"]["name"]) is not None
+                )
+            ],
             processing: [
                 SetK8sObjectPropertyAnnotation(
                     obj=lambda payload: payload["request"]["object"],
@@ -288,8 +289,10 @@ create_configuration_rulesdata = [
                             payload["request"]["object"]["spec"].get("data", {}),
                             payload["request"]["object"]["spec"].get("container", {}),
                             payload["request"]["object"]["spec"].get("volumes", {}),
-                            # PLAYGROUND
-                            payload["request"]["object"]["spec"].get("extensions", {}).get("features")
+                            json.loads(
+                                payload["request"]["object"]["metadata"].get("annotations", {})
+                                    .get("krules.dev/features", "{}")
+                            )
                         )
                     )
                 ),
@@ -304,7 +307,6 @@ create_configuration_rulesdata = [
                     )
                 ),
                 K8sObjectPatchAnnotations()
-                # TODO: update status subresource
             ]
         }
     },
@@ -351,41 +353,47 @@ create_configuration_rulesdata = [
             ]
         }
     },
-    """
-    On generated config map deleted force the creation of a new one
-    """,
-    {
-        rulename: "cfgp-cm-on-remove-recreate",
-        subscribe_to: "validate-configmap-delete",
-        ruledata: {
-            filters: [
-                PayloadMatchOne('request.oldObject.metadata.labels."config.krules.dev/provider"',
-                                payload_dest="provider_name"),
-                Filter(
-                    # ensure we have an updated version
-                    lambda: time.sleep(10) or True
-                ),
-                K8sObjectsQuery(
-                    apiversion="krules.dev/v1alpha1",
-                    kind="ConfigurationProvider",
-                    namespace=lambda payload: payload["request"]["namespace"],
-                    returns=lambda payload: lambda qobjs: (
-                        payload.setdefault("provider_object", qobjs.get(name=payload["provider_name"]).obj)
-                        and yaml.load(
-                            payload["provider_object"]["metadata"]["annotations"]["krules.dev/props"],
-                            Loader=yaml.SafeLoader,
-                        )["cm_name"] == payload["request"]["oldObject"]["metadata"]["name"]
-                    )
-                ),
-            ],
-            processing: [
-                CreateConfigMap(
-                    name=lambda payload: payload["request"]["oldObject"]["metadata"]["name"],
-                    provider=lambda payload: payload.get("provider_object"),
-                )
-            ]
-        }
-    },
+    # """
+    # On generated config map deleted force the creation of a new one
+    # """,
+    # {
+    #     rulename: "cfgp-cm-on-remove-recreate",
+    #     subscribe_to: "validate-configmap-delete",
+    #     ruledata: {
+    #         filters: [
+    #             PayloadMatchOne('request.oldObject.metadata.labels."config.krules.dev/provider"',
+    #                             payload_dest="provider_name"),
+    #             Filter(
+    #                 lambda payload:
+    #                     payload["request"]["userInfo"]["username"] != "system:serviceaccount:{0}:{0}".format(
+    #                         os.environ["SVC_ACC_NAME"]
+    #                     )
+    #             ),
+    #             Filter(
+    #                 # ensure we have an updated version
+    #                 lambda: time.sleep(1) or True
+    #             ),
+    #             K8sObjectsQuery(
+    #                 apiversion="krules.dev/v1alpha1",
+    #                 kind="ConfigurationProvider",
+    #                 namespace=lambda payload: payload["request"]["namespace"],
+    #                 returns=lambda payload: lambda qobjs: (
+    #                     payload.setdefault("provider_object", qobjs.get(name=payload["provider_name"]).obj)
+    #                     and yaml.load(
+    #                         payload["provider_object"]["metadata"]["annotations"]["krules.dev/props"],
+    #                         Loader=yaml.SafeLoader,
+    #                     )["cm_name"] == payload["request"]["oldObject"]["metadata"]["name"]
+    #                 )
+    #             ),
+    #         ],
+    #         processing: [
+    #             CreateConfigMap(
+    #                 name=lambda payload: payload["request"]["oldObject"]["metadata"]["name"],
+    #                 provider=lambda payload: payload.get("provider_object"),
+    #             )
+    #         ]
+    #     }
+    # },
     """
     On delete cfgp remove cm
     """,
@@ -408,6 +416,5 @@ create_configuration_rulesdata = [
         }
     }
 ]
-
 
 rulesdata = create_configuration_rulesdata + apply_configuration_rulesdata

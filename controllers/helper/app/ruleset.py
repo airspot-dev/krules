@@ -1,4 +1,6 @@
 from configurations import rulesdata as cfgp_rulesdata
+from serviceconfigurations import rulesdata as scfgp_rulesdata
+from featureconfigurations import rulesdata as fcfgp_rulesdata
 from namespace import rulesdata as ns_rulesdata
 
 # from krules_core.providers import proc_events_rx_factory
@@ -7,5 +9,5 @@ from namespace import rulesdata as ns_rulesdata
 #     on_next=pprint
 # )
 
-rulesdata = cfgp_rulesdata + ns_rulesdata
+rulesdata = cfgp_rulesdata + scfgp_rulesdata + fcfgp_rulesdata + ns_rulesdata
 

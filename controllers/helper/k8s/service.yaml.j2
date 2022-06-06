@@ -26,6 +26,8 @@ spec:
                 env:
                   - name: CE_SOURCE
                     value: {{ name }}
+                  - name: SVC_ACC_NAME
+                    value: {{ svc_acc_name }}
                 {% if debug_procevents_sink %}
                   - name: PUBLISH_PROCEVENTS_LEVEL
                     value: "2"
