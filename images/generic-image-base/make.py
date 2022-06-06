@@ -63,7 +63,6 @@ sane_utils.make_build_recipe(
                 "clean", "setup.py"
             ]
         )
-
     ]
 )
 

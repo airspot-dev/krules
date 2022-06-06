@@ -1,20 +1,17 @@
+import json
+
 
 def update_features_labels(configuration, service):
     if "labels" not in service['metadata']:
         service['metadata']['labels'] = {}
 
     labels = service['metadata']['labels']
-    features = configuration.get("spec", {}).get("extensions", {}).get("features", {})
+    features = json.loads(configuration.get("metadata", {}).get("annotations", {}).get("krules.dev/features", "{}"))
 
     # clean previous
-    # search for <feature>/...
-    to_delete = []
-    for feature_k in features:
-        for label in labels:
-            if label.startswith(f"{feature_k}/"):
-                to_delete.append(label)
-    for label in to_delete:
-        del labels[label]
+    for label in labels:
+        if label.startswith(f"features."):
+            labels[label] = None
 
     # add features labels
     new_labels = {}

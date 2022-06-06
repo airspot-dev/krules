@@ -149,7 +149,7 @@ class K8sObjectsQuery(K8sRuleFunctionBase):
             apiversion: resources api version, if None get this value from subject extended properties[default None]
             kind: resources kind version, if None get this value from subject extended properties[default None]
             foreach: an optional callable that will be execute for each query element[default None]
-            returns: an optional callable that will received as parameters the whole query elements[default None]
+            returns: an optional callable that will receive as parameters the whole query elements[default None]
             **filters: query kwargs
         """
 

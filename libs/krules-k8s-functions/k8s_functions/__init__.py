@@ -5,6 +5,6 @@ from pykube.objects import NamespacedAPIObject
 
 class ConfigurationProvider(NamespacedAPIObject):
 
-    version = "krules.airspot.dev/v1alpha1"
+    version = "krules.dev/v1alpha1"
     kind = "ConfigurationProvider"
     endpoint = "configurationproviders"

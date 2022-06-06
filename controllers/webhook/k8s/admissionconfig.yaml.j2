@@ -58,7 +58,7 @@ webhooks:
     sideEffects: None
     matchPolicy: Equivalent
     failurePolicy: Fail
-    timeoutSeconds: 5
+    timeoutSeconds: 10
     admissionReviewVersions:
       - v1
       - v1beta1
@@ -90,6 +90,7 @@ webhooks:
         apiVersions: ["v1"]
         resources: ["configmaps"]
         operations:
+          - UPDATE
           - DELETE
       - apiGroups: [""]
         apiVersions: ["v1"]

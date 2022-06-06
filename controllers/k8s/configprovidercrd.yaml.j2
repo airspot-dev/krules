@@ -189,9 +189,8 @@ spec:
                     x-kubernetes-preserve-unknown-fields: true
 
                 features:
-                  type: array
-                  items:
-                    type: string
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 extensions:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
@@ -250,6 +249,8 @@ spec:
             spec:
               type: object
               properties:
+                organization:
+                  type: string
                 data:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
