@@ -11,7 +11,7 @@ processing = Const.PROCESSING
 
 
 def _fcfgp_to_cfgp(fcfgp_obj):
-    key = f"features.{fcfgp_obj['spec']['organization']}.{fcfgp_obj['metadata']['name']}"
+    key = f"features.{fcfgp_obj['metadata']['name']}"
     appliesTo = {
         key: "enabled"
     }
@@ -23,7 +23,7 @@ def _fcfgp_to_cfgp(fcfgp_obj):
             "namespace": fcfgp_obj["metadata"]["namespace"],
             "name": fcfgp_obj["metadata"]["name"],
             "labels": {
-                f"{fcfgp_obj['spec']['organization']}/provides-feature": fcfgp_obj["metadata"]["name"],
+                "config.krules.dev/provides-feature": fcfgp_obj["metadata"]["name"],
                 "config.krules.dev/provider": fcfgp_obj["metadata"]["name"],
                 "config.krules.dev/provider_type": "feature"
             }

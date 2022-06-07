@@ -31,9 +31,10 @@ class ApplyConfiguration(K8sObjectsQuery):
             if len(features_labels):
                 api = self.get_api_client()
                 for feature_lbl in features_labels:
-                    prefix, name = feature_lbl.split("/")
+                    _, name = feature_lbl.split("/")
                     selector = {
-                        f"{prefix[len('features.'):]}/provides-feature": name,
+                        "config.krules.dev/provider": name,
+                        "config.krules.dev/provider_type": "feature",
                     }
                     _log.append({
                         "selector": selector
@@ -109,7 +110,10 @@ rulesdata = [
     """,
     {
         rulename: "apply-configuration-to-pod",
-        subscribe_to: ["mutate-pod-create"],
+        subscribe_to: [
+            "mutate-pod-create",
+            "mutate-pod-update",
+        ],
         ruledata: {
             filters: [
                 PayloadMatchOne(
@@ -130,7 +134,10 @@ rulesdata = [
     """,
     {
         rulename: "apply-configuration-to-deployment",
-        subscribe_to: ["mutate-deployment-create"],
+        subscribe_to: [
+            "mutate-deployment-create",
+            "mutate-deployment-update",
+        ],
         ruledata: {
             filters: [
                 PayloadMatchOne(
@@ -147,11 +154,14 @@ rulesdata = [
         }
     },
     """
-    Apply configurations to knative services (revisions)
+    Apply configurations to knative services
     """,
     {
         rulename: "apply-configuration-to-kservice",
-        subscribe_to: ["mutate-kservice-create"],
+        subscribe_to: [
+            "mutate-kservice-create",
+            "mutate-kservice-update",
+        ],
         ruledata: {
             processing: [
                 ApplyConfiguration(

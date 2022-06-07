@@ -6,7 +6,7 @@ def update_features_labels(configuration, service):
         service['metadata']['labels'] = {}
 
     labels = service['metadata']['labels']
-    features = json.loads(configuration.get("metadata", {}).get("annotations", {}).get("krules.dev/features", "{}"))
+    features = json.loads(configuration.get("metadata", {}).get("annotations", {}).get("krules.dev/features", "[]"))
 
     # clean previous
     for label in labels:
@@ -15,9 +15,8 @@ def update_features_labels(configuration, service):
 
     # add features labels
     new_labels = {}
-    for feature_k in features:
-        for feature in features[feature_k]:
-            new_labels[f"features.{feature_k}/{feature}"] = "enabled"  # features[feature_k][feature]
+    for feature in features:
+        new_labels[f"features.krules.dev/{feature}"] = "enabled"  # features[feature_k][feature]
 
     labels.update(new_labels)
 

@@ -28,7 +28,7 @@ def _scfgp_to_cfgp(scfgp_obj):
                 "config.krules.dev/provider_type": "service"
             },
             "annotations": {
-                "krules.dev/features": json.dumps(spec_from.get("features", {}))
+                "krules.dev/features": json.dumps(spec_from.get("features", []))
             }
         },
         "spec": {

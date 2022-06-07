@@ -128,9 +128,10 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
         if len(features_labels):
             api = self.get_api_client()
             for feature_lbl in features_labels:
-                prefix, name = feature_lbl.split("/")
+                _, name = feature_lbl.split("/")
                 selector = {
-                    f"{prefix[len('features.'):]}/provides-feature": name,
+                    "config.krules.dev/provider": name,
+                    "config.krules.dev/provider_type": "feature",
                 }
                 _log.append({
                     "selector": selector
