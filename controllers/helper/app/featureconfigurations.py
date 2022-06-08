@@ -11,7 +11,7 @@ processing = Const.PROCESSING
 
 
 def _fcfgp_to_cfgp(fcfgp_obj):
-    key = f"features.{fcfgp_obj['metadata']['name']}"
+    key = f"features.krules.dev/{fcfgp_obj['metadata']['name']}"
     appliesTo = {
         key: "enabled"
     }
@@ -69,7 +69,7 @@ rulesdata = [
     },
     {
         rulename: "fcfgp-on-delete-clean-cfgps",
-        subscribe_to: "validate-serviceconfigurationprovider-delete",
+        subscribe_to: "validate-featureconfigurationprovider-delete",
         ruledata: {
             processing: [
                 K8sObjectDelete(

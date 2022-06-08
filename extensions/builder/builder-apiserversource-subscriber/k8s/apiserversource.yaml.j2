@@ -1,0 +1,16 @@
+apiVersion: sources.knative.dev/v1
+kind: ApiServerSource
+metadata:
+  name: {{ app_name }}
+  namespace: {{ namespace }}
+spec:
+  serviceAccountName: {{ app_name }}
+  mode: Resource
+  resources:
+    - apiVersion: serving.knative.dev/v1
+      kind: Service
+  sink:
+    ref:
+      apiVersion: v1
+      kind: Service
+      name: {{ app_name }}

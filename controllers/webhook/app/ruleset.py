@@ -5,6 +5,7 @@ from krules_core.base_functions import Process, Filter
 
 from mutating.configurations import rulesdata as mutating_configurations_rulesdata
 from mutating.podenv import rulesdata as mutating_podenv_rulesdata
+from mutating.initalization import rulesdata as initalization_rulesdata
 from validating.podenv import rulesdata as validating_podenv_rulesdata
 from validating.configurations import rulesdata as validating_configurations_rulesdata
 from validating.sendout import rulesdata as validating_sendout_rulesdata
@@ -51,8 +52,10 @@ rulesdata = [
                 )
             ]
         }
-    }
-] + mutating_podenv_rulesdata \
+    },
+  ] \
+  + initalization_rulesdata \
+  + mutating_podenv_rulesdata \
   + mutating_configurations_rulesdata \
   + validating_podenv_rulesdata \
   + validating_configurations_rulesdata \

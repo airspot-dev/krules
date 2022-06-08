@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+    name: {{ app_name }}
+    namespace: {{ namespace }}
+    labels: 
+        krules.dev/app: {{ app_name }}
+        krules.dev/type: ruleset
+spec:
+    replicas: 1
+    selector:
+        matchLabels: 
+            krules.dev/app: {{ app_name }}
+    template:
+        metadata:
+            labels:
+                krules.dev/app: {{ app_name }}
+                krules.dev/type: ruleset
+        spec:
+            serviceAccountName: {{ app_name }}
+            containers:
+              - name: ruleset
+                image: {{ image }}
+                ports: 
+                  - containerPort: 8080
+                    name: ruleset
+                {% if debug_procevents_sink %}
+                env:
+                  - name: PUBLISH_PROCEVENTS_LEVEL
+                    value: "2"
+                  - name: PUBLISH_PROCEVENTS_MATCHING
+                    value: "*"
+                  - name: K_PROCEVENTS_SINK
+                    value: {{ debug_procevents_sink }}
+                {% endif %}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ app_name }}
+  namespace: {{ namespace}}
+spec:
+  selector:
+    krules.dev/app: {{ app_name }}
+  ports:
+    - port: 80
+      targetPort: ruleset
+---

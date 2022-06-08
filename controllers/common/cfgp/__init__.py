@@ -78,12 +78,12 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
         mounts = target.setdefault("volumeMounts", [])
         found = False
         for m in mounts:
-            if m["name"] == configuration.get("metadata").get("name"):
+            if m["name"] == configuration.get("metadata").get("name").replace(".", ""):
                 found = True
                 break
         if not found:
             mounts.append({
-                "name": configuration.get("metadata").get("name"),
+                "name": configuration.get("metadata").get("name").replace(".", ""),
                 "mountPath": mount_path
             })
 
@@ -112,7 +112,7 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
 
     # volumes
     cm_volume = {
-        "name": configuration.get("metadata").get("name"),
+        "name": configuration.get("metadata").get("name").replace(".", ""),
         "configMap": {
             "name": cm_name
         }
@@ -122,7 +122,7 @@ def apply_configuration(configuration: dict, dest: dict, root_expr: str, preserv
     volumes = template["spec"].setdefault("volumes", [])
     volume: dict
     for volume in volumes:
-        if volume["name"] == configuration.get("metadata").get("name"):
+        if volume["name"] == configuration.get("metadata").get("name").replace(".", ""):
             volume.update(cm_volume)
             found = True
             break
