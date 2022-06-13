@@ -9,6 +9,10 @@ spec:
   resources:
     - apiVersion: serving.knative.dev/v1
       kind: Service
+    - apiVersion: apps/v1
+      kind: Deployment
+    - apiVersion: krules.dev/v1alpha1
+      kind: ConfigurationProvider
   sink:
     ref:
       apiVersion: v1

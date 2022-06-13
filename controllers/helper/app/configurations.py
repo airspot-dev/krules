@@ -54,7 +54,7 @@ class SetK8sObjectPropertyAnnotation(RuleFunctionBase):
 
             self.router.route(
                 event_type=SUBJECT_PROPERTY_CHANGED,
-                subject=self.subject,
+                subject=self.subject,\
                 payload={
                     "property_name": property_name,
                     "value": value,

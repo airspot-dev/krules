@@ -19,6 +19,47 @@ processing = Const.PROCESSING
 ruleset_config: dict = configs_factory()["rulesets"][os.environ["CE_SOURCE"]]
 
 
+class K8sObjectSubjectMatch(SubjectNameMatch):
+
+    def execute(self, *args, **kwargs):
+
+        return super().execute(
+            "^k8s:/apis/(?P<api_version>.+)/namespaces/(?P<namespace>.+)/(?P<resources>.+)/(?P<name>.+)$"
+        )
+
+
+class UpdateServices(RuleFunctionBase):
+
+    def execute(self, configuration):
+        config = pykube.KubeConfig.from_env()
+        api = pykube.HTTPClient(config)
+
+        selector = {}
+        for k, v in configuration["spec"].get("appliesTo", {}).items():
+            if isinstance(v, type([])):
+                selector[f"{k}__in"] = set(v)
+            else:
+                selector[k] = v
+        self.payload["_selector"] = selector
+        for K8sClass in [k8s.KService, pykube.Deployment]:
+            qobjs = K8sClass.objects(api).filter(selector=selector)
+
+            _matches = []
+            for obj in qobjs:
+                if len(obj.obj["metadata"].get("ownerReferences", [])) > 0:
+                    continue
+                subject = subject_factory(f"k8s:/apis/{obj.version}/namespaces/{obj.namespace}/services/{obj.name}")
+                _matches.append(subject.name)
+                labels = obj.obj["metadata"].get("labels", {})
+                image_base = subject.get("image_base")
+
+                subject.set("build_source", compose_build_source(
+                    api=api, image_base=image_base, labels=labels
+                ), use_cache=False)
+
+        self.payload["_matches"] = _matches
+
+
 def compose_build_source(api, image_base, labels, log=[]):
     qobjs = k8s.ConfigurationProvider.objects(api).all()
     build_source = {
@@ -99,20 +140,28 @@ class SetK8sObjectProperties(RuleFunctionBase):
 
 rulesdata = [
     {
-        rulename: "on-ksvc-add-update-set-subject",
+        rulename: "on-k8s-ojbect-add-update-set-subject",
         subscribe_to: [
             "dev.knative.apiserver.resource.update",
             "dev.knative.apiserver.resource.add",
-            # "dev.knative.apiserver.resource.delete",
         ],
         ruledata: {
+            filters: [
+                Filter(
+                    lambda payload:
+                    payload["apiVersion"] == "serving.knative.dev/v1" and payload["kind"] == "Service"
+                    or
+                    payload["apiVersion"] == "apps/v1" and payload["kind"] == "Deployment" and
+                    len(payload["metadata"].get("ownerReferences", [])) == 0
+                )
+            ],
             processing: [
                 SetK8sObjectProperties(),
             ],
         }
     },
     {
-        rulename: "on-ksvc-delete-flush-subject",
+        rulename: "on-k8s-object-delete-flush-subject",
         subscribe_to: [
             "dev.knative.apiserver.resource.delete",
         ],
@@ -130,6 +179,15 @@ rulesdata = [
         ruledata: {
             filters: [
                 OnSubjectPropertyChanged("labels"),
+                K8sObjectSubjectMatch(),
+                Filter(
+                    lambda payload:
+                    payload["subject_match"]["api_version"] == "apps/v1"
+                    and payload["subject_match"]["resources"] == "deployments"
+                    or
+                    payload["subject_match"]["api_version"] == "serving.knative.dev/v1"
+                    and payload["subject_match"]["resources"] == "services"
+                ),
                 Filter(
                     lambda payload:
                     "krules.dev/app" in payload["value"]
@@ -138,6 +196,27 @@ rulesdata = [
             processing: [
                 SetBuildSource()
             ]
+        }
+    },
+    {
+        rulename: "on-cfgp-update-services",
+        subscribe_to: [
+            "dev.knative.apiserver.resource.update",
+            "dev.knative.apiserver.resource.add",
+            "dev.knative.apiserver.resource.delete",
+        ],
+        ruledata: {
+            filters: [
+                Filter(
+                    lambda payload:
+                    payload["kind"] == "ConfigurationProvider"
+                ),
+            ],
+            processing: [
+                UpdateServices(
+                    configuration=lambda payload: payload
+                )
+            ],
         }
     },
     {
