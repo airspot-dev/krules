@@ -188,7 +188,18 @@ class Subject(object):
         return self._event_info.copy()
 
     def flush(self):
+        from krules_core.providers import event_router_factory
+        from krules_core import event_types
+
+        props = {
+            "ext_props": self.get_ext_props(),
+            "props": {},
+        }
+        for k in self:
+            props["props"][k] = self.get(k)
+
         self._storage.flush()
+        event_router_factory().route(event_types.SUBJECT_FLUSHED, self, props)
         return self
 
     def store(self):

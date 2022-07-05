@@ -1,0 +1,51 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-and-push
+  annotations:
+    description: >-
+      Build and push service image
+spec:
+  params:
+    - name: imageRepo
+      type: string
+    - name: imagePrefix
+      type: string
+    - name: serviceName
+      type: string
+    - name: cmBuildSource
+      type: string
+  results:
+    - name: digest
+      description: Image digest
+  steps:
+    - name: populate-cache
+      image: busybox
+      command:
+        - /bin/sh
+      args:
+        - "-c"
+        - "cp /build/* /cache/"
+      volumeMounts:
+        - name: build-source
+          mountPath: /build
+        - name: cache
+          mountPath: /cache
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor
+      command:
+        - /kaniko/executor
+      args:
+        - "--dockerfile=Dockerfile"
+        - "--destination=$(params.imageRepo)/$(params.imagePrefix)-$(params.serviceName)"
+        - "--context=/build-context"
+        - "--image-name-with-digest-file=$(results.digest.path)"
+      volumeMounts:
+        - name: cache
+          mountPath: /build-context
+  volumes:
+    - name: build-source
+      configMap:
+        name: $(params.cmBuildSource)
+    - name: cache
+      emptyDir: {}

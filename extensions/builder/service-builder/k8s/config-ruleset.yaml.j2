@@ -1,0 +1,24 @@
+apiVersion: krules.dev/v1alpha1
+kind: ConfigurationProvider
+metadata:
+  name: config-ruleset-{{ app_name }}
+  namespace: {{ namespace }}
+spec:
+  key: rulesets.{{ app_name }}
+  appliesTo:
+    krules.dev/app: {{ app_name }}
+  data:
+    taskRun:
+        spec:
+            serviceAccountName: {{ app_name }}-tekton
+            params:
+            - name: imageRepo
+              value: $IMAGE_REPO
+            - name: imagePrefix
+              value: $IMAGE_PREFIX
+  container:
+    envFrom:
+    - configMapRef:
+        name: {{ app_name }}-env
+
+

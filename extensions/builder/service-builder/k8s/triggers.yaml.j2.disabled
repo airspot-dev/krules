@@ -1,7 +1,7 @@
 apiVersion: eventing.knative.dev/v1
 kind: Trigger
 metadata:
-  name: {{ app_name }}
+  name: {{ app_name }}-digest
   namespace: {{ namespace }}
   labels:
     "krules.dev/app": {{ app_name }}
@@ -9,7 +9,7 @@ spec:
   broker: default
   filter:
     attributes:
-      type: my.event  # REPLACE ME!
+      type: subject-property-changed
   subscriber:
     ref:
 {% if service_api == "knative" %}

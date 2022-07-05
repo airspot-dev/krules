@@ -17,7 +17,7 @@ spec:
                 krules.dev/app: {{ app_name }}
                 krules.dev/type: ruleset
         spec:
-            serviceAccountName: {{ app_name }}
+            serviceAccountName: {{ app_name }}-service
             containers:
               - name: ruleset
                 image: {{ image }}

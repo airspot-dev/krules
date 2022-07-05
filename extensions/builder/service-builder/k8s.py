@@ -29,6 +29,18 @@ class Trigger(NamespacedAPIObject):
     endpoint = "triggers"
 
 
+class TaskRun(NamespacedAPIObject):
+    version = "tekton.dev/v1beta1"
+    endpoint = "taskruns"
+    kind = "TaskRun"
+
+
+class PipelineRun(NamespacedAPIObject):
+    version = "tekton.dev/v1beta1"
+    endpoint = "pipelineruns"
+    kind = "PipelineRun"
+
+
 class ContainerSource(NamespacedAPIObject):
 
     version = "sources.knative.dev/v1"

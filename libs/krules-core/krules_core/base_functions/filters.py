@@ -15,6 +15,8 @@ from krules_core.subject import PayloadConst
 from krules_core.base_functions import RuleFunctionBase
 import inspect
 
+import re
+
 
 class Filter(RuleFunctionBase):
     """
@@ -73,14 +75,14 @@ class SubjectNameMatch(RuleFunctionBase):
         ]
     """
 
+
     def execute(self, regex, payload_dest="subject_match"):
         """
         Args:
             regex: Regular expression which will be evaluated
             payload_dest: Name of the key in the payload where the value of any groups contained in the expression will be saved saved
         """
-        import re
-        match = re.search(regex, self.subject.name)
+        match = re.match(regex, self.subject.name)
         if match is None:
             return False
         self.payload[payload_dest] = match.groupdict()
@@ -92,7 +94,7 @@ class SubjectNameDoesNotMatch(SubjectNameMatch):
     *Return True if the subject's name does not match the given regular expression*
     """
 
-    def execute(self, regex, **kwargs):  # TODO: best inheritage support (**kwargs satisfy base class signature)
+    def execute(self, regex, **kwargs):
         """
         Args:
             regex: Regular expression which will be evaluated

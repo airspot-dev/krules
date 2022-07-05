@@ -11,6 +11,7 @@
 import inspect
 from collections.abc import Mapping
 
+from krules_core.providers import subject_factory
 from krules_core.route.router import DispatchPolicyConst
 
 from krules_core.base_functions import RuleFunctionBase, Filter
@@ -199,7 +200,7 @@ class SetSubjectProperty(RuleFunctionBase):
             }
         ]
     """
-    def execute(self, property_name, value, extended=False, muted=False, use_cache=True):
+    def execute(self, property_name, value, subject=None, extended=False, muted=False, use_cache=True):
         """
         Args:
             property_name: Name of the property to set. It may or may not exist
@@ -210,10 +211,15 @@ class SetSubjectProperty(RuleFunctionBase):
                 properties are always muted so, if extended is True, this parameter will be ignored. [default False]
             use_cache: If False store the property value immediately on the storage, otherwise wait for the end of rule execution. [default False]
         """
+        if subject is None:
+            subject = self.subject
+        elif isinstance(subject, str):
+            subject = subject_factory(subject)
+
         if extended:
-            fn = lambda v: self.subject.set_ext(property_name, v, use_cache)
+            fn = lambda v: subject.set_ext(property_name, v, use_cache)
         else:
-            fn = lambda v: self.subject.set(property_name, v, muted, use_cache)
+            fn = lambda v: subject.set(property_name, v, muted, use_cache)
 
         return fn(value)
 
@@ -279,14 +285,25 @@ class SetSubjectProperties(RuleFunctionBase):
         ]
     """
 
-    def execute(self, props, unmuted=[]):
+    def execute(self, props: dict, subject=None, unmuted=None, use_cache=True):
         """
-        Args:
+        Args,
+            subject: If specified set properties on this subject
             props: The properties to set
-            unmuted: List of property names for which emit property changed events
+            unmuted: List of property names for which emit property changed events or "*" to unmute all
         """
+        if subject is None:
+            subject = self.subject
+        elif isinstance(subject, str):
+            subject = subject_factory(subject)
+        if props is None:
+            props = {}
+        if unmuted is None:
+            unmuted = []
+        if isinstance(unmuted, str) and unmuted == "*":
+            unmuted=list(props.keys())
         for name, value in props.items():
-            self.subject.set(name, value, muted=name not in unmuted)
+            subject.set(name, value, muted=name not in unmuted, use_cache=use_cache)
 
 
 class StoreSubject(RuleFunctionBase):

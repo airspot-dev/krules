@@ -63,6 +63,7 @@ sane_utils.make_render_resource_recipes(
     context_vars=lambda: {
         "app_name": sane_utils.check_env("APP_NAME"),
         "namespace": sane_utils.check_env("NAMESPACE"),
+        "service_api": sane_utils.check_env("SERVICE_API"),
         "image": "RELEASE_VERSION" not in os.environ and
                   open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".build/.digest"), "r").read()
                   or f"{os.environ['DOCKER_REGISTRY']}/{IMAGE_NAME}:{RELEASE_VERSION}",

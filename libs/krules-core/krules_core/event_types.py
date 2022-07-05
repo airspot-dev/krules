@@ -25,3 +25,4 @@ _m = format_event_type
 
 SUBJECT_PROPERTY_CHANGED = _m("subject-property-changed")
 SUBJECT_PROPERTY_DELETED = _m("subject-property-deleted")
+SUBJECT_FLUSHED = _m("subject-flushed")

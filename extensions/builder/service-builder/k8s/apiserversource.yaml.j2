@@ -4,7 +4,7 @@ metadata:
   name: {{ app_name }}
   namespace: {{ namespace }}
 spec:
-  serviceAccountName: {{ app_name }}
+  serviceAccountName: {{ app_name }}-apiserversource
   mode: Resource
   resources:
     - apiVersion: serving.knative.dev/v1
@@ -13,6 +13,12 @@ spec:
       kind: Deployment
     - apiVersion: krules.dev/v1alpha1
       kind: ConfigurationProvider
+#    - apiVersion: krules.dev/v1alpha1
+#      kind: ServiceConfigurationProvider
+#    - apiVersion: krules.dev/v1alpha1
+#      kind: FeatureConfigurationProvider
+    - apiVersion: tekton.dev/v1beta1
+      kind: TaskRun
   sink:
     ref:
       apiVersion: v1

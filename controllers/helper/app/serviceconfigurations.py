@@ -33,6 +33,7 @@ def _scfgp_to_cfgp(scfgp_obj):
         },
         "spec": {
             "key": key,
+            "description": spec_from.get("description", ""),
             "appliesTo": appliesTo,
             "data": spec_from.get('data', {}),
             "container": spec_from.get('container', {}),

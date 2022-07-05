@@ -1,0 +1,7 @@
+FROM {{ image_base }}
+
+RUN pip3 install jsonpath-ng
+
+ADD k8s.py /app/k8s.py
+ADD builder_functions.py /app/builder_functions.py
+ADD ruleset.py /app/ruleset.py
