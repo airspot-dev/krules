@@ -16,7 +16,7 @@ from dependency_injector import providers
 from krules_core import RuleConst, ProcEventsLevel
 from krules_core.base_functions import SetPayloadProperties, SetPayloadProperty, SetSubjectProperty, \
     OnSubjectPropertyChanged, SetSubjectExtendedProperty, SetSubjectPropertyImmediately, \
-    RuleFunctionBase, SetSubjectProperties, Process
+    RuleFunctionBase, SetSubjectProperties, Process, FlushSubject, Filter
 
 from krules_core.core import RuleFactory
 from .. import get_value_from_payload_diffs
@@ -146,6 +146,9 @@ def test_subject_functions(subject, router, asserted):
         subscribe_to="test-set-subject-property",
         data={
             processing: [
+                SetSubjectProperty("my_old_prop", 1, muted=True),
+                SetSubjectExtendedProperty("my_old_ext_prop", "oldextpropvalue"),
+                FlushSubject(),
                 SetSubjectProperty("dt_prop", lambda: datetime.now().isoformat()),  # no args
                 SetSubjectProperty("my_prop", 1),
                 SetSubjectProperty("my_prop", lambda v: v+10),
@@ -221,6 +224,16 @@ def test_subject_functions(subject, router, asserted):
             ]
         }
     )
+    RuleFactory.create(
+        "test-subject-flushed",   # never processed
+        subscribe_to=event_types.SUBJECT_FLUSHED,
+        data={
+            filters: [
+                Filter(lambda payload: payload["props"]["my_old_prop"] == 1),
+                Filter(lambda payload: payload["ext_props"]["my_old_ext_prop"] == "oldextpropvalue")
+            ]
+        }
+    )
 
     proc_events_rx_factory().subscribe(
         lambda x: x[rulename] == "test-set-subject-property" and _assert(
@@ -264,6 +277,12 @@ def test_subject_functions(subject, router, asserted):
             False
         )
     )
+    proc_events_rx_factory().subscribe(
+        lambda x: x[rulename] == "test-subject-flushed" and x[passed] and _assert(
+            x[rulename],
+            True
+        )
+    )
 
     router.route("test-set-subject-property", subject, {})
 
@@ -278,3 +297,4 @@ def test_subject_functions(subject, router, asserted):
     assert "test-muted-property" not in asserted
     assert "test-direct-property" in asserted
     assert "test-multi-set-properties-unmuted" in asserted
+    assert "test-subject-flushed" in asserted

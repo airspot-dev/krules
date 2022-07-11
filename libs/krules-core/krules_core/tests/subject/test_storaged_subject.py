@@ -100,7 +100,7 @@ def test_set_get_del(subject):
     # not yet stored
     subject_copy = subject_factory(subject.name)
     # check default
-    assert subject_copy.get("my-prop", default=None) is None
+    assert subject_copy.get("my-prop", default=0) == 0
     with pytest.raises(AttributeError):
         subject_copy.get("my-prop")
     subject.store()
@@ -376,7 +376,7 @@ def test_property_proxy(subject_no_cache):
 
     subject_no_cache.foo = 1
     assert subject_no_cache.foo == 1
-    assert len(_test_events) == 1
+    assert len(_test_events) == 2
 
     if subject_storage_factory(subject_no_cache.name).is_persistent():
         assert subject_factory(subject_no_cache.name).get("foo") == 1
@@ -384,25 +384,25 @@ def test_property_proxy(subject_no_cache):
     assert subject_no_cache.m_foo == 1
     assert subject_no_cache.foo == 1
     subject_no_cache.m_foo = 2
-    assert len(_test_events) == 1
+    assert len(_test_events) == 2
 
     subject_no_cache.ext_foo = 3
     assert subject_no_cache.ext_foo == 3
     assert subject_no_cache.foo == 2
-    assert len(_test_events) == 1
+    assert len(_test_events) == 2
     if subject_storage_factory(subject_no_cache.name).is_persistent():
         assert subject_factory(subject_no_cache.name).get_ext("foo") == 3
 
     subject_no_cache.foo = lambda foo: foo * foo
-    assert len(_test_events) == 2
+    assert len(_test_events) == 3
 
     assert subject_no_cache.foo == 4
 
     subject_no_cache.foo.incr()
-    assert len(_test_events) == 3
+    assert len(_test_events) == 4
     assert subject_no_cache.foo == 5
     subject_no_cache.m_foo.incr(2)
-    assert len(_test_events) == 3
+    assert len(_test_events) == 4
     assert subject_no_cache.foo == 7
     subject_no_cache.foo.decr()
     assert subject_no_cache.foo == 6
@@ -412,12 +412,12 @@ def test_property_proxy(subject_no_cache):
         subject_no_cache.ext_foo.decr()
 
     del subject_no_cache.foo
-    assert len(_test_events) == 5
+    assert len(_test_events) == 6
     with pytest.raises(AttributeError):
         _ = subject_no_cache.foo
     subject_no_cache.foo = 1
     del subject_no_cache.m_foo
-    assert len(_test_events) == 6
+    assert len(_test_events) == 7
     with pytest.raises(AttributeError):
         _ = subject_no_cache.foo
     del subject_no_cache.ext_foo

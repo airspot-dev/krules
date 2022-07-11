@@ -131,6 +131,11 @@ class Subject(object):
             return val
 
     def get(self, prop, use_cache=None, **kwargs):
+        """
+        kwargs:
+            default: value returned if the subject does not contain the property.
+            If default is not set and the property is not present in the subject an AttributeError will be raised
+        """
         try:
             return self._get(prop, False, use_cache)
         except AttributeError as ex:
