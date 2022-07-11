@@ -36,10 +36,10 @@ filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
 rulename = RuleConst.RULENAME
 processed = RuleConst.PASSED
-subscribed_rules = []
 
 
 def test_filtered(router, subject):
+    subscribed_rules = []
     os.environ["PUBLISH_PROCEVENTS_LEVEL"] = str(ProcEventsLevel.FULL)
     os.environ["PUBLISH_PROCEVENTS_MATCHING"] = "passed=true"
 
@@ -81,3 +81,42 @@ def test_filtered(router, subject):
 
     assert "check-even-value" in subscribed_rules
     assert "check-odd-value" not in subscribed_rules
+
+
+def test_got_errors(router, subject):
+    subscribed_rules = []
+    os.environ["PUBLISH_PROCEVENTS_LEVEL"] = str(ProcEventsLevel.LIGHT)
+    os.environ["PUBLISH_PROCEVENTS_MATCHING"] = "got_errors=true"
+
+    proc_events_rx_factory().subscribe(
+        on_next=lambda x: publish_proc_events_filtered(x, "got_errors=true", lambda match: match is not None,
+                                                       debug=True))
+
+    RuleFactory.create('set-half-with-error',
+                       subscribe_to="event-test-procevents",
+                       data={
+                           processing: [
+                               SetPayloadProperty("half", lambda payload: payload["wrong_key"] / 2, ),
+                           ]
+                       })
+
+    RuleFactory.create('set-half',
+                       subscribe_to="event-test-procevents",
+                       data={
+                           processing: [
+                               SetPayloadProperty("half", lambda payload: payload["value"] / 2, ),
+                           ]
+                       })
+
+    RuleFactory.create('test-procevents-errors',
+                       subscribe_to=RULE_PROC_EVENT,
+                       data={
+                           processing: [
+                               Process(lambda payload: subscribed_rules.append(payload["name"])),
+                           ],
+                       })
+
+    router.route("event-test-procevents", subject, {"value": 2})
+
+    assert "set-half-with-error" in subscribed_rules
+    assert "set-half" not in subscribed_rules
