@@ -99,6 +99,8 @@ def test_set_get_del(subject):
 
     # not yet stored
     subject_copy = subject_factory(subject.name)
+    # check default
+    assert subject_copy.get("my-prop", default=None) is None
     with pytest.raises(AttributeError):
         subject_copy.get("my-prop")
     subject.store()

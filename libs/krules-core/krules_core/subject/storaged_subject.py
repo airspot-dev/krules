@@ -130,8 +130,13 @@ class Subject(object):
                 self._cached[k]["updated"].add(prop)
             return val
 
-    def get(self, prop, use_cache=None):
-        return self._get(prop, False, use_cache)
+    def get(self, prop, use_cache=None, **kwargs):
+        try:
+            return self._get(prop, False, use_cache)
+        except AttributeError as ex:
+            if "default" in kwargs:
+                return kwargs["default"]
+            raise ex
 
     def get_ext(self, prop, use_cache=None):
         return self._get(prop, True, use_cache)
