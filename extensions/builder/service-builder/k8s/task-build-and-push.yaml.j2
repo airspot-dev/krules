@@ -19,18 +19,19 @@ spec:
     - name: digest
       description: Image digest
   steps:
-    - name: populate-cache
+    # solves issues related to using the mounted cm directly as the build context
+    - name: populate-context
       image: busybox
       command:
         - /bin/sh
       args:
         - "-c"
-        - "cp /build/* /cache/"
+        - "cp /source-cm/* /source/"
       volumeMounts:
-        - name: build-source
-          mountPath: /build
-        - name: cache
-          mountPath: /cache
+        - name: build-source-cm
+          mountPath: /source-cm
+        - name: source
+          mountPath: /source
     - name: build-and-push
       image: gcr.io/kaniko-project/executor
       command:
@@ -41,11 +42,16 @@ spec:
         - "--context=/build-context"
         - "--image-name-with-digest-file=$(results.digest.path)"
       volumeMounts:
-        - name: cache
+        - name: source
           mountPath: /build-context
+#        - name: docker-config
+#          mountPath: /kaniko/.docker
   volumes:
-    - name: build-source
+    - name: build-source-cm
       configMap:
         name: $(params.cmBuildSource)
-    - name: cache
+    - name: source
       emptyDir: {}
+#    - name: docker-config
+#      configMap:
+#        name: docker-config

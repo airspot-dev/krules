@@ -1,6 +1,7 @@
 import os
 import pprint
 import uuid
+from typing import Union
 
 import pykube
 import yaml
@@ -8,6 +9,7 @@ import yaml
 from krules_core.base_functions import *
 import k8s
 from krules_core.providers import subject_factory
+from krules_core.subject.storaged_subject import Subject
 
 ruleset_config: dict = configs_factory()["rulesets"][os.environ["CE_SOURCE"]]
 
@@ -25,6 +27,19 @@ class IsDeployableTarget(RuleFunctionBase):
             len(resource["metadata"].get("ownerReferences", [])) == 0
 
 
+class DeleteTaskRuns(RuleFunctionBase):
+
+    def execute(self, service_name: str):
+        config = pykube.KubeConfig.from_env()
+        api = pykube.HTTPClient(config)
+
+        qobjs = k8s.TaskRun.objects(api).filter(
+            selector={
+                "krules.dev/app": service_name
+            }
+        )
+        for qobj in qobjs:
+            qobj.delete()
 
 def _compose_build_source(api, image_base, labels, log=[]):
     qobjs = k8s.ConfigurationProvider.objects(api).all()
@@ -75,6 +90,7 @@ def _compose_build_source(api, image_base, labels, log=[]):
 class UpdateServices(RuleFunctionBase):
 
     def execute(self, configuration, service_target_property="build_source"):
+
         config = pykube.KubeConfig.from_env()
         api = pykube.HTTPClient(config)
 
@@ -84,27 +100,35 @@ class UpdateServices(RuleFunctionBase):
                 selector[f"{k}__in"] = set(v)
             else:
                 selector[k] = v
-        self.payload["_selector"] = selector
-        _matches = self.payload["_matches"] = []
-        _skipped = self.payload["_skipped"] = []
+        _log = self.payload["_log"] = []
+        _log.append(("selector", selector))
         for K8sClass in [k8s.KService, pykube.Deployment]:
-            qobjs = K8sClass.objects(api).filter(selector=selector)
+            qobjs = K8sClass.objects(api).filter(namespace=api.config.namespace, selector=selector)
 
             for obj in qobjs:
+                _log.append((repr(K8sClass), obj.name))
                 if len(obj.obj["metadata"].get("ownerReferences", [])) > 0:
+                    _log.append(("skip owned", obj.name))
                     continue
-                subject = subject_factory(f"k8s:/apis/{obj.version}/namespaces/{obj.namespace}/services/{obj.name}")
+                subject = subject_factory(f"k8s:/apis/{obj.version}/namespaces/{obj.namespace}/{obj.endpoint}/{obj.name}")
+
                 labels = obj.obj["metadata"].get("labels", {})
 
                 if "image_base" in subject:
-                    _matches.append(subject.name)
+                    _log.append(("matched", subject.name))
                     image_base = subject.get("image_base")
 
                     subject.set(service_target_property, _compose_build_source(
                         api=api, image_base=image_base, labels=labels
                     ), use_cache=False)
                 else:
-                    _skipped.append(subject.name)
+                    _log.append(("skip missing image_base", subject.name))
+
+        # self.router.route(
+        #     "dbg-update-service",
+        #     self.subject,
+        #     self.payload
+        # )
 
 
 class SetBuildSource(RuleFunctionBase):
@@ -177,7 +201,8 @@ class CreateTaskRun(RuleFunctionBase):
             config = pykube.KubeConfig.from_env()
             api = self.payload["_pykube_api"] = pykube.HTTPClient(config)
 
-        params = ruleset_config["taskRun"]["spec"]["params"]
+        spec = ruleset_config["taskRun"]["spec"]
+        params = spec["params"]
 
         params.extend([
             {
@@ -190,26 +215,29 @@ class CreateTaskRun(RuleFunctionBase):
             }
         ])
 
-        k8s.TaskRun(
-            api,
-            {
+        taskRun = {
                 "apiVersion": "tekton.dev/v1beta1",
                 "kind": "TaskRun",
                 "metadata": {
                     "generateName": "taskrun-build-and-push-",
                     "annotations": {
                         "krules.dev/subject": self.subject.name,
+                    },
+                    "labels": {
+                        "krules.dev/app": service_name
                     }
                 },
-                "spec": {
-                    "taskRef": {
-                        "name": "build-and-push"
-                    },
-                    "serviceAccountName": ruleset_config["taskRun"]["spec"]["serviceAccountName"],
-                    "params": params,
-                }
+                "spec": spec,
+#                 "spec": {
+#                     "taskRef": {
+#                         "name": "build-and-push"
+#                     },
+# #                    "serviceAccountName": ruleset_config["taskRun"]["spec"]["serviceAccountName"],
+# #                    "params": params,
+#                 }
             }
-        ).create()
+
+        k8s.TaskRun(api, taskRun).create()
 
 
 class OnTaskRunUpdatesSetSubject(RuleFunctionBase):
@@ -262,3 +290,34 @@ class PatchDeploymentImage(RuleFunctionBase):
         obj = pykube.Deployment.objects(api).get(name=deployment_name)
         obj.obj["spec"]["template"]["spec"]["containers"][0]["image"] = image
         obj.update()
+
+
+class UpdateSubjectConfigurationProperty(RuleFunctionBase):
+
+    def execute(self, subject: Union[str, Subject],  configuration: dict):
+
+        if isinstance(subject, str):
+            subject = subject_factory(subject)
+        spec = configuration["spec"]
+        p = {}
+        if "configuration" in subject:
+            p = subject.get("configuration")
+        p["description"] = spec.get("description", "")
+        p["data"] = spec.get("data", {})
+        p["features"] = spec.get("features", [])
+        p["extensions"] = spec.get("extensions", {})
+        p["container"] = spec.get("container", {})
+        p["extra_volumes"] = spec.get("extraVolumes")
+
+        # WORKAROUND!! the prop change event is not intercepted
+        value, old_value = subject.set("configuration", p, use_cache=False)
+        # self.router.route(
+        #     "forced-subject-property-changed",
+        #     subject,
+        #     {
+        #         "property_name": "description",
+        #         "value": value,
+        #         "old_value": old_value
+        #     }
+        # )
+

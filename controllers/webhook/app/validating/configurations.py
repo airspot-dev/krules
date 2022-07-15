@@ -1,4 +1,5 @@
 import os
+import re
 
 from krules_core import RuleConst as Const
 from krules_core.base_functions import *
@@ -10,6 +11,8 @@ subscribe_to = Const.SUBSCRIBE_TO
 ruledata = Const.RULEDATA
 filters = Const.FILTERS
 processing = Const.PROCESSING
+
+SYS_SVC_REGEX = re.compile("^system:[^:]+$")
 
 rulesdata = [
     {
@@ -28,13 +31,14 @@ rulesdata = [
                 ),
                 Filter(
                     lambda payload:
-                    payload["request"]["userInfo"]["username"] != "system:serviceaccount:{0}:{0}".format(
-                        os.environ["SVC_ACC_NAME"]
-                    )
+                    payload["request"]["userInfo"]["username"] !=
+                        "system:serviceaccount:{0}:{0}".format(
+                            os.environ["SVC_ACC_NAME"]
+                        ) and not SYS_SVC_REGEX.match(payload["request"]["userInfo"]["username"])
                 ),
             ],
             processing: [
-                Deny("owned by configuration provider")
+                Deny(lambda payload: f"owned by configuration provider (using: {payload['request']['userInfo']['username']}")
             ]
         }
     }

@@ -11,7 +11,8 @@ processing = Const.PROCESSING
 
 
 def _scfgp_to_cfgp(scfgp_obj):
-    prefix, target = scfgp_obj['spec']['target'].split(":")
+    spec_target = scfgp_obj['spec'].get('target', f"krules.dev/app:{scfgp_obj['metadata']['name']}")
+    prefix, target = spec_target.split(":")
     key = f"services.{target}"
     appliesTo = {
         prefix: target

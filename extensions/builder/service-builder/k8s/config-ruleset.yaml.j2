@@ -10,12 +10,15 @@ spec:
   data:
     taskRun:
         spec:
+            taskRef:
+               name: build-and-push
             serviceAccountName: {{ app_name }}-tekton
             params:
             - name: imageRepo
               value: $IMAGE_REPO
             - name: imagePrefix
               value: $IMAGE_PREFIX
+
   container:
     envFrom:
     - configMapRef:

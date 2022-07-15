@@ -120,14 +120,25 @@ rulesdata = [
     {
         rulename: "on-service-labels-update-set-build-source",
         description: """
-            The build source is set when the service's labels changes. 
+            The build source is set when the service's labels changes (features added)
+            or configuration updated. 
         """,
-        subscribe_to: SUBJECT_PROPERTY_CHANGED,
+        subscribe_to: [
+            SUBJECT_PROPERTY_CHANGED,
+            #"forced-subject-property-changed",  # workaround in UpdateSubjectConfigurationProperty
+            ],
         ruledata: {
             filters: [
-                OnSubjectPropertyChanged("labels"),
                 Filter(
                     lambda subject: subject.name.startswith("k8s:")
+                ),
+                Filter(
+                    #lambda payload: payload["property_name"] in ["labels", "configuration"]
+                    lambda payload: payload["property_name"] == "labels"
+                ),
+                Filter(
+                    lambda payload:
+                    payload["property_name"] == "labels" and "krules.dev/app" in payload["value"]
                 ),
                 SubjectNameMatch(
                     "^k8s:/apis/(?P<api_version>.+)/namespaces/(?P<namespace>.+)/(?P<resources>.+)/(?P<service_name>.+)$"
@@ -140,10 +151,6 @@ rulesdata = [
                     payload["subject_match"]["api_version"] == "serving.knative.dev/v1"
                     and payload["subject_match"]["resources"] == "services"
                 ),
-                Filter(
-                    lambda payload:
-                    "krules.dev/app" in payload["value"]
-                ),
             ],
             processing: [
                 SetBuildSource(
@@ -151,6 +158,34 @@ rulesdata = [
                 )
             ]
         }
+    },
+    {
+        rulename: "on-scfgp-update-set-subject",
+        description: """
+            Update the configuration property of related subject
+        """,
+        subscribe_to: [
+            "dev.knative.apiserver.resource.update",
+            "dev.knative.apiserver.resource.add",
+        ],
+        ruledata: {
+            filters: [
+                Filter(
+                    lambda payload:
+                    payload["kind"] == "ServiceConfigurationProvider"
+                ),
+                Filter(
+                    lambda payload:
+                    payload["metadata"].get("annotations", {}).get("krules.dev/subject") is not None
+                )
+            ],
+            processing: [
+                UpdateSubjectConfigurationProperty(
+                    subject=lambda payload: payload["metadata"].get("annotations", {}).get("krules.dev/subject"),
+                    configuration=lambda payload: payload
+                )
+            ],
+        },
     },
     {
         rulename: "on-cfgp-update-services",
@@ -194,6 +229,9 @@ rulesdata = [
             ],
             processing: [
                 CreateBuildSourceConfigMap(payload_dest="cm_info"),
+                DeleteTaskRuns(
+                    service_name=lambda payload: payload["subject_match"]["service_name"]
+                ),
                 CreateTaskRun(
                     config_name=lambda payload: payload["cm_info"]["cm_name"],
                     service_name=lambda payload: payload["subject_match"]["service_name"]
@@ -259,13 +297,32 @@ rulesdata = [
             filters: [
                 OnSubjectPropertyChanged("digest"),
                 SubjectNameMatch(
-                    "^k8s:/apis/(?P<api_version>.+)/namespaces/(?P<namespace>.+)/(?P<resources>.+)/(?P<service_name>.+)$"
+                    "^k8s:/apis/apps/v1/namespaces/(?P<namespace>.+)/(?P<resources>.+)/(?P<service_name>.+)$"
                 ),
             ],
             processing: [
                 PatchDeploymentImage(
                     deployment_name=lambda payload: payload['subject_match']['service_name'],
                     image=lambda payload: payload["value"].strip(),
+                )
+            ]
+        }
+    },
+    {
+        rulename: "delete-taskrun-for-deleted-services",
+        subscribe_to: "dev.knative.apiserver.resource.delete",
+        description: """
+            When a previously deployed service is deleted, its related taskruns are also removed
+        """,
+        ruledata: {
+            filters: [
+                IsDeployableTarget(
+                    lambda payload: payload
+                ),
+            ],
+            processing: [
+                DeleteTaskRuns(
+                    service_name=lambda payload: payload["metadata"]["name"]
                 )
             ]
         }
