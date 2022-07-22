@@ -213,6 +213,57 @@ rulesdata = [
             ],
         }
     },
+    # CHECK PODS CONTAINERS STATUS
+    {
+        rulename: "on-pod-updates-store-in-subject",
+        description: """
+            Annotate on subject pods container statuses
+        """,
+        subscribe_to: [
+            "dev.knative.apiserver.resource.update",
+            "dev.knative.apiserver.resource.add",
+        ],
+        ruledata: {
+            filters: [
+                Filter(
+                    lambda payload:
+                    payload["kind"] == "Pod" and \
+                    "krules.dev/app" in payload["metadata"].get("labels", {}) and \
+                    "krules.dev/api" in payload["metadata"].get("labels", {})
+                ),
+            ],
+            processing: [
+                SubjectAnnotatePodInfo(
+                    resource=lambda payload: payload,
+                ),
+            ]
+        }
+    },
+    {
+        rulename: "on-pod-delete-remove-from-subject",
+        description: """
+            Remove annotated pod from subject
+        """,
+        subscribe_to: [
+            "dev.knative.apiserver.resource.delete",
+        ],
+        ruledata: {
+            filters: [
+                Filter(
+                    lambda payload:
+                    payload["kind"] == "Pod" and \
+                    "krules.dev/app" in payload["metadata"].get("labels", {}) and \
+                    "krules.dev/api" in payload["metadata"].get("labels", {})
+                ),
+            ],
+            processing: [
+                RemoveAnnotatedPodInfo(
+                    resource=lambda payload: payload,
+                ),
+            ]
+        }
+    },
+    # DISPOSE TASKS
     {
         rulename: "on-build-source-dispose-task",
         description: """

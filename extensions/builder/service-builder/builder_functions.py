@@ -1,10 +1,12 @@
 import os
 import pprint
 import uuid
+from datetime import datetime
 from typing import Union
 
 import pykube
 import yaml
+from pykube import Pod
 
 from krules_core.base_functions import *
 import k8s
@@ -22,9 +24,9 @@ class IsDeployableTarget(RuleFunctionBase):
 
     def execute(self, resource):
         return resource["apiVersion"] == "serving.knative.dev/v1" and resource["kind"] == "Service" \
-            or \
-            resource["apiVersion"] == "apps/v1" and resource["kind"] == "Deployment" and \
-            len(resource["metadata"].get("ownerReferences", [])) == 0
+               or \
+               resource["apiVersion"] == "apps/v1" and resource["kind"] == "Deployment" and \
+               len(resource["metadata"].get("ownerReferences", [])) == 0
 
 
 class DeleteTaskRuns(RuleFunctionBase):
@@ -40,6 +42,7 @@ class DeleteTaskRuns(RuleFunctionBase):
         )
         for qobj in qobjs:
             qobj.delete()
+
 
 def _compose_build_source(api, image_base, labels, log=[]):
     qobjs = k8s.ConfigurationProvider.objects(api).all()
@@ -110,7 +113,8 @@ class UpdateServices(RuleFunctionBase):
                 if len(obj.obj["metadata"].get("ownerReferences", [])) > 0:
                     _log.append(("skip owned", obj.name))
                     continue
-                subject = subject_factory(f"k8s:/apis/{obj.version}/namespaces/{obj.namespace}/{obj.endpoint}/{obj.name}")
+                subject = subject_factory(
+                    f"k8s:/apis/{obj.version}/namespaces/{obj.namespace}/{obj.endpoint}/{obj.name}")
 
                 labels = obj.obj["metadata"].get("labels", {})
 
@@ -216,26 +220,26 @@ class CreateTaskRun(RuleFunctionBase):
         ])
 
         taskRun = {
-                "apiVersion": "tekton.dev/v1beta1",
-                "kind": "TaskRun",
-                "metadata": {
-                    "generateName": "taskrun-build-and-push-",
-                    "annotations": {
-                        "krules.dev/subject": self.subject.name,
-                    },
-                    "labels": {
-                        "krules.dev/app": service_name
-                    }
+            "apiVersion": "tekton.dev/v1beta1",
+            "kind": "TaskRun",
+            "metadata": {
+                "generateName": "taskrun-build-and-push-",
+                "annotations": {
+                    "krules.dev/subject": self.subject.name,
                 },
-                "spec": spec,
-#                 "spec": {
-#                     "taskRef": {
-#                         "name": "build-and-push"
-#                     },
-# #                    "serviceAccountName": ruleset_config["taskRun"]["spec"]["serviceAccountName"],
-# #                    "params": params,
-#                 }
-            }
+                "labels": {
+                    "krules.dev/app": service_name
+                }
+            },
+            "spec": spec,
+            #                 "spec": {
+            #                     "taskRef": {
+            #                         "name": "build-and-push"
+            #                     },
+            # #                    "serviceAccountName": ruleset_config["taskRun"]["spec"]["serviceAccountName"],
+            # #                    "params": params,
+            #                 }
+        }
 
         k8s.TaskRun(api, taskRun).create()
 
@@ -246,19 +250,51 @@ class OnTaskRunUpdatesSetSubject(RuleFunctionBase):
         super().__init__(*args, **kwargs)
         from jsonpath_ng.ext import parse
 
-        self.jp_expr = parse('$.status.taskResults[?(name="digest")].value')
+        self.digest_jp_expr = parse('$.status.taskResults[?(name="digest")].value')
+        self.status_condition_jp_expr = parse('$.status.conditions[?(type="Succeeded")]')
+        self.status_completion_time_jp_expr = parse("$.status.completionTime")
 
     def execute(self, taskrun):
 
-        _log = self.payload["_log"] = []
         subject = subject_factory(
             taskrun["metadata"]["annotations"]["krules.dev/subject"]
         )
-        _log.append(f"subject: {subject.name}")
 
-        for match in self.jp_expr.find(taskrun):
-            _log.append(match.value)
+        for match in self.digest_jp_expr.find(taskrun):
             subject.set("digest", match.value.strip(), use_cache=False)
+
+        build_status = {}
+        for match in self.status_condition_jp_expr.find(taskrun):
+            match = match.value
+            if "lastTransitionTime" in match:
+                build_status["last_transition_time"] = match["lastTransitionTime"].replace("Z", "+00:00")
+            build_status["message"] = match.get("message")
+            build_status["reason"] = match.get("reason")
+            build_status["status"] = match.get("status")
+
+            error_logs = {}
+            if match.get("status") == "False" and match.get("reason") == "Failed":
+                # get failed step container
+                if "_pykube_api" in self.payload:
+                    api = self.payload["_pykube_api"]
+                else:
+                    config = pykube.KubeConfig.from_env()
+                    api = self.payload["_pykube_api"] = pykube.HTTPClient(config)
+                pod = Pod.objects(api).get(name=f"{taskrun['metadata']['name']}-pod")
+                for step in taskrun.get("status", {}).get("steps", []):
+                    if step.get("terminated", {}).get("reason") == "Error":
+                        container_log = pod.logs(
+                            container=step["container"]
+                        )
+                        error_logs[step["name"]] = container_log.split("\n")
+
+            build_status["error_logs"] = error_logs
+
+        for match in self.status_completion_time_jp_expr.find(taskrun):
+            build_status["completion_time"] = match.value.replace("Z", "+00:00")
+
+        if len(build_status):
+            subject.build_status = build_status
 
 
 class PatchKServiceImage(RuleFunctionBase):
@@ -294,7 +330,7 @@ class PatchDeploymentImage(RuleFunctionBase):
 
 class UpdateSubjectConfigurationProperty(RuleFunctionBase):
 
-    def execute(self, subject: Union[str, Subject],  configuration: dict):
+    def execute(self, subject: Union[str, Subject], configuration: dict):
 
         if isinstance(subject, str):
             subject = subject_factory(subject)
@@ -309,15 +345,87 @@ class UpdateSubjectConfigurationProperty(RuleFunctionBase):
         p["container"] = spec.get("container", {})
         p["extra_volumes"] = spec.get("extraVolumes")
 
-        # WORKAROUND!! the prop change event is not intercepted
-        value, old_value = subject.set("configuration", p, use_cache=False)
-        # self.router.route(
-        #     "forced-subject-property-changed",
-        #     subject,
-        #     {
-        #         "property_name": "description",
-        #         "value": value,
-        #         "old_value": old_value
-        #     }
-        # )
+        subject.set("configuration", p, use_cache=False)
 
+
+class SubjectAnnotatePodInfo(RuleFunctionBase):
+
+    def execute(self, resource: dict):
+
+        api = resource.get("metadata", {}).get("labels", {}).get("krules.dev/api")
+        name = resource.get("metadata", {}).get("labels", {}) \
+            .get("krules.dev/app", resource.get("metadata", {}).get("labels", {}).get("app"))
+        namespace = resource.get("metadata", {}).get("namespace")
+
+        subject: Subject
+        revision: str
+        if api == "base":
+            subject = subject_factory(f"k8s:/apis/apps/v1/namespaces/{namespace}/deployments/{name}")
+            revision = name
+        elif api == "knative":
+            subject = subject_factory(f"k8s:/apis/serving.knative.dev/v1/namespaces/{namespace}/services/{name}")
+            revision = resource.get("metadata", {}).get("labels", {}).get("serving.knative.dev/revision")
+        else:
+            return
+
+        ready = len([condition for condition in resource.get("status", {}).get("conditions", [])
+                     if condition["type"] == "Ready" and condition["status"] == "True"]) == 1
+
+        pod_info = {
+            "revision": revision,
+            "ready": ready
+        }
+        failed_containers = {}
+        if not ready:
+            for container in resource.get("status", {}).get("containerStatuses", []):
+                if container.get("ready") is False:
+                    if "lastState" in container and "terminated" in container['lastState']:
+                        if container['lastState']['terminated']['exitCode'] != 0:
+                            message = container['lastState']['terminated']['reason']
+                            if "message" in container['lastState']['terminated']:
+                                message = container['lastState']['terminated']["message"]
+                            failed_containers[container['name']] = message
+                            pod_info['failed_containers'] = failed_containers
+                            #break
+
+        def _update_pods(cur_v):
+            nonlocal self, resource
+            if cur_v is None:
+                cur_v = {}
+            cur_v[resource["metadata"]["name"]] = pod_info
+            return cur_v
+
+        subject.set("pods", _update_pods, use_cache=False)
+        # if len(failed_containers):
+        #     subject.set("failed_containers", failed_containers)
+        # else:
+        #     subject.set("failed_containers", None)
+
+
+class RemoveAnnotatedPodInfo(RuleFunctionBase):
+
+    def execute(self, resource: dict):
+
+        api = resource.get("metadata", {}).get("labels", {}).get("krules.dev/api")
+        name = resource.get("metadata", {}).get("labels", {}) \
+            .get("krules.dev/app", resource.get("metadata", {}).get("labels", {}).get("app"))
+        namespace = resource.get("metadata", {}).get("namespace")
+
+        subject: Subject
+        revision: str
+        if api == "base":
+            subject = subject_factory(f"k8s:/apis/apps/v1/namespaces/{namespace}/deployments/{name}")
+            # revision = name
+        elif api == "knative":
+            subject = subject_factory(f"k8s:/apis/serving.knative.dev/v1/namespaces/{namespace}/services/{name}")
+            # revision = resource.get("metadata", {}).get("labels", {}).get("serving.knative.dev/revision")
+        else:
+            return
+
+        def _delete_pod(cur_v):
+            if cur_v is None:
+                cur_v = {}
+            del cur_v[resource["metadata"]["name"]]
+            return cur_v
+
+        subject.set("pods", _delete_pod, use_cache=False)

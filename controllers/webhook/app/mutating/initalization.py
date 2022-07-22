@@ -28,6 +28,21 @@ class AnnotateImageBase(RuleFunctionBase):
 
         annotations["krules.dev/props"] = yaml.dump(props, Dumper=yaml.SafeDumper)
 
+
+class SetLabel(RuleFunctionBase):
+
+    def execute(self, name: str, value):
+
+        labels = self.payload["__mutated_object"]["metadata"].setdefault("labels", {})
+        labels[name] = value
+
+        if "template" in self.payload["__mutated_object"].get("spec", {}):
+            labels = self.payload["__mutated_object"]["spec"]["template"]["metadata"].setdefault("labels", {})
+            labels[name] = value
+
+
+
+
 rulesdata = [
     """
     Initialize pods only when not owned by other objects
@@ -47,7 +62,7 @@ rulesdata = [
             processing: [
                 AnnotateImageBase(
                     lambda payload: payload["request"]["object"]["spec"]["containers"][0]["image"]
-                )
+                ),
             ]
         }
     },
@@ -69,7 +84,8 @@ rulesdata = [
             processing: [
                 AnnotateImageBase(
                     lambda payload: payload["request"]["object"]["spec"]["template"]["spec"]["containers"][0]["image"]
-                )
+                ),
+                SetLabel("krules.dev/api", "base"),
             ]
         }
     },
@@ -85,7 +101,8 @@ rulesdata = [
             processing: [
                 AnnotateImageBase(
                     lambda payload: payload["request"]["object"]["spec"]["template"]["spec"]["containers"][0]["image"]
-                )
+                ),
+                SetLabel("krules.dev/api", "knative"),
             ]
         }
     },
