@@ -114,7 +114,9 @@ class UpdateServices(RuleFunctionBase):
                     _log.append(("skip owned", obj.name))
                     continue
                 subject = subject_factory(
-                    f"k8s:/apis/{obj.version}/namespaces/{obj.namespace}/{obj.endpoint}/{obj.name}")
+                    #f"k8s:/apis/{obj.version}/namespaces/{obj.namespace}/{obj.endpoint}/{obj.name}")
+                    f"krules:builder:{obj.namespace}:services:{obj.name}"
+                )
 
                 labels = obj.obj["metadata"].get("labels", {})
 
@@ -172,7 +174,7 @@ class CreateBuildSourceConfigMap(RuleFunctionBase):
             api = self.payload["_pykube_api"] = pykube.HTTPClient(config)
 
         source_hash = self._hashed(self.payload["value"])
-        service_name = self.subject.name.split("/")[-1]
+        service_name = self.subject.name.split(":")[-1]
         cm_name = f"build-source-{service_name}-{source_hash}"
         cm = pykube.ConfigMap(api, {
             "apiVersion": "v1",
@@ -352,18 +354,17 @@ class SubjectAnnotatePodInfo(RuleFunctionBase):
 
     def execute(self, resource: dict):
 
-        api = resource.get("metadata", {}).get("labels", {}).get("krules.dev/api")
+        api = resource.get("metadata", {}).get("annotations", {}).get("krules.dev/api")
         name = resource.get("metadata", {}).get("labels", {}) \
             .get("krules.dev/app", resource.get("metadata", {}).get("labels", {}).get("app"))
         namespace = resource.get("metadata", {}).get("namespace")
 
         subject: Subject
         revision: str
+        subject = subject_factory(f"krules:builder:{namespace}:services:{name}")
         if api == "base":
-            subject = subject_factory(f"k8s:/apis/apps/v1/namespaces/{namespace}/deployments/{name}")
             revision = name
         elif api == "knative":
-            subject = subject_factory(f"k8s:/apis/serving.knative.dev/v1/namespaces/{namespace}/services/{name}")
             revision = resource.get("metadata", {}).get("labels", {}).get("serving.knative.dev/revision")
         else:
             return
@@ -406,21 +407,21 @@ class RemoveAnnotatedPodInfo(RuleFunctionBase):
 
     def execute(self, resource: dict):
 
-        api = resource.get("metadata", {}).get("labels", {}).get("krules.dev/api")
+        #api = resource.get("metadata", {}).get("annotations", {}).get("krules.dev/api")
         name = resource.get("metadata", {}).get("labels", {}) \
             .get("krules.dev/app", resource.get("metadata", {}).get("labels", {}).get("app"))
         namespace = resource.get("metadata", {}).get("namespace")
 
         subject: Subject
         revision: str
-        if api == "base":
-            subject = subject_factory(f"k8s:/apis/apps/v1/namespaces/{namespace}/deployments/{name}")
-            # revision = name
-        elif api == "knative":
-            subject = subject_factory(f"k8s:/apis/serving.knative.dev/v1/namespaces/{namespace}/services/{name}")
-            # revision = resource.get("metadata", {}).get("labels", {}).get("serving.knative.dev/revision")
-        else:
-            return
+        subject = subject_factory(f"krules:builder:{namespace}:services:{name}")
+        # if api == "base":
+        #     # revision = name
+        # elif api == "knative":
+        #     subject = subject_factory(f"k8s:/apis/serving.knative.dev/v1/namespaces/{namespace}/services/{name}")
+        #     # revision = resource.get("metadata", {}).get("labels", {}).get("serving.knative.dev/revision")
+        # else:
+        #     return
 
         def _delete_pod(cur_v):
             if cur_v is None:
@@ -429,3 +430,23 @@ class RemoveAnnotatedPodInfo(RuleFunctionBase):
             return cur_v
 
         subject.set("pods", _delete_pod, use_cache=False)
+
+
+class SubjectAnnotateReplicaSetRevisionNo(RuleFunctionBase):
+
+    def execute(self):
+
+        namespace = self.payload.get("metadata", {}).get("namespace")
+        name = self.payload.get("metadata", {}).get("mame")
+        revision = self.payload.get("metadata", {}).get("annotations", {}).get("deployment.kubernetes.io/revision")
+        subject = subject_factory(f"krules:builder:{namespace}:services:{name}")
+
+        #assert "revision" is not None
+        #assert "api" in subject and subject.get("api") == "base"
+
+        def _annotate_rs_revision(cur_v):
+            if cur_v is None:
+                cur_v = {}
+            cur_v[revision] = name
+
+        subject.set("_rs_revisions", _annotate_rs_revision, muted=True)

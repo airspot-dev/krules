@@ -10,9 +10,9 @@ filters = Const.FILTERS
 processing = Const.PROCESSING
 
 
-class AnnotateImageBase(RuleFunctionBase):
+class AnnotateInProps(RuleFunctionBase):
 
-    def execute(self, image):
+    def execute(self, prop, value):
         """
         When the object is created the image is annotated as a base image.
         Any builds dependent on dynamic configurations will refer to this image
@@ -24,21 +24,21 @@ class AnnotateImageBase(RuleFunctionBase):
             Loader=yaml.SafeLoader
         )
 
-        props["image_base"] = image
+        props[prop] = value
 
         annotations["krules.dev/props"] = yaml.dump(props, Dumper=yaml.SafeDumper)
 
 
-class SetLabel(RuleFunctionBase):
+class Annotate(RuleFunctionBase):
 
     def execute(self, name: str, value):
 
-        labels = self.payload["__mutated_object"]["metadata"].setdefault("labels", {})
-        labels[name] = value
+        annotations = self.payload["__mutated_object"]["metadata"].setdefault("annotations", {})
+        annotations[name] = value
 
         if "template" in self.payload["__mutated_object"].get("spec", {}):
-            labels = self.payload["__mutated_object"]["spec"]["template"]["metadata"].setdefault("labels", {})
-            labels[name] = value
+            annotations = self.payload["__mutated_object"]["spec"]["template"]["metadata"].setdefault("annotations", {})
+            annotations[name] = value
 
 
 
@@ -60,7 +60,7 @@ rulesdata = [
                 )
             ],
             processing: [
-                AnnotateImageBase(
+                AnnotateInProps(
                     lambda payload: payload["request"]["object"]["spec"]["containers"][0]["image"]
                 ),
             ]
@@ -82,10 +82,10 @@ rulesdata = [
                 )
             ],
             processing: [
-                AnnotateImageBase(
-                    lambda payload: payload["request"]["object"]["spec"]["template"]["spec"]["containers"][0]["image"]
+                AnnotateInProps(
+                    "image_base", lambda payload: payload["request"]["object"]["spec"]["template"]["spec"]["containers"][0]["image"]
                 ),
-                SetLabel("krules.dev/api", "base"),
+                Annotate("krules.dev/api", "base"),
             ]
         }
     },
@@ -99,10 +99,10 @@ rulesdata = [
         ],
         ruledata: {
             processing: [
-                AnnotateImageBase(
+                AnnotateInProps(
                     lambda payload: payload["request"]["object"]["spec"]["template"]["spec"]["containers"][0]["image"]
                 ),
-                SetLabel("krules.dev/api", "knative"),
+                Annotate("krules.dev/api", "knative"),
             ]
         }
     },

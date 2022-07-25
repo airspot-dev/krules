@@ -39,6 +39,18 @@ def _get_svc_revision(obj: dict):
     return "Unknown"
 
 
+def _get_subject_name(obj: dict):
+    return f"krules:builder:{obj.get('metadata').get('namespace')}:services:{obj.get('metadata').get('name')}"
+
+def _get_resource_api(obj: dict):
+    if obj.get("apiVersion").startswith("serving.knative.dev/"):
+        return "knative"
+    elif obj.get("kind") == "Deployment":
+        return "base"
+
+    assert False
+
+
 rulesdata = [
     {
         rulename: "set-props-on-k8s-subject",
@@ -57,8 +69,15 @@ rulesdata = [
                 ),
             ],
             processing: [
+                SetSubjectProperty(
+                    subject=lambda payload: _get_subject_name(payload),
+                    property_name="api",
+                    value=lambda payload: _get_resource_api(payload),
+                    use_cache=False,
+                    muted=True
+                ),
                 SetSubjectProperties(
-                    subject=lambda subject: f"k8s:{subject.name}",
+                    subject=lambda payload: _get_subject_name(payload),
                     props=lambda payload: yaml.load(
                         payload["metadata"].get("annotations", {}).setdefault("krules.dev/props", "{}"),
                         Loader=yaml.SafeLoader
@@ -67,7 +86,7 @@ rulesdata = [
                     unmuted="*"
                 ),
                 SetSubjectProperty(
-                    subject=lambda subject: f"k8s:{subject.name}",
+                    subject=lambda payload: _get_subject_name(payload),
                     property_name="applied",
                     value=lambda payload: yaml.load(
                         payload["metadata"].get("annotations", {}).get("config.krules.dev/applied", "{}"),
@@ -76,19 +95,19 @@ rulesdata = [
                     use_cache=False,
                 ),
                 SetSubjectProperty(
-                    subject=lambda subject: f"k8s:{subject.name}",
+                    subject=lambda payload: _get_subject_name(payload),
                     property_name="labels",
                     value=lambda payload: payload.get("metadata", {}).get("labels", {}),
                     use_cache=False,
                 ),
                 SetSubjectProperty(
-                    subject=lambda subject: f"k8s:{subject.name}",
+                    subject=lambda payload: _get_subject_name(payload),
                     property_name="ready",
                     value=lambda payload: _get_svc_ready_status(payload),
                     use_cache=False,
                 ),
                 SetSubjectProperty(
-                    subject=lambda subject: f"k8s:{subject.name}",
+                    subject=lambda payload: _get_subject_name(payload),
                     property_name="revision",
                     value=lambda payload: _get_svc_revision(payload),
                     use_cache=False,
@@ -112,9 +131,40 @@ rulesdata = [
             ],
             processing: [
                 Process(
-                    lambda subject: subject_factory(f"k8s:{subject.name}").flush()
+                    lambda payload:
+                    subject_factory(
+                        f"krules:builder:{payload['metadata']['namespace']}:services:{payload['metadata']['name']}"
+                    ).flush()
                 )
             ],
+        }
+    },
+    {
+        rulename: "on-replicaset-update-on-base-annotate-revision-no",
+        description: """
+          The deployment revision number is annotated on the subject in order to use the replicaset name as
+          as service revision
+        """,
+        subscribe_to: [
+            "dev.knative.apiserver.resource.update",
+            "dev.knative.apiserver.resource.add",
+            #"dev.knative.apiserver.resource.delete",
+        ],
+        ruledata: {
+            filters: [
+                Filter(
+                    lambda payload:
+                    payload["kind"] == "ReplicaSet"
+                ),
+                Filter(
+                    lambda payload:
+                    payload.get("metadata", {}).get("annotations", {}).get("krules.dev/api") == "base"
+                    and "deployment.kubernetes.io/revision" in payload.get("metadata", {}).get("annotations", {})
+                ),
+            ],
+            processing: [
+                SubjectAnnotateReplicaSetRevisionNo()
+            ]
         }
     },
     {
@@ -129,9 +179,12 @@ rulesdata = [
             ],
         ruledata: {
             filters: [
-                Filter(
-                    lambda subject: subject.name.startswith("k8s:")
+                SubjectNameMatch(
+                    "^krules:builder:(?P<namespace>.+):services:(?P<service_name>.+)$"
                 ),
+                # Filter(
+                #     lambda subject: subject.name.startswith("k8s:")
+                # ),
                 Filter(
                     #lambda payload: payload["property_name"] in ["labels", "configuration"]
                     lambda payload: payload["property_name"] == "labels"
@@ -140,17 +193,17 @@ rulesdata = [
                     lambda payload:
                     payload["property_name"] == "labels" and "krules.dev/app" in payload["value"]
                 ),
-                SubjectNameMatch(
-                    "^k8s:/apis/(?P<api_version>.+)/namespaces/(?P<namespace>.+)/(?P<resources>.+)/(?P<service_name>.+)$"
-                ),
-                Filter(
-                    lambda payload:
-                    payload["subject_match"]["api_version"] == "apps/v1"
-                    and payload["subject_match"]["resources"] == "deployments"
-                    or
-                    payload["subject_match"]["api_version"] == "serving.knative.dev/v1"
-                    and payload["subject_match"]["resources"] == "services"
-                ),
+                # SubjectNameMatch(
+                #     "^k8s:/apis/(?P<api_version>.+)/namespaces/(?P<namespace>.+)/(?P<resources>.+)/(?P<service_name>.+)$"
+                # ),
+                # Filter(
+                #     lambda payload:
+                #     payload["subject_match"]["api_version"] == "apps/v1"
+                #     and payload["subject_match"]["resources"] == "deployments"
+                #     or
+                #     payload["subject_match"]["api_version"] == "serving.knative.dev/v1"
+                #     and payload["subject_match"]["resources"] == "services"
+                # ),
             ],
             processing: [
                 SetBuildSource(
@@ -229,7 +282,7 @@ rulesdata = [
                     lambda payload:
                     payload["kind"] == "Pod" and \
                     "krules.dev/app" in payload["metadata"].get("labels", {}) and \
-                    "krules.dev/api" in payload["metadata"].get("labels", {})
+                    "krules.dev/api" in payload["metadata"].get("annotations", {})
                 ),
             ],
             processing: [
@@ -253,7 +306,7 @@ rulesdata = [
                     lambda payload:
                     payload["kind"] == "Pod" and \
                     "krules.dev/app" in payload["metadata"].get("labels", {}) and \
-                    "krules.dev/api" in payload["metadata"].get("labels", {})
+                    "krules.dev/api" in payload["metadata"].get("annotations", {})
                 ),
             ],
             processing: [
@@ -275,7 +328,7 @@ rulesdata = [
             filters: [
                 OnSubjectPropertyChanged("build_source"),
                 SubjectNameMatch(
-                    "^k8s:/apis/(?P<api_version>.+)/namespaces/(?P<namespace>.+)/(?P<resources>.+)/(?P<service_name>.+)$"
+                    "^krules:builder:(?P<namespace>.+):services:(?P<service_name>.+)$"
                 ),
             ],
             processing: [
@@ -327,7 +380,7 @@ rulesdata = [
             filters: [
                 OnSubjectPropertyChanged("digest"),
                 SubjectNameMatch(
-                    "^k8s:/apis/serving.knative.dev/v1/namespaces/(?P<namespace>.+)/(?P<resources>.+)/(?P<service_name>.+)$"
+                    "^krules:builder:(?P<namespace>.+):services:(?P<service_name>.+)$"
                 ),
             ],
             processing: [
@@ -348,7 +401,7 @@ rulesdata = [
             filters: [
                 OnSubjectPropertyChanged("digest"),
                 SubjectNameMatch(
-                    "^k8s:/apis/apps/v1/namespaces/(?P<namespace>.+)/(?P<resources>.+)/(?P<service_name>.+)$"
+                    "^krules:builder:(?P<namespace>.+):services:(?P<service_name>.+)$"
                 ),
             ],
             processing: [
