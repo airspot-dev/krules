@@ -437,8 +437,9 @@ class SubjectAnnotateReplicaSetRevisionNo(RuleFunctionBase):
     def execute(self):
 
         namespace = self.payload.get("metadata", {}).get("namespace")
-        name = self.payload.get("metadata", {}).get("mame")
-        revision = self.payload.get("metadata", {}).get("annotations", {}).get("deployment.kubernetes.io/revision")
+        name = self.payload.get("metadata", {}).get("labels").get("krules.dev/app")
+        revision_no = self.payload.get("metadata", {}).get("annotations", {}).get("deployment.kubernetes.io/revision")
+        revision_name = self.payload.get("metadata", {}).get("name")
         subject = subject_factory(f"krules:builder:{namespace}:services:{name}")
 
         #assert "revision" is not None
@@ -447,6 +448,34 @@ class SubjectAnnotateReplicaSetRevisionNo(RuleFunctionBase):
         def _annotate_rs_revision(cur_v):
             if cur_v is None:
                 cur_v = {}
-            cur_v[revision] = name
+            cur_v[revision_no] = revision_name
+            return cur_v
 
         subject.set("_rs_revisions", _annotate_rs_revision, muted=True)
+
+
+class SetRevision(RuleFunctionBase):
+
+    def execute(self, subject: str, resource: dict):
+
+        subject = subject_factory(subject)
+        generation = resource.get("metadata").get("generation")
+        self.payload["_got_generation"] = generation
+
+        api = subject.get("api")
+        if api == "base":
+            rs_revisions = subject.get("_rs_revisions", default={})
+            self.payload["_got_revisions"] = rs_revisions
+            subject.set(
+                "revision",
+                rs_revisions.get(str(generation), self.payload["metadata"]["name"])
+            )
+        elif api == "knative":
+            for revision in self.payload.get("status", {}).get("traffic", []):
+                if revision.get("latestRevision"):
+                    subject.set(
+                        "revision",
+                        revision.get("revisionName")
+                    )
+
+

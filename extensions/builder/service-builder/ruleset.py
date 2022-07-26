@@ -28,15 +28,15 @@ def _get_svc_ready_status(obj: dict):
     return "Unknown"
 
 
-def _get_svc_revision(obj: dict):
-    if obj.get("apiVersion").startswith("serving.knative.dev/"):
-        for revision in obj.get("status", {}).get("traffic", []):
-            if revision.get("latestRevision"):
-                return revision.get("revisionName")
-    elif obj.get("kind") == "Deployment":
-        return obj.get("metadata", {}).get("name")
-
-    return "Unknown"
+# def _get_svc_revision(obj: dict):
+#     if obj.get("apiVersion").startswith("serving.knative.dev/"):
+#         for revision in obj.get("status", {}).get("traffic", []):
+#             if revision.get("latestRevision"):
+#                 return revision.get("revisionName")
+#     elif obj.get("kind") == "Deployment":
+#         return obj.get("metadata", {}).get("name")
+#
+#     return "Unknown"
 
 
 def _get_subject_name(obj: dict):
@@ -106,15 +106,40 @@ rulesdata = [
                     value=lambda payload: _get_svc_ready_status(payload),
                     use_cache=False,
                 ),
-                SetSubjectProperty(
+                SetRevision(
                     subject=lambda payload: _get_subject_name(payload),
-                    property_name="revision",
-                    value=lambda payload: _get_svc_revision(payload),
-                    use_cache=False,
+                    resource=lambda payload: payload
                 )
+                # SetSubjectProperty(
+                #     subject=lambda payload: _get_subject_name(payload),
+                #     property_name="_generation",
+                #     value=lambda payload: payload.get("metadata", {}).get("generation"),
+                # ),
+                # SetSubjectProperty(
+                #     subject=lambda payload: _get_subject_name(payload),
+                #     property_name="revision",
+                #     value=lambda payload: _get_svc_revision(payload),
+                #     use_cache=False,
+                # )
             ],
         }
     },
+    # {
+    #     rulename: "on-generation-change-set-revision",
+    #     description: """
+    #       Update revision on resource generation change accordignly to resource type.
+    #       Uses knative revision or subject annotated replicaset name for deployments.
+    #     """,
+    #     subscribe_to: SUBJECT_PROPERTY_CHANGED,
+    #     ruledata: {
+    #         filters: [
+    #             OnSubjectPropertyChanged("_generation")
+    #         ],
+    #         processing: [
+    #             SetRevision(generation=lambda payload: str(payload["value"]))
+    #         ]
+    #     }
+    # },
     {
         rulename: "flush-k8s-subject",
         description: """
