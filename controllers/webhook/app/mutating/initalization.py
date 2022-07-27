@@ -83,7 +83,8 @@ rulesdata = [
             ],
             processing: [
                 AnnotateInProps(
-                    "image_base", lambda payload: payload["request"]["object"]["spec"]["template"]["spec"]["containers"][0]["image"]
+                    "image_base",
+                    lambda payload: payload["request"]["object"]["spec"]["template"]["spec"]["containers"][0]["image"]
                 ),
                 Annotate("krules.dev/api", "base"),
             ]
@@ -100,6 +101,7 @@ rulesdata = [
         ruledata: {
             processing: [
                 AnnotateInProps(
+                    "image_base",
                     lambda payload: payload["request"]["object"]["spec"]["template"]["spec"]["containers"][0]["image"]
                 ),
                 Annotate("krules.dev/api", "knative"),
