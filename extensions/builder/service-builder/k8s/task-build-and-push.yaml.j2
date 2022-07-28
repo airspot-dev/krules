@@ -21,7 +21,7 @@ spec:
   steps:
     # solves issues related to using the mounted cm directly as the build context
     - name: populate-context
-      image: docker.io/lorenzocampo/populate-context:0.8
+      image: {{ populate_context_image }}
       command:
         - /usr/local/bin/python
       args:
