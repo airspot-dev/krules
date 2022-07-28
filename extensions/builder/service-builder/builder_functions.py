@@ -85,7 +85,8 @@ def _compose_build_source(api, image_base, labels, log=[]):
             if "Dockerfile" in build_source:
                 for f in docker_adds:
                     if f.startswith("/"):
-                        build_source["Dockerfile"] += f"\nADD {f[1:]} {f}"
+                        local_path = os.path.join("__ROOT__", f[1:])
+                        build_source["Dockerfile"] += f"\nADD {local_path} {f}"
                     else:
                         build_source["Dockerfile"] += f"\nADD {f} /app/{f}"
 

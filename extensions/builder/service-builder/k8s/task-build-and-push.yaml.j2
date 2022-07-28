@@ -26,8 +26,8 @@ spec:
         - /usr/local/bin/python
       args:
         - "populate-context.py"
-        - "source-cm"
-        - "source"
+        - "/source-cm"
+        - "/source"
       volumeMounts:
         - name: build-source-cm
           mountPath: /source-cm
