@@ -1,14 +1,12 @@
 import importlib
-import os
-import socket
 import logging
+import os
 import sys
+
 import jsonpath_rw_ext as jp
 from dependency_injector import providers
-from rx import subject
 
 from krules_core import RuleConst
-from krules_core.event_types import format_event_type
 from krules_core.exceptions_dumpers import ExceptionDumperBase, RequestsHTTPErrorDumper
 from krules_core.providers import (
     configs_factory,
@@ -26,7 +24,7 @@ config_base_path = os.environ.get("KRULES_CONFIG_BASE_PATH", "/krules/config")
 from krules_env.settings_loader import load_from_path
 krules_settings = load_from_path(config_base_path)
 
-RULE_PROC_EVENT = format_event_type("rule-proc-event")
+RULE_PROC_EVENT = "rule-proc-event"
 
 logger = logging.getLogger("__env__")
 logger.setLevel(logging.WARNING)

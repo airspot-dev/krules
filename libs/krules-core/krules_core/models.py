@@ -20,7 +20,7 @@ class Rule(BaseModel):
 
     def dict(self, *args, **kwargs) -> dict:
         dd = super().dict(exclude_unset=True)
-        dd["ruledata"] = {}
-        dd["ruledata"]["filters"] = dd.pop("filters", [])
-        dd["ruledata"]["processing"] = dd.pop("processing", [])
+        dd["data"] = {}
+        dd["data"]["filters"] = dd.pop("filters", [])
+        dd["data"]["processing"] = dd.pop("processing", [])
         return dd
