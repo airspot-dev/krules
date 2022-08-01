@@ -84,7 +84,11 @@ def _compose_build_source(api, image_base, labels, log=[]):
                     build_source[f] = _build_ext[f]
             if "Dockerfile" in build_source:
                 for f in docker_adds:
-                    build_source["Dockerfile"] += f"\nADD {f} /app/{f}"
+                    if f.startswith("/"):
+                        local_path = os.path.join("__ROOT__", f[1:])
+                        build_source["Dockerfile"] += f"\nADD {local_path} {f}"
+                    else:
+                        build_source["Dockerfile"] += f"\nADD {f} /app/{f}"
 
     log.append(build_source)
     return build_source
@@ -176,6 +180,18 @@ class CreateBuildSourceConfigMap(RuleFunctionBase):
         source_hash = self._hashed(self.payload["value"])
         service_name = self.subject.name.split(":")[-1]
         cm_name = f"build-source-{service_name}-{source_hash}"
+
+        source = []
+
+        if self.payload["value"] is not None:
+            for path, content in self.payload["value"].items():
+                source.append(
+                    {
+                        "path": path,
+                        "content": content
+                    }
+                )
+
         cm = pykube.ConfigMap(api, {
             "apiVersion": "v1",
             "kind": "ConfigMap",
@@ -186,7 +202,9 @@ class CreateBuildSourceConfigMap(RuleFunctionBase):
                     "krules.airspot.dev/app": service_name,
                 }
             },
-            "data": self.payload["value"]
+            "data": {
+                "source.yaml": yaml.dump(source)
+            }
         })
         if not cm.exists():
             cm.create()

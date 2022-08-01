@@ -26,7 +26,7 @@ KRULES_DEP_LIBS = [
     "krules-env"
 ]
 
-DEV_REQUIREMENTS = ["dependency-injector==4.32.2"]
+DEV_REQUIREMENTS = ["dependency-injector==4.39.1"]
 
 if "RELEASE_VERSION" in os.environ:
     os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")

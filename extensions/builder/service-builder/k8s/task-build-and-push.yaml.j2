@@ -21,12 +21,13 @@ spec:
   steps:
     # solves issues related to using the mounted cm directly as the build context
     - name: populate-context
-      image: busybox
+      image: {{ populate_context_image }}
       command:
-        - /bin/sh
+        - /usr/local/bin/python
       args:
-        - "-c"
-        - "cp /source-cm/* /source/"
+        - "populate-context.py"
+        - "/source-cm"
+        - "/source"
       volumeMounts:
         - name: build-source-cm
           mountPath: /source-cm

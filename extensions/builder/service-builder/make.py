@@ -13,6 +13,18 @@ RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
 
 DEBUG_PROCEVENTS_SINK = os.environ.get("DEBUG_PROCEVENTS_SINK")
 
+KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                                 os.path.pardir, os.path.pardir))
+
+
+def get_populate_context_image():
+    return sane_utils.get_buildable_image(
+        location=os.path.join(KRULES_REPO_DIR, "extensions", "builder"),
+        dir_name="populate-context-image",
+        use_release_version=True,
+    )
+
+
 # making changes to these files will result in a new build
 sane_utils.update_code_hash(
     globs=[
@@ -68,6 +80,7 @@ sane_utils.make_render_resource_recipes(
                   open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".build/.digest"), "r").read()
                   or f"{os.environ['DOCKER_REGISTRY']}/{IMAGE_NAME}:{RELEASE_VERSION}",
         "debug_procevents_sink": DEBUG_PROCEVENTS_SINK,
+        "populate_context_image": get_populate_context_image(),
     },
     hooks=[
         'prepare_deploy'
