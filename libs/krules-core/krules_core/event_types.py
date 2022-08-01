@@ -8,21 +8,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from krules_core.models import EventType
 
-from .providers import configs_factory
-from . import ConfigKeyConst
-
-
-_settings = configs_factory()
-
-
-def format_event_type(type):
-    return "{}{}".format(_settings.get(ConfigKeyConst.TYPE_TOPICS_PREFIX, ""), type)
-
-
-_m = format_event_type
-
-
-SUBJECT_PROPERTY_CHANGED = _m("subject-property-changed")
-SUBJECT_PROPERTY_DELETED = _m("subject-property-deleted")
-SUBJECT_FLUSHED = _m("subject-flushed")
+SUBJECT_PROPERTY_CHANGED = SubjectPropertyChanged = EventType("subject-property-changed")
+SUBJECT_PROPERTY_DELETED = SubjectPropertyDeleted = EventType("subject-property-deleted")
+SUBJECT_FLUSHED = SubjectFlushed = EventType("subject-flushed")

@@ -8,18 +8,28 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import inspect
-from collections.abc import Mapping
+from abc import ABCMeta, abstractmethod
+from typing import Any, List
 
+from krules_core.base_functions import RuleFunctionBase
 from krules_core.providers import subject_factory
 from krules_core.route.router import DispatchPolicyConst
 
-from krules_core.base_functions import RuleFunctionBase, Filter
+from deepmerge import always_merger, Merger
+
+from krules_core.subject.storaged_subject import Subject
 
 
-class Process(Filter):
+class ProcessingFunction(RuleFunctionBase):
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def execute(self, *args, **kwargs):
+        raise NotImplementedError("execute")
+
+
+class Process(ProcessingFunction):
     """
-    *Like* `Filter <https://intro.krules.io/Filters.html#krules_core.base_functions.filters.Filter>`_ *evaluate a given expression but does not return it.*
     *The best way to exploit it is to use it in combination with* `Argument Processors <https://intro.krules.io/ArgumentProcessors.html>`_.
 
     ::
@@ -58,17 +68,16 @@ class Process(Filter):
         ]
 
     """
-    def execute(self, value):
+    def execute(self, value: Any):
         """
 
         """
-        super().execute(value)
+        pass
 
 
 ## PAYLOAD FUNCTIONS ##############################################################
 
-
-class SetPayloadProperties(RuleFunctionBase):
+class SetPayloadProperties(ProcessingFunction):
     """
     *Set the given properties in the payload, if some of that already exist will be overridden*
 
@@ -150,7 +159,7 @@ class SetPayloadProperty(SetPayloadProperties):
         ]
     """
 
-    def execute(self, property_name, value):
+    def execute(self, property_name: str, value: Any):
         """
         Args:
             property_name: Name of property which will be to set,
@@ -159,10 +168,20 @@ class SetPayloadProperty(SetPayloadProperties):
         super().execute(**{property_name: value})
 
 
+class PayloadDeepMerge(ProcessingFunction):
+
+    """
+    Wraps: `Deepmerge library <https://deepmerge.readthedocs.io/en/latest/>`
+    """
+
+    def execute(self, data: dict, merger: Merger = always_merger):
+
+        merger.merge(self.payload, data)
+
 ## SUBJECT FUNCTIONS ################################################################
 
 
-class SetSubjectProperty(RuleFunctionBase):
+class SetSubjectProperty(ProcessingFunction):
     """
     *Set a single property of the subject, supporting atomic operation.*
     *By default, the property is reactive unless is muted (muted=True) or extended (extended=True)*
@@ -200,7 +219,11 @@ class SetSubjectProperty(RuleFunctionBase):
             }
         ]
     """
-    def execute(self, property_name, value, subject=None, extended=False, muted=False, use_cache=True):
+    def execute(self,
+                property_name: str, value: Any,
+                extended: bool = False, muted: bool = False, use_cache: bool = True,
+                subject: str | Subject = None,
+                ):
         """
         Args:
             property_name: Name of the property to set. It may or may not exist
@@ -210,6 +233,7 @@ class SetSubjectProperty(RuleFunctionBase):
             muted: If True no subject-property-changed will be raised after property setting. Note that extended
                 properties are always muted so, if extended is True, this parameter will be ignored. [default False]
             use_cache: If False store the property value immediately on the storage, otherwise wait for the end of rule execution. [default False]
+            subject: is specified use this subject instead self.subject
         """
         if subject is None:
             subject = self.subject
@@ -224,20 +248,6 @@ class SetSubjectProperty(RuleFunctionBase):
         return fn(value)
 
 
-class SetSubjectPropertyImmediately(SetSubjectProperty):
-    """
-    *Extends* `SetSubjectProperty <https://intro.krules.io/Processing.html#krules_core.base_functions.processing.SetSubjectProperty>`_
-    *setting a property directly to the storage without using the cache (* **use_cache=False** *).
-    This could be very helpful to avoid concurrency issues by avoiding running into inconsistencies during the execution.
-    The extension's aim is to made code more readable.*
-    """
-    def execute(self, property_name, value, extended=False, muted=False, **kwargs):
-        """
-
-        """
-        return super().execute(property_name, value, extended=extended, muted=muted, use_cache=False)
-
-
 class SetSubjectExtendedProperty(SetSubjectProperty):
     """
     *Extends* `SetSubjectProperty <https://intro.krules.io/Processing.html#krules_core.base_functions.processing.SetSubjectProperty>`_
@@ -245,14 +255,15 @@ class SetSubjectExtendedProperty(SetSubjectProperty):
     in the arguments because an extended property is always muted.
     The extension's aim is to made code more readable.*
     """
-    def execute(self, property_name, value, use_cache=True, **kwargs):
+    def execute(self,
+                property_name: str, value: Any, use_cache: bool =True, subject: Subject = None, **kwargs):
         """
 
         """
-        return super().execute(property_name, value, extended=True, muted=True, use_cache=use_cache)
+        return super().execute(property_name, value, extended=True, muted=True, use_cache=use_cache, subject=subject)
 
 
-class SetSubjectProperties(RuleFunctionBase):
+class SetSubjectProperties(ProcessingFunction):
     """
     *Set multiple properties in subject from dictionary. This is allowed only by using cache and not for
     extended properties. Each property set in that way is muted but it is possible to unmute some of that using*
@@ -285,12 +296,13 @@ class SetSubjectProperties(RuleFunctionBase):
         ]
     """
 
-    def execute(self, props: dict, subject=None, unmuted=None, use_cache=True):
+    def execute(self, props: dict, unmuted: List[str] = None, use_cache: bool = True, subject: Subject = None):
         """
         Args,
             subject: If specified set properties on this subject
             props: The properties to set
             unmuted: List of property names for which emit property changed events or "*" to unmute all
+            subject: use this subject instead self.subject
         """
         if subject is None:
             subject = self.subject
@@ -306,7 +318,7 @@ class SetSubjectProperties(RuleFunctionBase):
             subject.set(name, value, muted=name not in unmuted, use_cache=use_cache)
 
 
-class StoreSubject(RuleFunctionBase):
+class StoreSubject(ProcessingFunction):
     """
     *Store alla subject properties on the subject storage and then flush the cache.
     Usually this happens at the end of the ruleset execution.*
@@ -316,7 +328,7 @@ class StoreSubject(RuleFunctionBase):
         self.subject.store()
 
 
-class FlushSubject(RuleFunctionBase):
+class FlushSubject(ProcessingFunction):
     """
     *Remove all subject's properties. It is important tho recall that a subject exists while it has at least a property,
     so* **remove all its properties means remove the subject itself**.
@@ -435,7 +447,9 @@ class Route(RuleFunctionBase):
         ]
     """
 
-    def execute(self, event_type=None, subject=None, payload=None, dispatch_policy=DispatchPolicyConst.DEFAULT):
+    def execute(self, 
+                event_type: str = None, 
+                subject: Subject = None, payload: dict = None, dispatch_policy: str = DispatchPolicyConst.DEFAULT):
         """
         Args:
             event_type: The event type. If None use current processing event type [default None]
@@ -444,7 +458,6 @@ class Route(RuleFunctionBase):
             dispatch_policy: Define the event dispatch policy as explained before. [default DispatchPolicyConst.DEFAULT]
         """
 
-        from krules_core.providers import event_router_factory
         if event_type is None:
             event_type = self.event_type
         if subject is None:

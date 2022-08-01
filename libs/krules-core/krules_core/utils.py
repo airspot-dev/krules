@@ -13,17 +13,22 @@ import socket
 from krules_core import RuleConst
 import os
 
+from krules_core.models import Rule
+
 
 def load_rules_from_rulesdata(rulesdata):
 
     from krules_core.core import RuleFactory
 
-    description=""
+    description = ""
     for el in rulesdata:
-        if type(el) == type(""):
-            description=el
-        elif type(el) == type({}) and RuleConst.RULENAME in el:
-            el[RuleConst.DESCRIPTION] = description
+        if isinstance(el, str):
+            description = el
+        elif isinstance(el, Rule) or isinstance(el, dict):
+            if isinstance(el, Rule):
+                el = el.dict()
+            if len(description):
+                el[RuleConst.DESCRIPTION] = description
             if el.get(RuleConst.SUBSCRIBE_TO, None) is None:
                 el[RuleConst.SUBSCRIBE_TO] = "*"
             RuleFactory.create(**el)

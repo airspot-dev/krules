@@ -32,7 +32,7 @@ import os
 from collections.abc import Mapping
 
 
-class Rule:
+class _Rule:
 
     def __init__(self, name, description=""):
         self.name = name
@@ -162,11 +162,11 @@ class Rule:
                         Const.SECTION: Const.FILTERS,
                         Const.FUNC_NAME: _cinst_name,
                         Const.PAYLOAD: __copy(payload),
-                        Const.ARGS: __copy_list(_c._args),
-                        Const.KWARGS: __copy(_c._kwargs),
+                        Const.ARGS: __copy_list(_c._processor_args),
+                        Const.KWARGS: __copy(_c._processor_kwargs),
                     }
                     logger.debug("> processing: {0}".format(res_in))
-                _cinst = type(_cinst_name, (_c.__class__,), {})()
+                _cinst = type(_cinst_name, (_c.__class__,), {})(*_c._copy_args, **_c._copy_kwargs)
                 _cinst.event_type = event_type
                 _cinst.subject = subject
                 _cinst.payload = payload
@@ -174,8 +174,8 @@ class Rule:
                 _cinst.router = event_router_factory()
                 _cinst.configs = configs_factory()
                 try:
-                    processed_args = _c._get_args(_cinst)
-                    processed_kwargs = _c._get_kwargs(_cinst)
+                    processed_args = _c._get_processed_args(_cinst)
+                    processed_kwargs = _c._get_processed_kwargs(_cinst)
                     res = _cinst.execute(*processed_args, **processed_kwargs)
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
@@ -221,11 +221,12 @@ class Rule:
                         Const.SECTION: Const.PROCESSING,
                         Const.FUNC_NAME: _cinst_name,
                         Const.PAYLOAD: __copy(payload),
-                        Const.ARGS: __copy_list(_c._args),
-                        Const.KWARGS: __copy(_c._kwargs),
+                        Const.ARGS: __copy_list(_c._processor_args),
+                        Const.KWARGS: __copy(_c._processor_kwargs),
                     }
                     logger.debug("> processing: {0}".format(res_in))
-                _cinst = type(_cinst_name, (_c.__class__,), {})()
+                #import pdb; pdb.set_trace()
+                _cinst = type(_cinst_name, (_c.__class__,), {})(*_c._copy_args, **_c._copy_kwargs)
                 _cinst.event_type = event_type
                 _cinst.subject = subject
                 _cinst.payload = payload
@@ -233,8 +234,8 @@ class Rule:
                 _cinst.router = event_router_factory()
                 _cinst.configs = configs_factory()
                 try:
-                    processed_args = _c._get_args(_cinst)
-                    processed_kwargs = _c._get_kwargs(_cinst)
+                    processed_args = _c._get_processed_args(_cinst)
+                    processed_kwargs = _c._get_processed_kwargs(_cinst)
                     res = _cinst.execute(*processed_args, **processed_kwargs)
                 except TypeError as ex:
                     msg = "{} in {}: ".format(_cinst_name, self.name)
@@ -303,7 +304,7 @@ class RuleFactory:
     @staticmethod
     def create(name: object, description: object = "", subscribe_to: object = None, data: object = {}) -> object:
 
-        rule = Rule(name, description)
+        rule = _Rule(name, description)
 
         rule.set_filters(data.get(Const.FILTERS, []))
         rule.set_processing(data.get(Const.PROCESSING, []))

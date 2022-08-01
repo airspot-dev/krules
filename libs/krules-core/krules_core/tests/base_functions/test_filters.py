@@ -139,7 +139,7 @@ def test_subject_match(router, asserted):
                        subscribe_to='event-user-action',
                        data={
                            filters: [
-                               SubjectNameMatch(r"^user\|(?P<user_id>.+)", payload_dest="user_info"),
+                               SubjectNameMatch(f"^user|(?P<user_id>.+)", payload_dest="user_info"),
                                Filter(
 
                                    lambda payload: "user_id" in payload.get("user_info", {})
@@ -151,7 +151,7 @@ def test_subject_match(router, asserted):
                        subscribe_to='event-user-action',
                        data={
                            filters: [
-                               SubjectNameDoesNotMatch(r"^device\|(?P<device_id>.+)", payload_dest="device_info"),
+                               SubjectNameDoesNotMatch(r"^device\|(?P<device_id>.+)"),
                            ]
                        })
 
@@ -213,9 +213,25 @@ def test_check_subject_property(router, subject, asserted):
         }
     )
 
+    subject2 = subject_factory("subject2")
+    RuleFactory.create(
+        "test-passing-subject",
+        subscribe_to="test-subject-property",
+        data={
+            filters: [
+                # one argument (value)
+                CheckSubjectProperty("prop-1", 1, subject=subject2),
+                CheckSubjectProperty("prop-1", 1, subject=subject2.name),
+            ]
+        }
+    )
+
+
     subject.set("prop-1", "value-1")
     subject.set("prop-2", 2)
     subject.set_ext("ext-prop", "extprop")
+
+    subject2.set("prop-1", 1)
 
     proc_events_rx_factory().subscribe(
         lambda x: x[rulename] == "test-simple-subject-property" and _assert(
@@ -235,16 +251,24 @@ def test_check_subject_property(router, subject, asserted):
             x[passed] is True
         )
     )
+    proc_events_rx_factory().subscribe(
+        lambda x: x[rulename] == "test-passing-subject" and _assert(
+            x[rulename],
+            x[passed] is True
+        )
+    )
 
     router.route("test-subject-property", subject, {})
 
     assert "test-simple-subject-property" in asserted
     assert "test-simple-subject-property-fails" in asserted
     assert "test-expr-subject-property" in asserted
+    assert "test-passing-subject" in asserted
 
     # clean up
     router.unregister_all()
     proc_events_rx_factory.override(providers.Singleton(rx_subject.ReplaySubject))
+    #subject2.flush()
 
     # check direct
     subject.set("prop-1", "value-2")
@@ -400,9 +424,7 @@ def test_on_subject_property_changed(router, subject, asserted):
         data={
             filters: [
                 OnSubjectPropertyChanged("prop_a"),
-                OnSubjectPropertyChanged(lambda: "prop_{}".format("a")),
                 OnSubjectPropertyChanged(lambda prop: re.match("prop_[a-z]", prop)),
-                OnSubjectPropertyChanged("prop_a", lambda: 1),
                 OnSubjectPropertyChanged("prop_a", value=lambda value: value > 0),
                 OnSubjectPropertyChanged("prop_a", value=lambda value, old_value: value == 1 and old_value is None),
                 OnSubjectPropertyChanged("prop_a", old_value=None),

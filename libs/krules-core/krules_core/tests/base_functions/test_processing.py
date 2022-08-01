@@ -11,21 +11,20 @@
 import os
 
 import pytest
-from rx import subject as rx_subject
 from dependency_injector import providers
+from rx import subject as rx_subject
+
 from krules_core import RuleConst, ProcEventsLevel
 from krules_core.base_functions import SetPayloadProperties, SetPayloadProperty, SetSubjectProperty, \
-    OnSubjectPropertyChanged, SetSubjectExtendedProperty, SetSubjectPropertyImmediately, \
-    RuleFunctionBase, SetSubjectProperties, Process, FlushSubject, Filter
-
+    OnSubjectPropertyChanged, SetSubjectExtendedProperty, RuleFunctionBase, SetSubjectProperties, Process, FlushSubject, \
+    Filter, PayloadDeepMerge
 from krules_core.core import RuleFactory
-from .. import get_value_from_payload_diffs
-
 from krules_core.providers import (
     event_router_factory,
     proc_events_rx_factory,
     subject_factory,
     subject_storage_factory)
+from .. import get_value_from_payload_diffs
 
 counter = 0
 asserted = []
@@ -91,7 +90,9 @@ def test_payload_functions(subject, router, asserted):
                     k3=lambda payload: payload["k3"]+1,
                     k4=lambda payload: "k4" in payload and payload["k4"] + 1 or -1
                 ),
-                SetPayloadProperty("k4", lambda payload: "k4" in payload and payload["k4"] + 1 or -1)
+                SetPayloadProperty("k4", lambda payload: "k4" in payload and payload["k4"] + 1 or -1),
+                PayloadDeepMerge({"k5": {"k5a": [1]}}),
+                PayloadDeepMerge({"k5": {"k5a": [2]}}),
             ]
         }
     )
@@ -125,6 +126,8 @@ def test_payload_functions(subject, router, asserted):
 
     router.route("test-alter-payload", subject, test_payload)
 
+    assert(test_payload["k5"]["k5a"] == [1, 2])
+
     assert "test-update-1" in asserted
     assert "test-update-2" in asserted
 
@@ -153,9 +156,9 @@ def test_subject_functions(subject, router, asserted):
                 SetSubjectProperty("my_prop", 1),
                 SetSubjectProperty("my_prop", lambda v: v+10),
                 SetSubjectProperty("something_to_say", False, muted=True),
-                SetSubjectPropertyImmediately("my_prop_2", 2),
+                SetSubjectProperty("my_prop_2", 2, use_cache=False),
                 _CheckStoredValue("my_prop_2", 2),
-                SetSubjectPropertyImmediately("my_prop_3", 3, muted=True),
+                SetSubjectProperty("my_prop_3", 3, muted=True, use_cache=False),
                 _CheckStoredValue("my_prop_3", 3),
                 SetSubjectExtendedProperty("my_ext_prop", "extpropvalue"),
                 SetSubjectProperties({

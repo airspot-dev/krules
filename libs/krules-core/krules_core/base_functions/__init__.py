@@ -13,6 +13,8 @@
 
 from abc import ABCMeta, abstractmethod
 #import jsonpath_rw_ext as jp
+from pydantic.fields import ModelField
+
 from krules_core.arg_processors import processors, DefaultArgProcessor
 from krules_core.providers import event_router_factory, configs_factory
 
@@ -88,14 +90,22 @@ class RuleFunctionBase:
     configs = {}
     rule_name = ""
 
-    def __init__(self, *args, **kwargs):
-        self._args = []
+    # we want to get invocation parameters
+    # of the final class not the base
+    def __new__(cls, *args, **kwargs):
+        obj = super().__new__(cls)
+        setattr(obj, "_copy_args", args)
+        setattr(obj, "_copy_kwargs", kwargs)
+        processor_args = []
         for a in args:
-            self._args.append(self._get_arg_processor(a))
+            processor_args.append(obj._get_arg_processor(a))
 
-        self._kwargs = {}
+        processor_kwargs = {}
         for k, v in kwargs.items():
-            self._kwargs[k] = self._get_arg_processor(v)
+            processor_kwargs[k] = obj._get_arg_processor(v)
+        setattr(obj, "_processor_args", processor_args)
+        setattr(obj, "_processor_kwargs", processor_kwargs)
+        return obj
 
 
     @staticmethod
@@ -105,21 +115,21 @@ class RuleFunctionBase:
                 return processor(arg)
         return DefaultArgProcessor(arg)
 
-    def _get_args(self, instance):
+    def _get_processed_args(self, instance):
         args = []
-        for processor in self._args:
+        for processor in self._processor_args:
             args.append(processor.process(instance))
         return tuple(args)
 
-    def _get_kwargs(self, instance):
+    def _get_processed_kwargs(self, instance):
         kwargs = {}
-        for key, processor in self._kwargs.items():
+        for key, processor in self._processor_kwargs.items():
             kwargs[key] = processor.process(instance)
         return kwargs
 
-    @abstractmethod
-    def execute(self, *args, **kwargs):
-        raise NotImplementedError("execute")
+    # @abstractmethod
+    # def execute(self, *args, **kwargs):
+    #     raise NotImplementedError("execute")
 
 
 from krules_core.base_functions.filters import *

@@ -46,9 +46,9 @@ class RuleConst(object):
     PAYLOAD_DIFFS = "payload_diffs"
 
 
-class ConfigKeyConst(object):
-
-    TYPE_TOPICS_PREFIX = "TYPE_TOPICS_PREFIX"
+# class ConfigKeyConst(object):
+#
+#     TYPE_TOPICS_PREFIX = "TYPE_TOPICS_PREFIX"
 
 
 class ProcEventsLevel(object):
