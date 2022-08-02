@@ -11,6 +11,7 @@
 from krules_core.base_functions import RuleFunctionBase
 
 
+# TODO: decline to Filter/Processing
 class PyCall(RuleFunctionBase):
     """
     *Execute a generic python function.
