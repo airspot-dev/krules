@@ -367,7 +367,7 @@ class FlushSubject(ProcessingFunction):
 #####################################################################################
 
 
-class Route(RuleFunctionBase):
+class Route(ProcessingFunction):
     """
     *Produce an event inside and/or outside the ruleset, for "sending outside" the event we mean to deliver it to the
     dispatcher component.
@@ -468,7 +468,7 @@ class Route(RuleFunctionBase):
         self.router.route(event_type, subject, payload, dispatch_policy=dispatch_policy)
 
 
-class RaiseException(RuleFunctionBase):
+class RaiseException(ProcessingFunction):
     """
     *Force the given exception raising*
 

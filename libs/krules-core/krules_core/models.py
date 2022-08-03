@@ -11,7 +11,7 @@ class Rule(BaseModel):
 
     name: str
     description: Optional[str]
-    subscribe_to: EventType | List[EventType]
+    subscribe_to: Optional[EventType | List[EventType]]
     filters: List[FilterFunction] = []
     processing: List[ProcessingFunction] = []
 
