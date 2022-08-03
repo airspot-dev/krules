@@ -267,7 +267,7 @@ class CreateTaskRun(RuleFunctionBase):
 class OnTaskRunUpdatesSetSubject(RuleFunctionBase):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        #super().__init__(*args, **kwargs)
         from jsonpath_ng.ext import parse
 
         self.digest_jp_expr = parse('$.status.taskResults[?(name="digest")].value')

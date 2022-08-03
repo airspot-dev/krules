@@ -27,6 +27,13 @@ def _get_svc_ready_status(obj: dict):
 
     return "Unknown"
 
+def _get_svc_url(obj: dict):
+    if obj.get("apiVersion").startswith("serving.knative.dev/"):
+        url: str = obj.get("status", {}).get("url")
+        if url is not None and not url.endswith(".cluster.local"):
+            return url
+    return None
+
 
 # def _get_svc_revision(obj: dict):
 #     if obj.get("apiVersion").startswith("serving.knative.dev/"):
@@ -104,6 +111,12 @@ rulesdata = [
                     subject=lambda payload: _get_subject_name(payload),
                     property_name="ready",
                     value=lambda payload: _get_svc_ready_status(payload),
+                    use_cache=False,
+                ),
+                SetSubjectProperty(
+                    subject=lambda payload: _get_subject_name(payload),
+                    property_name="url",
+                    value=lambda payload: _get_svc_url(payload),
                     use_cache=False,
                 ),
                 SetRevision(
@@ -407,6 +420,9 @@ rulesdata = [
                 SubjectNameMatch(
                     "^krules:builder:(?P<namespace>.+):services:(?P<service_name>.+)$"
                 ),
+                Filter(
+                    lambda subject: "api" in subject and subject.get("api") == "knative"
+                ),
             ],
             processing: [
                 PatchKServiceImage(
@@ -427,6 +443,9 @@ rulesdata = [
                 OnSubjectPropertyChanged("digest"),
                 SubjectNameMatch(
                     "^krules:builder:(?P<namespace>.+):services:(?P<service_name>.+)$"
+                ),
+                Filter(
+                    lambda subject: "api" in subject and subject.get("api") == "base"
                 ),
             ],
             processing: [
