@@ -5,12 +5,8 @@ from flask import g
 
 class Deny(RuleFunctionBase):
 
-    def __init__(self, message: typing.Union[str, typing.Callable] = None, **status_kwargs):
-        super().__init__(message, **status_kwargs)
-
     def execute(self, message=None, **status_kwargs):
 
-        #response = self.payload["response"]
         response = g.response
         response["allowed"] = False
         if message is not None:
