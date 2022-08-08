@@ -2,6 +2,7 @@ import os
 import pprint
 import uuid
 from datetime import datetime
+import copy
 from typing import Union
 
 import pykube
@@ -225,7 +226,7 @@ class CreateTaskRun(RuleFunctionBase):
             config = pykube.KubeConfig.from_env()
             api = self.payload["_pykube_api"] = pykube.HTTPClient(config)
 
-        spec = ruleset_config["taskRun"]["spec"]
+        spec = copy.deepcopy(ruleset_config["taskRun"]["spec"])
         params = spec["params"]
 
         params.extend([

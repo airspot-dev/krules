@@ -27,7 +27,7 @@ rulesdata = [
             filters: [
                 Filter(
                     lambda payload: "config.krules.dev/provider" in
-                                    payload["request"]["oldObject"].get("metadata").get("labels")
+                                    payload["request"]["oldObject"].get("metadata", {}).get("labels", [])
                 ),
                 Filter(
                     lambda payload:
