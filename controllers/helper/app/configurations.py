@@ -154,9 +154,10 @@ class ApplyConfigurationToExistingResources(K8sObjectsQuery):
                             _log=self.payload["__log"])
 
         try:
-            obj.update(is_strategic=True)
+            # is_strategic was set to False to prevent issues occurring when a valueFrom is provided in a
+            # ConfigurationProvider with both a valueFrom and other env entries
+            obj.update(is_strategic=False)
         except pykube.exceptions.HTTPError as ex:
-
             k8s_event_create(
                 api=self.payload.get("_k8s_api_client"),
                 producer=configuration["metadata"]["name"],

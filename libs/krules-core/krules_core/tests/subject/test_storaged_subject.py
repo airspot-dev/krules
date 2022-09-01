@@ -448,3 +448,11 @@ def test_reading(subject):
     assert subject.listvalue == listvalue
 
 
+def test_dict(subject):
+    subject.flush()
+    subject.set("prop", 1)
+    subject.set_ext("prop2", "ext")
+    obj = subject.dict()
+    assert obj["name"].startswith("test-subject")
+    assert obj["prop"] == 1
+    assert obj["ext"]["prop2"] == "ext"

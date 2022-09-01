@@ -232,6 +232,24 @@ class Subject(object):
         self._storage.store(inserts=inserts, updates=updates, deletes=deletes)
         self._cached = None
 
+    def dict(self):
+
+        if self._cached is None or not self._use_cache:
+            self._load()
+
+        obj = {
+            "name": self.name,
+            "ext": {}
+        }
+
+        for prop, value in self._cached[PropertyType.DEFAULT]["values"].items():
+            obj[prop] = value
+
+        for prop, value in self._cached[PropertyType.EXTENDED]["values"].items():
+            obj["ext"][prop] = value
+
+        return obj
+
     def __len__(self):
 
         if self._cached is None or not self._use_cache:

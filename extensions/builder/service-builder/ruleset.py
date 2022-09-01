@@ -49,6 +49,7 @@ def _get_svc_url(obj: dict):
 def _get_subject_name(obj: dict):
     return f"krules:builder:{obj.get('metadata').get('namespace')}:services:{obj.get('metadata').get('name')}"
 
+
 def _get_resource_api(obj: dict):
     if obj.get("apiVersion").startswith("serving.knative.dev/"):
         return "knative"
