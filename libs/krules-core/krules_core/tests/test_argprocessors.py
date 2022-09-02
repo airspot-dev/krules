@@ -282,7 +282,7 @@ def test_implicit_wrapping():
 
     from krules_core.arg_processors import processors
 
-    class ClearPayloadListArgProcessor(BaseArgProcessor):
+    class PopFromPayloadArgProcessor(BaseArgProcessor):
 
         def __init__(self, arg):
             super().__init__(arg)
@@ -292,9 +292,9 @@ def test_implicit_wrapping():
             return isinstance(arg, cls)
 
         def process(self, instance, arg):
-            instance.payload.get(arg, []).clear()
+            instance.payload.pop(arg)
 
-    processors.append(ClearPayloadListArgProcessor)
+    processors.append(PopFromPayloadArgProcessor)
 
     rule = Rule(
         name="test-implicit-wrapping",
@@ -308,7 +308,7 @@ def test_implicit_wrapping():
             )
         ],
         processing=[
-            ClearPayloadListArgProcessor("values")
+            PopFromPayloadArgProcessor("values")
         ]
     )
 
@@ -326,4 +326,4 @@ def test_implicit_wrapping():
         )
     )
 
-    assert len(payload["values"]) == 0
+    assert "values" not in payload
