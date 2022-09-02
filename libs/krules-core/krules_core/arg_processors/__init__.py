@@ -10,6 +10,9 @@
 # limitations under the License.
 
 import inspect
+import os
+
+import celpy
 
 processors = []
 
@@ -22,8 +25,8 @@ class BaseArgProcessor:
     def __init__(self, arg):
         self._arg = arg
 
-    @staticmethod
-    def interested_in(arg):
+    @classmethod
+    def interested_in(cls, arg):
         """
         Returns:
             True if arg must be processed by this class False if not.
@@ -31,7 +34,7 @@ class BaseArgProcessor:
 
         raise NotImplementedError()
 
-    def process(self, instance):
+    def process(self, instance, arg):
         """
         Returns:
             Processed argument.
@@ -48,8 +51,8 @@ class DefaultArgProcessor(BaseArgProcessor):
     def __init__(self, arg):
         super().__init__(lambda: arg)
 
-    @staticmethod
-    def interested_in(arg):
+    @classmethod
+    def interested_in(cls, arg):
         """
         Returns:
             Always True.
@@ -57,13 +60,13 @@ class DefaultArgProcessor(BaseArgProcessor):
 
         return True
 
-    def process(self, instance):
+    def process(self, instance, arg):
         """
         Returns:
             Argument itself.
         """
 
-        return self._arg()
+        return arg()
 
 
 class SimpleCallableArgProcessor(BaseArgProcessor):
@@ -71,8 +74,8 @@ class SimpleCallableArgProcessor(BaseArgProcessor):
     *An Argument Processor specific for callable without parameters.*
     """
 
-    @staticmethod
-    def interested_in(arg):
+    @classmethod
+    def interested_in(cls, arg):
         """
         Returns:
             True if the argument is a function which not expect any parameters.
@@ -84,13 +87,13 @@ class SimpleCallableArgProcessor(BaseArgProcessor):
         except TypeError:
             return False
 
-    def process(self, _):
+    def process(self, _, arg):
         """
         Returns:
             Argument execution result.
         """
 
-        return self._arg()
+        return arg()
 
 
 processors.append(SimpleCallableArgProcessor)
@@ -101,8 +104,8 @@ class CallableWithSelfArgProcessor(BaseArgProcessor):
     *An Argument Processor specific for callable with *self* as unique parameter.*
     """
 
-    @staticmethod
-    def interested_in(arg):
+    @classmethod
+    def interested_in(cls, arg):
         """
         Returns:
             True if the argument is a function which expect only self as unique argument.
@@ -114,13 +117,13 @@ class CallableWithSelfArgProcessor(BaseArgProcessor):
         except TypeError:
             return False
 
-    def process(self, instance):
+    def process(self, instance, arg):
         """
         Returns:
             Argument execution result passing RuleFunction instance as argument.
         """
 
-        return self._arg(instance)
+        return arg(instance)
 
 
 processors.append(CallableWithSelfArgProcessor)
@@ -131,8 +134,8 @@ class CallableWithPayloadArgProcessor(BaseArgProcessor):
     *An Argument Processor specific for callable with *payload* as unique parameter.*
     """
 
-    @staticmethod
-    def interested_in(arg):
+    @classmethod
+    def interested_in(cls, arg):
         """
         Returns:
             True if the argument is a function which expect only *payload* as unique argument.
@@ -144,13 +147,13 @@ class CallableWithPayloadArgProcessor(BaseArgProcessor):
         except TypeError:
             return False
 
-    def process(self, instance):
+    def process(self, instance, arg):
         """
         Returns:
             Return the argument execution result passing RuleFunction instance payload as argument.
         """
 
-        return self._arg(instance.payload)
+        return arg(instance.payload)
 
 
 processors.append(CallableWithPayloadArgProcessor)
@@ -161,8 +164,8 @@ class CallableWithSubjectArgProcessor(BaseArgProcessor):
     *An Argument Processor specific for callable with *subject* as unique parameter.*
     """
 
-    @staticmethod
-    def interested_in(arg):
+    @classmethod
+    def interested_in(cls, arg):
         """
         Returns:
             True if the argument is a function which expect only *subject* as unique argument.
@@ -174,13 +177,39 @@ class CallableWithSubjectArgProcessor(BaseArgProcessor):
         except TypeError:
             return False
 
-    def process(self, instance):
+    def process(self, instance, arg):
         """
         Returns:
             Return the argument execution result passing RuleFunction instance subject as argument.
         """
 
-        return self._arg(instance.subject)
+        return arg(instance.subject)
 
 
 processors.append(CallableWithSubjectArgProcessor)
+
+
+class CELExpressionArgProcessor(BaseArgProcessor):
+
+    def __init__(self, arg):
+        super().__init__(arg)
+        env = celpy.Environment()
+        ast = env.compile(arg)
+        self.program = env.program(ast)
+
+    @classmethod
+    def interested_in(cls, arg):
+        return isinstance(arg, cls)
+
+    def process(self, instance, _):
+        return self.program.evaluate(
+            {
+                "subject": celpy.json_to_cel(instance.subject.dict()),
+                "payload": celpy.json_to_cel(instance.payload),
+                "event_info": celpy.json_to_cel(instance.subject.event_info()),
+                "env": celpy.json_to_cel(dict(os.environ)),
+            }
+        )
+
+
+processors.append(CELExpressionArgProcessor)

@@ -15,7 +15,7 @@ from abc import ABCMeta, abstractmethod
 #import jsonpath_rw_ext as jp
 from pydantic.fields import ModelField
 
-from krules_core.arg_processors import processors, DefaultArgProcessor
+from krules_core.arg_processors import processors, DefaultArgProcessor, BaseArgProcessor
 from krules_core.providers import event_router_factory, configs_factory
 
 
@@ -107,24 +107,25 @@ class RuleFunctionBase:
         setattr(obj, "_processor_kwargs", processor_kwargs)
         return obj
 
-
     @staticmethod
     def _get_arg_processor(arg):
         for processor in processors:
             if processor.interested_in(arg):
+                if isinstance(arg, BaseArgProcessor):
+                    return arg
                 return processor(arg)
         return DefaultArgProcessor(arg)
 
     def _get_processed_args(self, instance):
         args = []
         for processor in self._processor_args:
-            args.append(processor.process(instance))
+            args.append(processor.process(instance, processor._arg))
         return tuple(args)
 
     def _get_processed_kwargs(self, instance):
         kwargs = {}
         for key, processor in self._processor_kwargs.items():
-            kwargs[key] = processor.process(instance)
+            kwargs[key] = processor.process(instance, processor._arg)
         return kwargs
 
     # @abstractmethod

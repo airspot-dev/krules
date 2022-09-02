@@ -12,12 +12,13 @@ import pytest
 from rx import subject as rx_subject
 from dependency_injector import providers
 
-from krules_core.arg_processors import BaseArgProcessor
+from krules_core.arg_processors import BaseArgProcessor, CELExpressionArgProcessor
 from krules_core import RuleConst
-from krules_core.base_functions import RuleFunctionBase, inspect
+from krules_core.base_functions import RuleFunctionBase, inspect, Filter, SetPayloadProperty
 from krules_core.core import RuleFactory
 from krules_core.providers import event_router_factory, subject_factory, proc_events_rx_factory
 from rx import subject
+from krules_core.models import Rule, EventType
 
 filters = RuleConst.FILTERS
 processing = RuleConst.PROCESSING
@@ -189,12 +190,12 @@ def test_extend_jp_match():
 
     class JPProcessor(BaseArgProcessor):
 
-        @staticmethod
-        def interested_in(arg):
+        @classmethod
+        def interested_in(cls, arg):
             return isinstance(arg, JPPayloadMatchBase)
 
-        def process(self, instance):
-            return self._arg.match(instance)
+        def process(self, instance, arg):
+            return arg.match(instance)
 
     processors.append(JPProcessor)
 
@@ -232,3 +233,97 @@ def test_extend_jp_match():
 
     assert payload["values"] == ['a', 'b']
     assert payload["elem-2"]["id"] == 2 and payload["elem-2"]["value"] == "b"
+
+
+def test_cel_expr():
+
+    rule = Rule(
+        name="test-cel-explicit",
+        description="Test CELExpressionArgProcessor as Filter and Process argument",
+        subscribe_to=EventType("test-cel-expression"),
+        filters=[
+            Filter(
+                CELExpressionArgProcessor(
+                    """
+                        payload.value > 0 
+                    """
+                )
+            )
+        ],
+        processing=[
+            SetPayloadProperty(
+                "value",
+                CELExpressionArgProcessor(
+                    """
+                        payload.value * 2
+                    """
+                )
+            )
+        ]
+    )
+
+    RuleFactory.create(**rule.dict())
+
+    payload = {
+        "value": 2
+    }
+    event_router_factory().route("test-cel-expression", "test-0", payload)
+
+    proc_events_rx_factory().subscribe(
+        lambda x: x[rulename] == "test-cel-explicit" and _assert(
+            x[passed]
+        )
+    )
+
+    assert payload["value"] == 4
+
+
+def test_implicit_wrapping():
+
+    from krules_core.arg_processors import processors
+
+    class ClearPayloadListArgProcessor(BaseArgProcessor):
+
+        def __init__(self, arg):
+            super().__init__(arg)
+
+        @classmethod
+        def interested_in(cls, arg):
+            return isinstance(arg, cls)
+
+        def process(self, instance, arg):
+            instance.payload.get(arg, []).clear()
+
+    processors.append(ClearPayloadListArgProcessor)
+
+    rule = Rule(
+        name="test-implicit-wrapping",
+        description="Test Implicit ArgProcessor definition",
+        subscribe_to=EventType("test-implicit-wrapping"),
+        filters=[
+            CELExpressionArgProcessor(
+                """
+                    payload.mode == 'CLEAR' 
+                """
+            )
+        ],
+        processing=[
+            ClearPayloadListArgProcessor("values")
+        ]
+    )
+
+    RuleFactory.create(**rule.dict())
+
+    payload = {
+        "mode": "CLEAR",
+        "values": [1, 2, 3]
+    }
+    event_router_factory().route("test-implicit-wrapping", "test-0", payload)
+
+    proc_events_rx_factory().subscribe(
+        lambda x: x[rulename] == "test-implicit-wrapping" and _assert(
+            x[passed]
+        )
+    )
+
+    assert len(payload["values"]) == 0
