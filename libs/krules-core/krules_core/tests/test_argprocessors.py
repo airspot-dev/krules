@@ -17,7 +17,7 @@ from krules_core import RuleConst
 from krules_core.base_functions import RuleFunctionBase, inspect, Filter, SetPayloadProperty
 from krules_core.core import RuleFactory
 from krules_core.providers import event_router_factory, subject_factory, proc_events_rx_factory
-from rx import subject
+# from rx import subject
 from krules_core.models import Rule, EventType
 
 filters = RuleConst.FILTERS
@@ -245,7 +245,7 @@ def test_cel_expr():
             Filter(
                 CELExpressionArgProcessor(
                     """
-                        payload.value > 0 
+                        payload.value > 0 && subject.ext.mode == 'multiply'
                     """
                 )
             )
@@ -255,7 +255,7 @@ def test_cel_expr():
                 "value",
                 CELExpressionArgProcessor(
                     """
-                        payload.value * 2
+                        payload.value * subject.num
                     """
                 )
             )
@@ -267,7 +267,10 @@ def test_cel_expr():
     payload = {
         "value": 2
     }
-    event_router_factory().route("test-cel-expression", "test-0", payload)
+    subject = subject_factory("test-0")
+    subject.set("num", 3)
+    subject.set_ext("mode", "multiply")
+    event_router_factory().route("test-cel-expression", subject, payload)
 
     proc_events_rx_factory().subscribe(
         lambda x: x[rulename] == "test-cel-explicit" and _assert(
@@ -275,7 +278,7 @@ def test_cel_expr():
         )
     )
 
-    assert payload["value"] == 4
+    assert payload["value"] == 6
 
 
 def test_implicit_wrapping():
