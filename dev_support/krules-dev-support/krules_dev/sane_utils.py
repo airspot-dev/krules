@@ -355,7 +355,8 @@ def make_push_recipe(digest_file: str = ".digest",
                 Help.error(ex.stderr.decode())
 
 
-def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[typing.Callable] = (), **recipe_kwargs):
+def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[typing.Callable] = (), context=None,
+                      **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
 
@@ -368,9 +369,21 @@ def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[t
     def apply():
         kubectl_cmd = os.environ.get("KUBECTL_CMD", check_cmd("kubectl"))
         check_cmd(kubectl_cmd)
+        kubectl_opts = os.environ.get("KUBECTL_OPTS", "").split()
+        context_opt = None
+        context_idx = -1
+        if context is not None:
+            for idx, opt in enumerate(kubectl_opts):
+                if opt.startswith("--context="):
+                    context_opt = opt
+                    context_idx = idx
+                    break
+            if context_opt is not None:
+                kubectl_opts[context_idx] = f"--context={context}"
+            else:
+                kubectl_opts.append(f"--context={context}")
         for func in run_before:
             func()
-
         with pushd(root_dir):
             k8s_files = []
             for file in globs:
@@ -379,8 +392,10 @@ def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[t
                 Help.log(f"Applying {file}..")
                 try:
                     out = run(
-                        f'{kubectl_cmd} apply -f {file}',
-                        shell=True, capture_output=True, check=True
+                        [
+                            kubectl_cmd, *kubectl_opts,  "apply", "-f", file,
+                        ],
+                        capture_output=True, check=True
                     ).stdout
                     [Help.log(f"> {l}") for l in out.decode().splitlines()]
                 except CalledProcessError as ex:
@@ -393,6 +408,7 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
                         service_account: str = None,
                         kn_extra: tuple = (),
                         env: typing.Union[dict, typing.Callable[[], dict]] = {},
+                        context=None,
                         **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
@@ -403,6 +419,18 @@ def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
     if service_api == "base":
         kubectl_cmd = os.environ.get("KUBECTL_CMD", check_cmd("kubectl"))
         kubectl_opts = os.environ.get("KUBECTL_OPTS", "").split()
+        context_opt = None
+        context_idx = -1
+        if context is not None:
+            for idx, opt in enumerate(kubectl_opts):
+                if opt.startswith("--context="):
+                    context_opt = opt
+                    context_idx = idx
+                    break
+            if context_opt is not None:
+                kubectl_opts[context_idx] = f"--context={context}"
+            else:
+                kubectl_opts.append(f"--context={context}")
     elif service_api == "knative":
         kn_cmd = os.environ.get("KN_CMD", check_cmd("kn"))
         kn_opts = os.environ.get("KN_OPTS", "").split()
