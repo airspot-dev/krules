@@ -1,0 +1,42 @@
+# apiVersion: v1
+# data:
+#   REDIS_AUTH:
+#   REDIS_HOST:
+#   REDIS_USER: ""
+# kind: Secret
+# metadata:
+#   name: redis-auth
+#   namespace: {{ namespace }}
+# type: Opaque
+# ---
+
+apiVersion: krules.dev/v1alpha1
+kind: ConfigurationProvider
+metadata:
+  name: config-krules-subjects-redis
+  namespace: {{ namespace }}
+spec:
+  key: subjects-backends.redis
+  appliesTo:
+    krules.dev/type:
+      - ruleset
+      - generic
+  data:
+    url: redis://$REDIS_USER:$REDIS_AUTH@$REDIS_HOST:6379/5
+    key_prefix: {{ project_name }}
+  container:
+    envFrom:
+    - secretRef:
+        name: redis-auth
+
+
+
+
+
+
+
+
+
+
+
+

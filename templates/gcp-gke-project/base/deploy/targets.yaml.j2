@@ -1,0 +1,22 @@
+{% for target in targets %}
+apiVersion: deploy.cloud.google.com/v1beta1
+kind: Target
+metadata:
+  name: {{project_name}}-gke-{{ target.name }}
+description: GKE {{ target.name }}
+requireApproval: {{ target.require_approval }}
+gke:
+  cluster: projects/{{ target.project_id }}/locations/{{ target.location }}/clusters/{{ target.cluster }}
+---
+apiVersion: deploy.cloud.google.com/v1beta1
+kind: Target
+metadata:
+  name: {{project_name}}-run-{{ target.name }}
+description: CloudRun {{ target.name }}
+requireApproval: {{ target.require_approval }}
+run:
+  location: projects/{{ target.project_id }}/locations/{{ target.location }}
+{% if not loop.last %}
+---
+{% endif %}
+{% endfor %}

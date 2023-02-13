@@ -1,0 +1,6 @@
+env.local
+.env.local
+.python-version
+venv
+.idea/
+.DS_Store

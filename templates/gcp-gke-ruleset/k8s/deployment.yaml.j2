@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ app_name }}
+  namespace: {{ namespace }}
+  labels:
+    krules.dev/app: {{ app_name }}
+    krules.dev/type: ruleset
+spec:
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    krules.dev/app: {{ app_name }}
+    krules.dev/type: ruleset
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ app_name }}
+  namespace: {{ namespace }}
+  labels:
+    krules.dev/app: {{ app_name }}
+    krules.dev/type: ruleset
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      krules.dev/app: {{ app_name }}
+  template:
+    metadata:
+      labels:
+        krules.dev/app: {{ app_name }}
+        krules.dev/type: ruleset
+    spec:
+      containers:
+      - name: {{ app_name }}
+        image: {{ app_name }}
+        ports:
+        - containerPort: 8080
+        env:
+        {% if target == "dev" %}
+        - name: PUBLISH_PROCEVENTS_LEVEL
+          value: "2"
+        - name: PUBLISH_PROCEVENTS_MATCHING
+          value: "*"
+        {% else %}
+        - name: PUBLISH_PROCEVENTS_LEVEL
+          value: "0"
+        {% endif %}
+        - name: PROJECT_NAME
+          value: {{ project_name }}
+        - name: TARGET
+          value: {{ target }}

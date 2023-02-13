@@ -13,13 +13,14 @@ Are defined in **env.project** file and are part of the project itself (included
 
   - **PROJECT_NAME**: Name of the project. If not set defaults to destination directory name
   - **RELEASE_DOCKER_REGISTRY**: Registry from which release image versions are pulled. By default, gcr.io/airspot
+  - **RULESET_IMAGE_BASE**: Base image from which ruleset will inherit
 
 ## Local development or separate deployment environments
 Are defined in **env.local** file which is excluded from the code repository
 These variables can be used to distinguish different deployments environments like
 for local user *development* or different target environments such as *staging* or *production*
 
-  - **TARGETS**: String containing targets name separated by ";" " " or ","
+  - **TARGETS**: String containing targets name separated by ";" " " or "," [default: dev;stable]
   - **PROJECT_ID**: Your GCP project ID
   - **REGION**: Your GKE cluster region
   - **ZONE**: Your GKE cluster zone
@@ -63,6 +64,10 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     release_docker_registry = _get_var("RELEASE_DOCKER_REGISTRY", lambda: "gcr.io/airspot")
     out.append(f"- **RELEASE_DOCKER_REGISTRY**: {release_docker_registry}")
     env_project.append(f"RELEASE_DOCKER_REGISTRY={release_docker_registry}")
+    # ruleset image base
+    ruleset_image_base = _get_var("RULESET_IMAGE_BASE", lambda: "gcr.io/airspot/krules-ruleset-image-base:latest")
+    out.append(f"- **RULESET_IMAGE_BASE**: {ruleset_image_base}")
+    env_project.append(f"RULESET_IMAGE_BASE={ruleset_image_base}")
 
 
     open(os.path.join(dest, "env.project"), "w").write("\n".join(env_project))
@@ -74,6 +79,7 @@ def on_create(ctx, click, dest, env: dict, tag: str = None) -> bool:
     if env_targets is None:
         out.append(f"- **TARGETS**: *not set, dev;stable will be used*")
         env_local.append(f"TARGETS=\"dev;stable\"")
+        targets = ["dev", "stable"]
     else:
         targets = re.split(" |,|;", env_targets)
         if len(targets) == 1 and len(targets) == 0:

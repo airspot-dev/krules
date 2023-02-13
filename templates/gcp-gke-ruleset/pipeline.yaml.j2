@@ -1,0 +1,12 @@
+apiVersion: deploy.cloud.google.com/v1beta1
+kind: DeliveryPipeline
+metadata:
+  name: {{ project_name }}-{{ app_name }}
+description: {{ app_name }} delivery pipeline for project {{ project_name }}
+serialPipeline:
+ stages:
+ {% for target in targets %}
+ - targetId: {{ project_name }}-{{ target }}
+   profiles:
+   - {{ target }}
+ {% endfor %}

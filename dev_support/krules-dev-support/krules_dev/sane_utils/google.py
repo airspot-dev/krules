@@ -80,7 +80,7 @@ def make_set_gke_contexts_recipe(project_name, targets, **recipe_kwargs):
     def set_gke_contexts():
         for target in targets:
             context_name = f"gke_{project_name}_{target}"
-            project = sane_utils.get_var_for_target("project", target, True)
+            project = sane_utils.get_var_for_target("project_id", target, True)
             cluster_name = sane_utils.get_var_for_target("cluster", target, True)
             namespace = sane_utils.get_var_for_target("namespace", target)
             if namespace is None:
@@ -237,7 +237,7 @@ def make_cloud_deploy_recipes(
             "project_name": sane_utils.check_env("PROJECT_NAME"),
             "image_base": image_base,
             "user_baselibs": baselibs,
-            "project_id": sane_utils.get_var_for_target("project", targets[0], True),
+            "project_id": sane_utils.get_var_for_target("project_id", targets[0], True),
             "targets": targets,
             **extra_context_vars
         },
@@ -291,7 +291,7 @@ def make_cloud_deploy_recipes(
         Help.log("Building the artifact")
         artifact_registry = sane_utils.check_env('PROJECT_NAME')
         region = sane_utils.get_var_for_target('region', targets[0])
-        project = sane_utils.get_var_for_target('project', targets[0])
+        project = sane_utils.get_var_for_target('project_id', targets[0])
         repo_name = f"{region}-docker.pkg.dev/{project}/{artifact_registry}"
         try:
             run([

@@ -1,0 +1,22 @@
+
+apiVersion: skaffold/v2beta7
+kind: Config
+build:
+  artifacts:
+    - image: {{ app_name }}
+      context: ".build"
+  googleCloudBuild:
+    projectId: {{ project_id }}
+profiles:
+{% for target in targets %}
+  - name: {{ target }}
+    deploy:
+      kubectl:
+        manifests:
+        - k8s/{{target}}/*.yaml
+{% endfor %}
+portForward:
+  - resourceType: deployment
+    resourceName: {{ app_name }}
+    port: 8080
+    localPort: 9000
