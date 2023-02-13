@@ -33,7 +33,7 @@ def develop():
     hook_deps=["prepare_setup"],
     conditions=[
         Help.file_condition(
-            sources=glob(os.path.join(ROOT_DIR, "krules_dev")),
+            sources=glob(os.path.join(ROOT_DIR, "krules_cli")),
             targets=[os.path.join(ROOT_DIR, "build")]
         )
     ],
