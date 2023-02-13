@@ -449,13 +449,17 @@ class Route(ProcessingFunction):
 
     def execute(self, 
                 event_type: str = None, 
-                subject: Subject = None, payload: dict = None, dispatch_policy: str = DispatchPolicyConst.DEFAULT):
+                subject: Subject = None,
+                payload: dict = None,
+                dispatch_policy: str = DispatchPolicyConst.DEFAULT,
+                **kwargs):
         """
         Args:
             event_type: The event type. If None use current processing event type [default None]
             subject: The event subject. If None use the current subject [default None]
             payload: The event payload. If None use the current payload [default None]
             dispatch_policy: Define the event dispatch policy as explained before. [default DispatchPolicyConst.DEFAULT]
+            kwargs: The event extended properties
         """
 
         if event_type is None:
@@ -465,7 +469,7 @@ class Route(ProcessingFunction):
         if payload is None:
             payload = self.payload
 
-        self.router.route(event_type, subject, payload, dispatch_policy=dispatch_policy)
+        self.router.route(event_type, subject, payload, dispatch_policy=dispatch_policy, **kwargs)
 
 
 class RaiseException(ProcessingFunction):

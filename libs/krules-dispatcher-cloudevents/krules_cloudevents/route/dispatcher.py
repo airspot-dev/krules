@@ -47,7 +47,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         self._source = source
         self._test = test
 
-    def dispatch(self, event_type, subject, payload):
+    def dispatch(self, event_type, subject, payload, **kwargs):
 
         if isinstance(subject, str):
             subject = subject_factory(subject)
@@ -69,6 +69,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         property_name = payload.get(PayloadConst.PROPERTY_NAME, None)
         if property_name is not None:
             ext_props.update({"propertyname": property_name})
+        ext_props.update(kwargs)
         event.SetExtensions(ext_props)
         event.Set('Originid', str(_event_info.get("originid", _id)))
         event.SetData(payload)

@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, constr
 from krules_core.arg_processors import BaseArgProcessor
 from krules_core.base_functions import FilterFunction, ProcessingFunction, Filter, Process
 
-EventType = NewType("EventType", constr(regex="^[a-z0-9.-]+$"))
+EventType = NewType("EventType", constr(regex="^[a-zA-Z0-9_.-]+$"))
 
 
 class Rule(BaseModel):

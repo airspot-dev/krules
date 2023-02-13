@@ -144,6 +144,14 @@ def update_code_hash(globs: list,
                      out_dir: str = ".build",
                      output_file: str = ".code.digest"):
 
+    def _update_hash_within_dir(dir_path):
+        for filename in os.listdir(dir_path):
+            f = os.path.join(dir_path, filename)
+            if os.path.isfile(f):
+                code_hash.update(open(f, "rb").read())
+            else:
+                _update_hash_within_dir(f)
+
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
     Path(out_dir).mkdir(parents=True, exist_ok=True)
@@ -154,9 +162,11 @@ def update_code_hash(globs: list,
             files.extend(glob(file, recursive=True))
 
         code_hash = hashlib.md5()
-        for file in files:
-            if os.path.isfile(file):
-                code_hash.update(open(file, "rb").read())
+        for path in files:
+            if os.path.isfile(path):
+                code_hash.update(open(path, "rb").read())
+            else:
+                _update_hash_within_dir(path)
         open(os.path.join(out_dir, output_file), "w").write(code_hash.hexdigest())
 
 
@@ -612,7 +622,12 @@ def copy_resources(src: typing.Iterable[str], dst: str,
     with pushd(dest_dir):
         os.makedirs(dst, exist_ok=True)
         for p in src:
-            to_path = os.path.join(dst, os.path.basename(p))
+            if p.endswith("/"):
+                p = p[:-1]
+            basename = os.path.basename(p)
+            if basename in ("", "."):
+                continue
+            to_path = os.path.join(dst, basename)
             if os.path.exists(to_path):
                 if override:
                     if os.path.isdir(to_path):
@@ -667,11 +682,11 @@ def copy_source(src: typing.Union[typing.Iterable[str], str],
                 workdir: str = None):
     """
     It assumes paths relative to KRULES_REPO_DIR
-    :param src: 
-    :param dst: 
-    :param condition: 
-    :param override: 
-    :param make_recipes: 
+    :param src:
+    :param dst:
+    :param condition:
+    :param override:
+    :param make_recipes:
     :param workdir:
     :return:
     """
@@ -685,6 +700,7 @@ def copy_source(src: typing.Union[typing.Iterable[str], str],
         src, dst, override, make_recipes_before=(), make_recipes_after=make_recipes,
         workdir=workdir,
     )
+
 
 def make_copy_source_recipe(location: str,
                             src: typing.Union[typing.Iterable[str], str],
@@ -722,3 +738,52 @@ def make_subprocess_run_recipe(cmd, **recipe_kwargs):
             cmd, **run_kwargs
         ).stdout
         [Help.log(f"> {l}") for l in out.decode().splitlines()]
+
+
+def get_var_for_target(name: str, target: str, mandatory: bool = False, default=None) -> str | None:
+    name = name.upper()
+    target = target.upper()
+    if f"{target}_{name}" in os.environ:
+        return os.environ[f"{target}_{name}"]
+    if name in os.environ:
+        return os.environ[name]
+    else:
+        if mandatory:
+            Help.error(f"missing required environment variable for {name}")
+    return default
+
+
+def get_target_dicts(targets: typing.Iterable, keys: typing.Iterable[str | list | tuple]) -> list[dict]:
+    ret: list[dict] = []
+    for target in targets:
+        dd = {
+            "name": target
+        }
+        for k in keys:
+            default: str | typing.Callable[[str], str] = lambda x: ""
+            if isinstance(k, (list, tuple)):
+                k, default = k
+            val = os.environ.get(f"{target.upper()}_{k.upper()}")
+            if val is None:
+                val = os.environ.get(f"{k.upper()}")
+            if val is None:
+                val = callable(default) and default(target) or default
+            dd[k] = val
+
+        ret.append(dd)
+    return ret
+
+
+def make_run_terraform_recipe(manifests_dir="terraform", init_params=(), **recipe_kwargs):
+
+    @recipe(info="Apply terraform manifests", **recipe_kwargs)
+    def run_terraform():
+        terraform = check_cmd(os.environ.get("TERRAFORM_CMD", "terraform"))
+        with pushd(manifests_dir):
+            Help.log("Applying terraform manifests...")
+            try:
+                run(f"{terraform} init --upgrade {' '.join(init_params)}", shell=True, check=True, capture_output=True)
+                run(f"{terraform} plan -out=terraform.tfplan", shell=True, check=True, capture_output=True)
+                run(f"{terraform} apply -auto-approve terraform.tfplan", shell=True, check=True, capture_output=True)
+            except CalledProcessError as ex:
+                Help.error(ex.stderr.decode("utf8"))

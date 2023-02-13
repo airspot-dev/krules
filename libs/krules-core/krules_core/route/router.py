@@ -49,7 +49,7 @@ class EventRouter(object):
             count += self.unregister(event_type)
         return count
 
-    def route(self, event_type, subject, payload, dispatch_policy=DispatchPolicyConst.DEFAULT):
+    def route(self, event_type, subject, payload, dispatch_policy=DispatchPolicyConst.DEFAULT, **kwargs):
 
         if isinstance(subject, str):
             # NOTE: this should have already happened if we want to take care or event info
@@ -79,4 +79,4 @@ class EventRouter(object):
                 or dispatch_policy == DispatchPolicyConst.ALWAYS \
                 or dispatch_policy == DispatchPolicyConst.DIRECT:
             logger.debug("dispatch {} to {} with payload {}".format(event_type, subject, payload))
-            return event_dispatcher_factory().dispatch(event_type, subject, payload)
+            return event_dispatcher_factory().dispatch(event_type, subject, payload, **kwargs)
