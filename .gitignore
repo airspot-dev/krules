@@ -11,3 +11,5 @@ env.local
 #.env.override
 #env.override
 .build/*
+Pipfile
+Pipfile.lock

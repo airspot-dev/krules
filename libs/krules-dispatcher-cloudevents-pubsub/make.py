@@ -47,7 +47,7 @@ def release():
     sane_utils.check_cmd("twine")
     with sane_utils.pushd(ROOT_DIR):
         subprocess.run(["python3", "setup.py", "sdist"])
-        subprocess.run(["twine", "upload", "dist/*"], env=os.environ.copy())
+        subprocess.run(["twine", "upload", "dist/*"])
 
 sane_utils.make_clean_recipe(
     globs=[
