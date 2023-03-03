@@ -51,23 +51,33 @@ class CloudEventsDispatcher(BaseDispatcher):
         _event_info = subject.event_info()
 
         _id = str(uuid.uuid4())
-
         ext_props = subject.get_ext_props()
         property_name = payload.get(PayloadConst.PROPERTY_NAME, None)
         if property_name is not None:
             ext_props.update({"propertyname": property_name})
-        ext_props['Originid'] =  str(_event_info.get("originid", _id))
+        ext_props['Originid'] = str(_event_info.get("originid", _id))
+        ext_props.update(extra)
 
         event = CloudEvent(
             id=_id,
             type=event_type,
             source=self._source,
             subject=str(subject),
-
+            data=payload
         )
 
-        _topic_id = callable(self._topic_id) and self._topic_id(subject, event_type) or self._topic_id
-        topic_path = self._publisher.topic_path(self._project_id, _topic_id)
+        # event.SetData(payload)
+
+        if "topic" in extra:
+            _topic_id = extra["topic"]
+        else:
+            _topic_id = callable(self._topic_id) and self._topic_id(subject, event_type) or self._topic_id
+            if _topic_id is None:
+                raise EnvironmentError("A topic must be specified or PUBSUB_SINK must be defined in environ")
+        if _topic_id.startswith("projects/"):
+            topic_path = _topic_id
+        else:
+            topic_path = self._publisher.topic_path(self._project_id, _topic_id)
 
         future = self._publisher.publish(topic_path, data=event.json().encode("utf-8"), **ext_props, contentType="text/json")
         future.add_done_callback(lambda _future: _future.result(timeout=60))

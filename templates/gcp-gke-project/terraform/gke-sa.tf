@@ -7,7 +7,7 @@ resource "google_service_account" "gke-sa-default" {
 
 resource "google_service_account_iam_binding" "goog-id-iam-binding-default" {
     for_each = var.targets
-    service_account_id = "projects/${each.value.project_id}/serviceAccounts/${var.project_name}-${each.key}-default@${each.value.project}.iam.gserviceaccount.com"
+    service_account_id = "projects/${each.value.project_id}/serviceAccounts/${var.project_name}-${each.key}-default@${each.value.project_id}.iam.gserviceaccount.com"
     role               = "roles/iam.workloadIdentityUser"
 
     members = [

@@ -22,7 +22,7 @@ ADD ./app /app
 
 ENV PYTHONPATH /app
 WORKDIR /app
-
 RUN pip install uvicorn[standard]==0.17.6 fastapi-cloudevents
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+

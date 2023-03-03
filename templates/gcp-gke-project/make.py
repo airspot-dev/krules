@@ -57,7 +57,7 @@ sane_utils.google.make_check_gcloud_config_recipe(
     ],
 )
 def create_tf_vars(
-        out_file="base/terraform/terraform.tfvars.json",
+        out_file="terraform/terraform.tfvars.json",
         content=lambda: {
             "project_name": PROJECT_NAME,
             "primary_target": TARGET_DICTS[0],
@@ -73,8 +73,8 @@ def create_tf_vars(
 
 sane_utils.make_render_resource_recipes(
     globs=[
-        "base/terraform/*.tf.j2",
-        "base/terraform/backend.hcl.j2",
+        "terraform/*.tf.j2",
+        "terraform/backend.hcl.j2",
     ],
     context_vars={
         "project_name": PROJECT_NAME,
@@ -86,7 +86,7 @@ sane_utils.make_render_resource_recipes(
     hooks=[
         "prepare_tf"
     ],
-    out_dir="base/terraform/"
+    out_dir="terraform/"
 )
 
 sane_utils.google.make_ensure_gcs_bucket_recipe(
@@ -97,7 +97,7 @@ sane_utils.google.make_ensure_gcs_bucket_recipe(
 )
 
 sane_utils.make_run_terraform_recipe(
-    manifests_dir=os.path.join(ROOT_DIR, "base", "terraform"),
+    manifests_dir=os.path.join(ROOT_DIR, "terraform"),
     init_params=["-backend-config=backend.hcl"],
     hook_deps=[
         "prepare_tf"
@@ -109,47 +109,9 @@ sane_utils.google.make_set_gke_contexts_recipe(
     targets=TARGETS,
 )
 
-for target in TARGETS:
-    sane_utils.make_render_resource_recipes(
-        globs=[
-            f"base/k8s/*.yaml.j2"
-        ],
-        context_vars={
-            "project_name": PROJECT_NAME,
-            "target": target,
-            "namespace": sane_utils.get_var_for_target("namespace", target, default="default"),
-            "gcp_project": sane_utils.get_var_for_target("project_id", target, True),
-        },
-        hooks=[
-            f"prepare_base_{target}_resources"
-        ],
-        out_dir=f"base/k8s/{target}"
-    )
-
-    context_name = f"gke_{PROJECT_NAME}_{target}"
-    sane_utils.make_apply_recipe(
-        info=f"Apply base k8s resources for target {target}",
-        name=f"apply_{target}_base",
-        globs=[
-            f"base/k8s/{target}/*.yaml"
-        ],
-        hook_deps=[
-            f"prepare_base_{target}_resources"
-        ],
-        context=context_name,
-    )
-
-
-@recipe(
-    info="Apply base k8s resources in each target",
-    recipe_deps=[f"apply_{target}_base" for target in TARGETS])
-def apply_base():
-    pass
-
-
 sane_utils.make_render_resource_recipes(
     globs=[
-        f"base/deploy/targets.yaml.j2"
+        f"targets.yaml.j2"
     ],
     context_vars={
         "project_name": PROJECT_NAME,
@@ -158,13 +120,13 @@ sane_utils.make_render_resource_recipes(
     hooks=[
         "prepare_base_deploy_resources"
     ],
-    out_dir="base/deploy"
+    out_dir="."
 )
 
 sane_utils.google.make_gcloud_deploy_apply_recipe(
     region=sane_utils.get_var_for_target('region', TARGETS[0], True),
-    templates=[os.path.join("base", "targets.yaml.j2")],
-    out_dir="base/deploy",
+    templates=["targets.yaml.j2"],
+    out_dir=".",
     hook_deps=[
         "prepare_base_deploy_resources"
     ],
@@ -181,13 +143,12 @@ def prepare_targets():
 
 sane_utils.make_clean_recipe(
     globs=[
-        "base/terraform/backend.hcl",
-        "base/terraform/terraform.tfvars.json",
-        "base/terraform/.terraform*",
-        "base/terraform/terraform.tfplan",
-        "base/terraform/terraform.tfstate*",
-        "base/k8s/*/*.yaml",
-        "base/deploy/targets.yaml",
+        "terraform/backend.hcl",
+        "terraform/terraform.tfvars.json",
+        "terraform/.terraform*",
+        "terraform/terraform.tfplan",
+        "terraform/terraform.tfstate*",
+        "targets.yaml",
     ]
 )
 

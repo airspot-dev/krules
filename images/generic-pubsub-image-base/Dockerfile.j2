@@ -17,12 +17,7 @@ ADD .build/.krules-libs /.krules-libs
 RUN cd /.krules-libs/{{ lib }} && pip3 install --upgrade --no-cache-dir .
 {% endfor %}
 {% endif %}
+ADD env.py /app/
 
-ADD ./app /app
+RUN pip install google-auth
 
-ENV PYTHONPATH /app
-WORKDIR /app
-
-RUN pip install uvicorn[standard]==0.17.6 fastapi-cloudevents
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

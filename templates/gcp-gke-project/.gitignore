@@ -4,3 +4,9 @@ env.local
 venv
 .idea/
 .DS_Store
+targets.yaml
+.terraform
+terraform/backend.hcl
+terraform/.terraform.lock.hcl
+terraform/terraform.tfplan
+terraform/terraform.tfvars.json

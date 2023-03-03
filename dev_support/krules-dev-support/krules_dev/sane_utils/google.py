@@ -285,6 +285,8 @@ def make_cloud_deploy_recipes(
 
     @recipe(info="Build the artifact", hook_deps=['prepare_build'], hooks=["prepare_deploy"])
     def build():
+        if str(os.environ.get("BUILD_ARTIFACTS")) == "0":
+            return
         if not code_changed:
             Help.log("No changes detected... Skip build")
             return
@@ -327,15 +329,24 @@ def make_cloud_deploy_recipes(
         app_version = f"{git_sha}-{unique}"
 
         try:
-
-            run([
-                sane_utils.check_cmd("gcloud"), "deploy", "releases",
-                "create", f"{app_name[0]}-{app_version}",
-                "--region", sane_utils.get_var_for_target('region', targets[0]),
-                "--delivery-pipeline", f"{sane_utils.check_env('PROJECT_NAME')}-{app_name}",
-                "--build-artifacts", os.path.join(root_dir, out_dir, "artifacts.json"),
-                "--source", out_dir
-            ], check=True, capture_output=True)
+            if str(os.environ.get("BUILD_ARTIFACTS")) == "0":
+                run([
+                    sane_utils.check_cmd("gcloud"), "deploy", "releases",
+                    "create", f"{app_name[0]}-{app_version}",
+                    "--region", sane_utils.get_var_for_target('region', targets[0]),
+                    "--delivery-pipeline", f"{sane_utils.check_env('PROJECT_NAME')}-{app_name}",
+                    "--skaffold-file", os.path.join(root_dir, out_dir, "skaffold.yaml"),
+                    "--source", out_dir
+                ], check=True, capture_output=True)
+            else:
+                run([
+                    sane_utils.check_cmd("gcloud"), "deploy", "releases",
+                    "create", f"{app_name[0]}-{app_version}",
+                    "--region", sane_utils.get_var_for_target('region', targets[0]),
+                    "--delivery-pipeline", f"{sane_utils.check_env('PROJECT_NAME')}-{app_name}",
+                    "--build-artifacts", os.path.join(root_dir, out_dir, "artifacts.json"),
+                    "--source", out_dir
+                ], check=True, capture_output=True)
         except CalledProcessError as ex:
             Help.log(ex.stdout.decode())
             Help.error(ex.stderr.decode())

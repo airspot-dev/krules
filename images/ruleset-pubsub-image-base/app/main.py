@@ -1,24 +1,23 @@
-from starlette import status
-import json
-from base64 import b64decode
 import pydantic
-import krules_env
-from krules_core.providers import subject_factory, event_router_factory
+from starlette import status
+
+from krules_core.providers import subject_factory
 from krules_core.route.router import DispatchPolicyConst
 from krules_fastapi_env import KrulesApp
 from datetime import datetime
 import os
 from fastapi import Request, Response
-# from fastapi_cloudevents import CloudEvent, install_fastapi_cloudevents
-from cloudevents.pydantic import CloudEvent
-
 import io
+import json
+
 from cloudevents.sdk.event import v1
 from cloudevents.sdk import marshaller
-
+from cloudevents.pydantic import CloudEvent
+from base64 import b64decode
+import krules_env
+from krules_core.providers import event_router_factory
 
 app = KrulesApp()
-# install_fastapi_cloudevents(app)
 
 krules_env.init()
 
@@ -41,7 +40,6 @@ async def main(request: Request, response: Response):
         m = marshaller.NewDefaultHTTPMarshaller()
         event = m.FromRequest(v1.Event(), request.headers, io.BytesIO(json.dumps(await request.json()).encode()), lambda x: json.load(x))
         event_info = event.Properties()
-        print(f"@@@@@@ {event_info}")
         event_info.update(event_info.pop("extensions", {}))
         event_data = event_info.pop("data")
 
@@ -53,9 +51,6 @@ async def main(request: Request, response: Response):
             return
 
         event_info["originid"] = event_info.get("originid", event_info.get("id"))
-
-        app.logger.debug("subject: {}".format(subject))
-        app.logger.debug("event_data: {}".format(event_data))
 
         if event_type == "google.cloud.pubsub.topic.v1.messagePublished":
             origin_id = event_data["message"]["messageId"]
@@ -80,6 +75,9 @@ async def main(request: Request, response: Response):
             except json.JSONDecodeError:
                 event_data["message"]["data"] = decoded_data
             event_info["originid"] = origin_id
+
+        app.logger.debug("subject: {}".format(subject))
+        app.logger.debug("event_data: {}".format(event_data))
 
         subject = subject_factory(name=subject, event_info=event_info, event_data=event_data)
 
@@ -109,8 +107,3 @@ async def main(request: Request, response: Response):
         app.logger.error(ex, exc_info=True)
         response.status_code = status.HTTP_201_CREATED
         return
-    # return CloudEvent(
-    #     type="my.response-type.v1",
-    #     data=event.data,
-    #     datacontenttype=event.datacontenttype,
-    # )

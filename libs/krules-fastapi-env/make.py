@@ -38,7 +38,7 @@ def develop():
     hook_deps=["prepare_setup"],
     conditions=[
         Help.file_condition(
-            sources=glob(os.path.join(ROOT_DIR, "krules_flask_env")),
+            sources=glob(os.path.join(ROOT_DIR, "krules_fastapi_env")),
             targets=[os.path.join(ROOT_DIR, "build")]
         )
     ],

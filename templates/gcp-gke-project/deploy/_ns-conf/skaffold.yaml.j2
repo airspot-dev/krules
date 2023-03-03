@@ -1,0 +1,11 @@
+
+apiVersion: skaffold/v2beta7
+kind: Config
+profiles:
+{% for target in targets %}
+  - name: {{ target }}
+    deploy:
+      kubectl:
+        manifests:
+        - k8s/{{target}}/*.yaml
+{% endfor %}

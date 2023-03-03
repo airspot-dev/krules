@@ -38,7 +38,7 @@ def develop():
     hook_deps=["prepare_setup"],
     conditions=[
         Help.file_condition(
-            sources=glob(os.path.join(ROOT_DIR, "krules_cloudevents_pubsub")),
+            sources=glob(os.path.join(ROOT_DIR, "krules_cloudevents")),
             targets=[os.path.join(ROOT_DIR, "build")]
         )
     ],
@@ -52,7 +52,8 @@ def release():
 sane_utils.make_clean_recipe(
     globs=[
         "setup.py",
-        "*.egg-info"
+        "*.egg-info",
+        "dist"
     ]
 )
 

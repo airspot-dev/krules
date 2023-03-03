@@ -22,8 +22,8 @@ spec:
       - ruleset
       - generic
   data:
-    url: redis://$REDIS_USER:$REDIS_AUTH@$REDIS_HOST:6379/5
-    key_prefix: {{ project_name }}
+    url: redis://$REDIS_USER:$REDIS_AUTH@$REDIS_HOST:6379/0
+    key_prefix: {{ project_name }}-{{ target }}
   container:
     envFrom:
     - secretRef:

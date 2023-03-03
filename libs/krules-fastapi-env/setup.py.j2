@@ -1,6 +1,4 @@
 import os
-
-import setuptools
 from setuptools import setup, find_packages
 
 
@@ -8,17 +6,17 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name='krules-dispatcher-cloudevents-pubsub',
-{% if release_version %}
+    name='krules-fastapi-env',
+{%  if release_version %}
     version="{{ release_version }}",
 {%  endif %}
     author="Alberto Degli Esposti",
     author_email="alberto@arispot.tech",
-    description="KRules cloudevents PUBSUB dispatcher",
+    description="KRules environment base package",
     license="Apache Licence 2.0",
-    keywords="krules cloudevents pubsub router",
-    url="https://github.com/airspot-dev/krules-dispatcher-cloudevents-pubsub",
-    packages=setuptools.find_packages(),
+    keywords="krules rules engine flask",
+    url="https://github.com/airspot-dev/krules-flask-env",
+    packages=find_packages(),
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -26,16 +24,15 @@ setup(
     ],
     install_requires=[
 {% if release_version %}
-        'krules-core=={{ release_version }}',
+        "krules-env=={{ release_version }}",
 {% endif %}
-        'cloudevents==1.7.1',
-        'google-cloud-pubsub==2.13.11',
+        "MarkupSafe==2.0.1",
+        "fastapi==0.92.0"
     ],
     setup_requires=[
         'pytest-runner',
     ],
     tests_require=[
         'pytest',
-        'pytest-localserver',
     ],
 )
