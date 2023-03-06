@@ -94,7 +94,7 @@ resource "google_eventarc_trigger" "pubsub-ingestion-message-published" {
     project         = each.value.project_id
     name            = "${var.project_name}-pubsub-message-published-${each.key}"
     location        = "${each.value.region}"
-    service_account = "${data.google_project.projects[each.value.project].number}-compute@developer.gserviceaccount.com"
+    service_account = "${data.google_project.projects[each.value.project_id].number}-compute@developer.gserviceaccount.com"
     matching_criteria {
             attribute = "type"
             value     = "google.cloud.pubsub.topic.v1.messagePublished"

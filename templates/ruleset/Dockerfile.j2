@@ -6,3 +6,4 @@ RUN cd /app/{{ user_lib }} && test -f requirements.txt && pip3 install -r requir
 {% endfor %}
 
 ADD ruleset.py /app/ruleset.py
+ADD routers.py /app/routers.py

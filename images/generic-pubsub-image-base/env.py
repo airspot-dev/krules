@@ -10,9 +10,9 @@ TOPIC_PREFIX = os.environ.get("PUBSUB_SINK")
 if TOPIC_PREFIX is None:
     raise EnvironmentError("PUBSUB_SINK must be defined")
 
-TARGET = os.environ.get("ENV_TARGET")
+TARGET = os.environ.get("TARGET")
 if TARGET is None:
-    raise EnvironmentError("ENV_TARGET must be defined in environ")
+    raise EnvironmentError("TARGET must be defined in environ")
 
 _, PROJECT = google.auth.default()
 

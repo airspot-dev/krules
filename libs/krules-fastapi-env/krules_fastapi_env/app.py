@@ -241,6 +241,7 @@ class KrulesApp(FastAPI):
             responses=responses,
             generate_unique_id_function=generate_unique_id_function,
         )
+        self.setup()
         self.add_middleware(GlobalsMiddleware)
 
         self.logger = logging.getLogger(self.title)
@@ -254,8 +255,8 @@ class KrulesApp(FastAPI):
 
 
 def _g_wrap(subject_class, *args, **kwargs):
-    event_info = kwargs.pop("event_info", None)
-    if not getattr(g, "subjects", None):
+    event_info = kwargs.pop("event_info", {})
+    if not getattr(g, "subjects"):
         g.subjects = []
     if event_info is None and len(g.subjects) > 0:
         event_info = g.subjects[0].event_info()

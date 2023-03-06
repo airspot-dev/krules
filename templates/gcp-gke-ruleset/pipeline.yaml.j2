@@ -6,7 +6,7 @@ description: {{ app_name }} delivery pipeline for project {{ project_name }}
 serialPipeline:
  stages:
  {% for target in targets %}
- - targetId: {{ project_name }}-{{ target }}
+ - targetId: {{ project_name }}-gke-{{ target }}
    profiles:
    - {{ target }}
  {% endfor %}

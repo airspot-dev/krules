@@ -15,9 +15,12 @@ from cloudevents.pydantic import CloudEvent
 import io
 from cloudevents.sdk.event import v1
 from cloudevents.sdk import marshaller
+from routers import routers
+import logging
+
+logger = logging.getLogger(__file__)
 
 
-app = KrulesApp()
 # install_fastapi_cloudevents(app)
 
 krules_env.init()
@@ -27,7 +30,13 @@ try:
 
     env.init()
 except ImportError:
-    app.logger.warning("No app env defined!")
+    logger.warning("No app env defined!")
+
+
+app = KrulesApp()
+
+for router in routers:
+    app.include_router(router)
 
 event_router = event_router_factory()
 

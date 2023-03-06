@@ -271,6 +271,7 @@ def make_cloud_deploy_recipes(
                 "app_name": sane_utils.check_env("APP_NAME"),
                 "namespace": sane_utils.get_var_for_target("namespace", target),
                 "target": target,
+                "project_id": sane_utils.get_var_for_target("project_id", targets[0], True),
                 **extra_target_context_vars.get(target, {})
             },
             hooks=[
