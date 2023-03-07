@@ -55,7 +55,8 @@ class CloudEventsDispatcher(BaseDispatcher):
         property_name = payload.get(PayloadConst.PROPERTY_NAME, None)
         if property_name is not None:
             ext_props.update({"propertyname": property_name})
-        ext_props['Originid'] = str(_event_info.get("originid", _id))
+        ext_props['originid'] = str(_event_info.get("originid", _id))
+        ext_props["ce-type"] = event_type
         ext_props.update(extra)
 
         event = CloudEvent(
