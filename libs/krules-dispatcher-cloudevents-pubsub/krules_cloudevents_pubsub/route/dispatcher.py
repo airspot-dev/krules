@@ -79,8 +79,13 @@ class CloudEventsDispatcher(BaseDispatcher):
             topic_path = _topic_id
         else:
             topic_path = self._publisher.topic_path(self._project_id, _topic_id)
-
-        future = self._publisher.publish(topic_path, data=event.json().encode("utf-8"), **ext_props, contentType="text/json")
+        event_obj = event.dict(exclude_unset=True)
+        event_obj["data"] = json.dumps(event_obj["data"]).encode()
+        # for k,v in event_obj.items():
+        #     if k != "data":
+        #         event_obj[k] = str(v)
+        future = self._publisher.publish(topic_path, **event_obj, **ext_props, contentType="text/json")
+        # future = self._publisher.publish(topic_path, data=event.json().encode("utf-8"), **ext_props, contentType="text/json")
         future.add_done_callback(lambda _future: _future.result(timeout=60))
 
 # class __old__CloudEventsDispatcher(BaseDispatcher):

@@ -86,6 +86,11 @@ async def main(request: Request, response: Response):
             except json.JSONDecodeError:
                 event_data["message"]["data"] = decoded_data
             event_info["originid"] = origin_id
+        elif event_type == "com.google.cloud.pubsub.message":
+            event_info = event_data.get("Attributes", event_info)
+            event_data = event_data.get("Data", event_data)
+            subject = event_info.get("subject", subject)
+            event_type = event_info.get("type", event_type)
 
         app.logger.debug("subject: {}".format(subject))
         app.logger.debug("event_data: {}".format(event_data))
