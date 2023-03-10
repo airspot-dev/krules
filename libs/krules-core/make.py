@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import subprocess
 from glob import glob
 
@@ -48,7 +49,10 @@ def develop():
 def release():
     sane_utils.check_cmd("twine")
     with sane_utils.pushd(ROOT_DIR):
-        subprocess.run(["python3", "setup.py", "sdist"])
+        if "TWINE_REPOSITORY_URL" in os.environ:
+            subprocess.run(["python3", "-m", "build"])
+        else:
+            subprocess.run(["python3", "setup.py", "sdist"])
         subprocess.run(["twine", "upload", "dist/*"], env=os.environ.copy())
 
 

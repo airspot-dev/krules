@@ -27,7 +27,7 @@ RUN pip3 install --upgrade pip setuptools wheel
 ADD env.py /app/
 
 {% if extra_index_url %}
-WORKDIR packages
+WORKDIR /packages
 COPY --from=pkg-build /packages/ /packages/
 # Installing the packages from the copied files
 RUN pip install --no-index --find-links=/packages/ /packages/*
