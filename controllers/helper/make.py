@@ -45,6 +45,9 @@ if "SVC_ACC_NAME" not in os.environ:
         os.environ["SVC_ACC_NAME"] = f"krules-system-{dev_target}"
 
 def _get_image_base():
+    if "FORCED_IMAGE_BASE" in os.environ:
+        return os.environ["FORCED_IMAGE_BASE"]
+
     return sane_utils.get_buildable_image(
         location=os.path.join(KRULES_REPO_DIR, "images"),
         dir_name="ruleset-image-base",

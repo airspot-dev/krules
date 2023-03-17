@@ -25,8 +25,9 @@ DEV_REQUIREMENTS = []
 if "RELEASE_VERSION" in os.environ:
     os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")
 
-
 def get_image_base():
+    if "FORCED_IMAGE_BASE" in os.environ:
+        return os.environ["FORCED_IMAGE_BASE"]
     return sane_utils.get_buildable_image(
         location=os.path.join(KRULES_REPO_DIR, "images"),
         dir_name="generic-image-base",
