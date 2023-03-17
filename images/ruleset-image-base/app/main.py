@@ -81,7 +81,7 @@ async def main(request: Request, response: Response):
                         event_info.update(event_info.pop("extension", {}))
                         subject = event_info.get("subject", subject)
                         event_type = event_info.get("type")
-                        event_data = event_info.pop("data")
+                        event_data = event_info.pop("data") or {}
                     except pydantic.error_wrappers.ValidationError as ex:
                         event_data = data
                 else:

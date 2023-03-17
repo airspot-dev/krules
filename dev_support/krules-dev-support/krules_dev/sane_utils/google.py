@@ -21,7 +21,7 @@ def make_enable_apis_recipe(google_apis, **recipe_kwargs):
         Help.log("Done")
 
 
-def make_check_gcloud_config_recipe(project_id, region, zone, **recipe_kwargs):
+def make_check_gcloud_config_recipe(project_id, region, zone, deploy_region, **recipe_kwargs):
     @recipe(info="Check current gcloud configuration", **recipe_kwargs)
     def check_gcloud_config():
         def _get_prop_cmd(prop):
@@ -65,11 +65,11 @@ def make_check_gcloud_config_recipe(project_id, region, zone, **recipe_kwargs):
         # DEPLOY REGION
         _deploy_region = _get_prop_cmd("deploy/region")
         if _deploy_region == '':
-            _deploy_region = _region
+            _deploy_region = deploy_region
             _set_prop_cmd("deploy/region", _deploy_region)
-        if _deploy_region != _region:
-            Help.error(f"already set deploy/region '{_deploy_region}' must match '{_region}'")
-        Help.log(f"Using deploy region: {_region}")
+        if _deploy_region != deploy_region:
+            Help.error(f"already set deploy/region '{_deploy_region}' must match '{deploy_region}'")
+        Help.log(f"Using deploy region: {_deploy_region}")
 
 
 def make_set_gke_contexts_recipe(project_name, targets, **recipe_kwargs):
@@ -165,13 +165,13 @@ def make_gcloud_deploy_apply_recipe(templates, region, out_dir=".build", **recip
             _make_apply_deploy_recipe(f)
 
 
-def make_ensure_gcs_bucket_recipe(bucket_name, **recipe_kwargs):
+def make_ensure_gcs_bucket_recipe(bucket_name, location="EU", **recipe_kwargs):
     @recipe(**recipe_kwargs)
     def ensure_gcs_bucket():
         gsutil = sane_utils.check_cmd(os.environ.get("GSUTIL_CMD", "gsutil"))
         Help.log(f"Creating bucket gs://{bucket_name}")
         try:
-            run(f"{gsutil} mb gs://{bucket_name}", shell=True, check=True, capture_output=True)
+            run(f"{gsutil} mb -l {location} gs://{bucket_name}", shell=True, check=True, capture_output=True)
         except CalledProcessError as ex:
             if ex.stderr.decode("utf8").find("ServiceException: 409 ") > 0:
                 Help.log("  ...bucket already exists")
@@ -311,7 +311,9 @@ def make_cloud_deploy_recipes(
             Help.error(ex.stderr.decode())
 
     make_gcloud_deploy_apply_recipe(
-        region=sane_utils.get_var_for_target('region', targets[0]),
+        region=sane_utils.get_var_for_target(
+            'CLOUDDEPLOY_REGION', targets[0], default=sane_utils.get_var_for_target('region', targets[0])
+        ),
         templates=["pipeline.yaml.j2"],
         hooks=["prepare_deploy"],
         hook_deps=["prepare_apply"]
@@ -328,13 +330,13 @@ def make_cloud_deploy_recipes(
         git_sha = repo.head.object.hexsha[:7]
         unique = str(uuid.uuid4()).split('-')[0]
         app_version = f"{git_sha}-{unique}"
-
+        region = sane_utils.get_var_for_target('region', targets[0])
         try:
             if str(os.environ.get("BUILD_ARTIFACTS")) == "0":
                 run([
                     sane_utils.check_cmd("gcloud"), "deploy", "releases",
                     "create", f"{app_name[0]}-{app_version}",
-                    "--region", sane_utils.get_var_for_target('region', targets[0]),
+                    "--region", sane_utils.get_var_for_target('CLOUDDEPLOY_REGION', targets[0], default=region),
                     "--delivery-pipeline", f"{sane_utils.check_env('PROJECT_NAME')}-{app_name}",
                     "--skaffold-file", os.path.join(root_dir, out_dir, "skaffold.yaml"),
                     "--source", out_dir
@@ -343,7 +345,7 @@ def make_cloud_deploy_recipes(
                 run([
                     sane_utils.check_cmd("gcloud"), "deploy", "releases",
                     "create", f"{app_name[0]}-{app_version}",
-                    "--region", sane_utils.get_var_for_target('region', targets[0]),
+                    "--region", sane_utils.get_var_for_target('CLOUDDEPLOY_REGION', targets[0], default=region),
                     "--delivery-pipeline", f"{sane_utils.check_env('PROJECT_NAME')}-{app_name}",
                     "--build-artifacts", os.path.join(root_dir, out_dir, "artifacts.json"),
                     "--source", out_dir

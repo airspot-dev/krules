@@ -13,6 +13,7 @@ sane_utils.google.make_cloud_deploy_recipes(
     baselibs=[],
     sources=[
         "ruleset.py",
+        "routers.py",
     ],
 )
 

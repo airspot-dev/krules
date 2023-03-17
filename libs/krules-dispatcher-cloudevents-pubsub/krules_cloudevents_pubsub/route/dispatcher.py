@@ -80,7 +80,8 @@ class CloudEventsDispatcher(BaseDispatcher):
         else:
             topic_path = self._publisher.topic_path(self._project_id, _topic_id)
         event_obj = event.dict(exclude_unset=True)
-        event_obj["data"] = json.dumps(event_obj["data"]).encode()
+        event_obj["data"] = json.dumps(event_obj["data"], cls=_JSONEncoder).encode()
+
         # for k,v in event_obj.items():
         #     if k != "data":
         #         event_obj[k] = str(v)

@@ -40,11 +40,16 @@ sane_utils.google.make_enable_apis_recipe([
     "storage.googleapis.com",
     "compute.googleapis.com",
     "artifactregistry.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "clouddeploy.googleapis.com",
+    "run.googleapis.com",
 ])
 
+REGION = sane_utils.get_var_for_target('REGION', TARGETS[0], True)
 sane_utils.google.make_check_gcloud_config_recipe(
     project_id=sane_utils.get_var_for_target('PROJECT_ID', TARGETS[0], True),
-    region=sane_utils.get_var_for_target('REGION', TARGETS[0], True),
+    region=REGION,
+    deploy_region=sane_utils.get_var_for_target('DEPLOY_REGION', TARGETS[0], False, default=REGION),
     zone=sane_utils.get_var_for_target('ZONE', TARGETS[0]),
 )
 

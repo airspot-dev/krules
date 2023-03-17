@@ -69,18 +69,24 @@ async def main(request: Request, response: Response):
             try:
                 data = json.loads(decoded_data)
                 if isinstance(data, dict):
-                    try:
-                        event = CloudEvent(**data)
-                        event_info = event.dict(exclude_unset=True)
-                        if event_info["source"] == os.environ.get("K_SERVICE", os.environ.get("SOURCE")):
-                            response.status_code = status.HTTP_201_CREATED
-                            return event
-                        event_info.update(event_info.pop("extension", {}))
+                    if "attributes" in event_data["message"]: # and "ce-type" in event_data["message"]["attributes"]:
+                        event_info = event_data["message"]["attributes"]
                         subject = event_info.get("subject", subject)
                         event_type = event_info.get("type")
-                        event_data = event_info.pop("data")
-                    except pydantic.error_wrappers.ValidationError as ex:
                         event_data = data
+                    else:
+                        try:
+                            event = CloudEvent(**data)
+                            event_info = event.dict(exclude_unset=True)
+                            if event_info["source"] == os.environ.get("K_SERVICE", os.environ.get("SOURCE")):
+                                response.status_code = status.HTTP_201_CREATED
+                                return event
+                            event_info.update(event_info.pop("extension", {}))
+                            subject = event_info.get("subject", subject)
+                            event_type = event_info.get("type")
+                            event_data = event_info.pop("data")
+                        except pydantic.error_wrappers.ValidationError as ex:
+                            event_data = data
                 else:
                     event_data["message"]["data"] = data
             except json.JSONDecodeError:
