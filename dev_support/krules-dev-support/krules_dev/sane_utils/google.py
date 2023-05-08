@@ -151,7 +151,7 @@ def make_gcloud_deploy_apply_recipe(templates, region, out_dir=".build", **recip
                 Help.log(f"Applying {resource_file}...")
                 try:
                     run(
-                        f"gcloud deploy apply --file {resource_file} --region {region}",
+                        f"gcloud deploy apply --file {resource_file} --region {region} --project {sane_utils.check_env('PROJECT_ID')}",
                         shell=True,
                         check=True,
                         capture_output=True
@@ -336,6 +336,7 @@ def make_cloud_deploy_recipes(
                 run([
                     sane_utils.check_cmd("gcloud"), "deploy", "releases",
                     "create", f"{app_name[0]}-{app_version}",
+                    "--project", sane_utils.get_var_for_target('PROJECT_ID', targets[0]),
                     "--region", sane_utils.get_var_for_target('CLOUDDEPLOY_REGION', targets[0], default=region),
                     "--delivery-pipeline", f"{sane_utils.check_env('PROJECT_NAME')}-{app_name}",
                     "--skaffold-file", os.path.join(root_dir, out_dir, "skaffold.yaml"),
@@ -345,6 +346,7 @@ def make_cloud_deploy_recipes(
                 run([
                     sane_utils.check_cmd("gcloud"), "deploy", "releases",
                     "create", f"{app_name[0]}-{app_version}",
+                    "--project", sane_utils.get_var_for_target('PROJECT_ID', targets[0]),
                     "--region", sane_utils.get_var_for_target('CLOUDDEPLOY_REGION', targets[0], default=region),
                     "--delivery-pipeline", f"{sane_utils.check_env('PROJECT_NAME')}-{app_name}",
                     "--build-artifacts", os.path.join(root_dir, out_dir, "artifacts.json"),

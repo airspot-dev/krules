@@ -23,6 +23,7 @@ from starlette.types import Scope, Receive, Send, ASGIApp
 import krules_env
 from krules_core.providers import subject_factory, event_router_factory
 from dependency_injector import providers
+import json_logging
 
 from .globals import GlobalsMiddleware, g
 
@@ -243,7 +244,8 @@ class KrulesApp(FastAPI):
         )
         self.setup()
         self.add_middleware(GlobalsMiddleware)
-
+        json_logging.init_fastapi(enable_json=True)
+        json_logging.init_request_instrument(self)
         self.logger = logging.getLogger(self.title)
         self.logger.setLevel(int(os.environ.get("LOGGING_LEVEL", logging.INFO)))
         self.logger.addHandler(logging.StreamHandler(sys.stdout))

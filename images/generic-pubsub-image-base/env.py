@@ -6,13 +6,9 @@ import os
 import google.auth
 
 
-TOPIC_PREFIX = os.environ.get("PUBSUB_SINK")
-if TOPIC_PREFIX is None:
+TOPIC_NAME = os.environ.get("PUBSUB_SINK")
+if TOPIC_NAME is None:
     raise EnvironmentError("PUBSUB_SINK must be defined")
-
-TARGET = os.environ.get("TARGET")
-if TARGET is None:
-    raise EnvironmentError("TARGET must be defined in environ")
 
 _, PROJECT = google.auth.default()
 
@@ -20,15 +16,15 @@ _, PROJECT = google.auth.default()
 def _get_topic_id(subject, event_type):
 
     if event_type == RULE_PROC_EVENT:
-        topic_prefix = os.environ.get("PUBSUB_PROCEVENTS_SINK")
-        if topic_prefix is None:
+        topic_name = os.environ.get("PUBSUB_PROCEVENTS_SINK")
+        if topic_name is None:
             raise EnvironmentError("PUBSUB_PROCEVENTS_SINK must be defined")
         if os.environ.get("PUBSUB_PROCEVENTS_SINK_PROJECT"):
-            return f"projects/{os.environ.get('PUBSUB_PROCEVENTS_SINK_PROJECT')}/topics/{topic_prefix}"
+            return f"projects/{os.environ.get('PUBSUB_PROCEVENTS_SINK_PROJECT')}/topics/{topic_name}"
     else:
-        topic_prefix = TOPIC_PREFIX
+        topic_name = TOPIC_NAME
 
-    return f"{topic_prefix}-{TARGET}"
+    return topic_name
 
 
 def init():
@@ -37,8 +33,7 @@ def init():
             (
                 project_id=PROJECT,
                 topic_id=_get_topic_id,
-                source=get_source()
+                source=get_source(),
             )
-
         )
     )

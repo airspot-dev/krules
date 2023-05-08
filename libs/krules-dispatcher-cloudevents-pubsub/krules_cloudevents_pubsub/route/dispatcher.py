@@ -11,8 +11,10 @@
 
 import inspect
 import json
+import os
 import uuid
 from concurrent import futures
+from datetime import datetime, timezone
 from typing import Callable
 
 from cloudevents.pydantic import CloudEvent
@@ -37,18 +39,33 @@ def _callback(publish_future, data):
 
 class CloudEventsDispatcher(BaseDispatcher):
 
-    def __init__(self, project_id, topic_id, source):
+    def __init__(self, project_id, topic_id, source, batch_settings=(), publisher_options=(), publisher_kwargs={}):
 
         self._project_id = project_id
         self._topic_id = topic_id
         self._source = source
-        self._publisher = pubsub_v1.PublisherClient()
+        self._publisher = pubsub_v1.PublisherClient(
+            batch_settings=batch_settings,
+            publisher_options=publisher_options,
+            **publisher_kwargs
+        )
 
     def dispatch(self, event_type, subject, payload, **extra):
 
         if isinstance(subject, str):
             subject = subject_factory(subject)
         _event_info = subject.event_info()
+
+        if "topic" in extra:
+            _topic_id = extra.pop("topic")
+        else:
+            _topic_id = callable(self._topic_id) and self._topic_id(subject, event_type) or self._topic_id
+            if _topic_id is None:
+                raise EnvironmentError("A topic must be specified or PUBSUB_SINK must be defined in environ")
+        if _topic_id.startswith("projects/"):
+            topic_path = _topic_id
+        else:
+            topic_path = self._publisher.topic_path(self._project_id, _topic_id)
 
         _id = str(uuid.uuid4())
         ext_props = subject.get_ext_props()
@@ -64,23 +81,15 @@ class CloudEventsDispatcher(BaseDispatcher):
             type=event_type,
             source=self._source,
             subject=str(subject),
-            data=payload
+            data=payload,
+            time=datetime.now(timezone.utc)
         )
 
         # event.SetData(payload)
 
-        if "topic" in extra:
-            _topic_id = extra["topic"]
-        else:
-            _topic_id = callable(self._topic_id) and self._topic_id(subject, event_type) or self._topic_id
-            if _topic_id is None:
-                raise EnvironmentError("A topic must be specified or PUBSUB_SINK must be defined in environ")
-        if _topic_id.startswith("projects/"):
-            topic_path = _topic_id
-        else:
-            topic_path = self._publisher.topic_path(self._project_id, _topic_id)
         event_obj = event.dict(exclude_unset=True)
         event_obj["data"] = json.dumps(event_obj["data"], cls=_JSONEncoder).encode()
+        event_obj["time"] = event_obj["time"].isoformat()
 
         # for k,v in event_obj.items():
         #     if k != "data":

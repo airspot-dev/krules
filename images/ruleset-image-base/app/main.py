@@ -15,7 +15,6 @@ from cloudevents.pydantic import CloudEvent
 import io
 from cloudevents.sdk.event import v1
 from cloudevents.sdk import marshaller
-from routers import routers
 import logging
 
 logger = logging.getLogger(__file__)
@@ -35,8 +34,19 @@ except ImportError:
 
 app = KrulesApp()
 
-for router in routers:
-    app.include_router(router)
+try:
+    from routers import routers
+    for router in routers:
+        app.include_router(router)
+except ImportError:
+    logger.warning("No router defined!")
+
+try:
+    from middlewares import middlewares
+    for cls, kwargs in middlewares:
+        app.add_middleware(cls, **kwargs)
+except ImportError:
+    logger.warning("No app middleware defined!")
 
 event_router = event_router_factory()
 
@@ -72,18 +82,24 @@ async def main(request: Request, response: Response):
             try:
                 data = json.loads(decoded_data)
                 if isinstance(data, dict):
-                    try:
-                        event = CloudEvent(**data)
-                        event_info = event.dict(exclude_unset=True)
-                        if event_info["source"] == os.environ.get("K_SERVICE", os.environ.get("SOURCE")):
-                            response.status_code = status.HTTP_201_CREATED
-                            return event
-                        event_info.update(event_info.pop("extension", {}))
+                    if "attributes" in event_data["message"]: # and "ce-type" in event_data["message"]["attributes"]:
+                        event_info = event_data["message"]["attributes"]
                         subject = event_info.get("subject", subject)
                         event_type = event_info.get("type")
-                        event_data = event_info.pop("data") or {}
-                    except pydantic.error_wrappers.ValidationError as ex:
                         event_data = data
+                    else:
+                        try:
+                            event = CloudEvent(**data)
+                            event_info = event.dict(exclude_unset=True)
+                            if event_info["source"] == os.environ.get("K_SERVICE", os.environ.get("SOURCE")):
+                                response.status_code = status.HTTP_201_CREATED
+                                return event
+                            event_info.update(event_info.pop("extension", {}))
+                            subject = event_info.get("subject", subject)
+                            event_type = event_info.get("type")
+                            event_data = event_info.pop("data")
+                        except pydantic.error_wrappers.ValidationError as ex:
+                            event_data = data
                 else:
                     event_data["message"]["data"] = data
             except json.JSONDecodeError:
@@ -123,8 +139,3 @@ async def main(request: Request, response: Response):
         app.logger.error(ex, exc_info=True)
         response.status_code = status.HTTP_201_CREATED
         return
-    # return CloudEvent(
-    #     type="my.response-type.v1",
-    #     data=event.data,
-    #     datacontenttype=event.datacontenttype,
-    # )

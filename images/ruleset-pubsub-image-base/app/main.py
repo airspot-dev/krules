@@ -16,7 +16,6 @@ from cloudevents.pydantic import CloudEvent
 from base64 import b64decode
 import krules_env
 from krules_core.providers import event_router_factory
-from routers import routers
 import logging
 
 logger = logging.getLogger(__file__)
@@ -36,8 +35,19 @@ except ImportError:
 
 app = KrulesApp()
 
-for router in routers:
-    app.include_router(router)
+try:
+    from routers import routers
+    for router in routers:
+        app.include_router(router)
+except ImportError:
+    logger.warning("No router defined!")
+
+try:
+    from middlewares import middlewares
+    for cls, kwargs in middlewares:
+        app.add_middleware(cls, **kwargs)
+except ImportError:
+    logger.warning("No app middleware defined!")
 
 event_router = event_router_factory()
 
