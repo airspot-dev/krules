@@ -1,6 +1,8 @@
 import glob
 import inspect
+import logging
 import os
+import sys
 import re
 import uuid
 import git
@@ -9,16 +11,19 @@ from subprocess import run, CalledProcessError
 from krules_dev import sane_utils
 from sane import recipe
 from sane import _Help as Help
+from .base import _run
+
+logger = logging.getLogger()
 
 
 def make_enable_apis_recipe(google_apis, **recipe_kwargs):
     @recipe(**recipe_kwargs)
     def enable_google_apis():
-        Help.log("Enabling GCP APIs, please wait, this may take several minutes...")
+        logger.info("Enabling GCP APIs, please wait, this may take several minutes...")
         for api in google_apis:
-            Help.log(f"enable {api}...")
+            logger.info(f"enable {api}...")
             run(f"gcloud services enable {api}", shell=True, check=True, capture_output=True)
-        Help.log("Done")
+        logger.info("Done")
 
 
 def make_check_gcloud_config_recipe(project_id, region, zone, deploy_region, **recipe_kwargs):
@@ -30,29 +35,27 @@ def make_check_gcloud_config_recipe(project_id, region, zone, deploy_region, **r
             ).stdout.decode("utf8").strip()
 
         def _set_prop_cmd(prop, value):
-            try:
-                run(f"gcloud config set {prop} {value}", shell=True, check=True, capture_output=True)
-            except CalledProcessError as ex:
-                Help.log(ex.stdout.decode("utf8"))
-                Help.error(ex.stderr.decode("utf8"))
+            _run(f"gcloud config set {prop} {value}", check=True)
 
-        Help.log("Check current gcloud configuration")
+        logger.info("Check current gcloud configuration")
         # PROJECT
         _project_id = _get_prop_cmd("core/project")
         if _project_id == '':
             _project_id = project_id
             _set_prop_cmd("core/project", project_id)
         if _project_id != project_id:
-            Help.error(f"code/project '{_project_id}' does not match '{project_id}'")
-        Help.log(f"Using project: {_project_id}")
+            logger.error(f"code/project '{_project_id}' does not match '{project_id}'")
+            sys.exit(-1)
+        logger.info(f"Using project: {_project_id}")
         # REGION
         _region = _get_prop_cmd("compute/region")
         if _region == '':
             _region = region
             _set_prop_cmd("compute/region", region)
         if _region != region:
-            Help.error(f"already set compute/region '{_region}' must match '{region}'")
-        Help.log(f"Using region: {_region}")
+            logger.error(f"already set compute/region '{_region}' must match '{region}'")
+            sys.exit(-1)
+        logger.info(f"Using region: {_region}")
         # ZONE
         if zone is not None:
             _zone = _get_prop_cmd("compute/zone")
@@ -60,16 +63,18 @@ def make_check_gcloud_config_recipe(project_id, region, zone, deploy_region, **r
                 _zone = zone
                 _set_prop_cmd("compute/zone", zone)
             if _zone != zone:
-                Help.error(f"already set compute/zone '{_zone}' must match '{zone}'")
-            Help.log(f"Using zone: {_zone}")
+                logger.error(f"already set compute/zone '{_zone}' must match '{zone}'")
+                sys.exit(-1)
+            logger.info(f"Using zone: {_zone}")
         # DEPLOY REGION
         _deploy_region = _get_prop_cmd("deploy/region")
         if _deploy_region == '':
             _deploy_region = deploy_region
             _set_prop_cmd("deploy/region", _deploy_region)
         if _deploy_region != deploy_region:
-            Help.error(f"already set deploy/region '{_deploy_region}' must match '{deploy_region}'")
-        Help.log(f"Using deploy region: {_deploy_region}")
+            logger.error(f"already set deploy/region '{_deploy_region}' must match '{deploy_region}'")
+            sys.exit(-1)
+        logger.info(f"Using deploy region: {_deploy_region}")
 
 
 def make_set_gke_contexts_recipe(project_name, targets, **recipe_kwargs):
@@ -90,7 +95,7 @@ def make_set_gke_contexts_recipe(project_name, targets, **recipe_kwargs):
             if region_or_zone is None:
                 region_or_zone = sane_utils.get_var_for_target("region", target, True)
                 location_arg = "--region"
-            Help.log(
+            logger.info(
                 f"Setting context {context_name} for cluster {region_or_zone}/{cluster_name} in project {project} to namespace {namespace}")
 
             run(
@@ -148,36 +153,50 @@ def make_gcloud_deploy_apply_recipe(templates, region, out_dir=".build", **recip
         @recipe(**recipe_kwargs)
         def render_resource():
             with sane_utils.pushd(root_dir):
-                Help.log(f"Applying {resource_file}...")
-                try:
-                    run(
-                        f"gcloud deploy apply --file {resource_file} --region {region} --project {sane_utils.check_env('PROJECT_ID')}",
-                        shell=True,
-                        check=True,
-                        capture_output=True
-                    )
-                except CalledProcessError as ex:
-                    Help.log(ex.stdout.decode("utf8"))
-                    Help.error(ex.stderr.decode("utf8"))
+                logger.info(f"Applying {resource_file}...")
+                _run(
+                    f"gcloud deploy apply --file {resource_file} --region {region} --project {sane_utils.check_env('PROJECT_ID')}",
+                    check=True,
+                )
 
     with sane_utils.pushd(root_dir):
         for f in templates:
             _make_apply_deploy_recipe(f)
 
 
-def make_ensure_gcs_bucket_recipe(bucket_name, location="EU", **recipe_kwargs):
+def make_ensure_billing_enabled(project_id, **recipe_kwargs):
+
+    @recipe(**recipe_kwargs)
+    def check_billing():
+        logger.info("Ensuring billing enabled...")
+        if not os.path.exists(f"billing-{project_id}"):
+            out = run(
+                f"{sane_utils.check_cmd('gcloud')} beta billing projects describe {project_id}",
+                shell=True, capture_output=True
+            )
+            if b"billingEnabled: true" in out.stdout:
+                with open(f"billing-{project_id}", "wb") as f:
+                    f.write(out.stdout)
+            else:
+                logger.error(f"You must enable billing on project {project_id}")
+                sys.exit(-1)
+        else:
+            logger.info(f"Billing enabled")
+
+
+def make_ensure_gcs_bucket_recipe(bucket_name, project_id, location="EU", **recipe_kwargs):
     @recipe(**recipe_kwargs)
     def ensure_gcs_bucket():
         gsutil = sane_utils.check_cmd(os.environ.get("GSUTIL_CMD", "gsutil"))
-        Help.log(f"Creating bucket gs://{bucket_name}")
-        try:
-            run(f"{gsutil} mb -l {location} gs://{bucket_name}", shell=True, check=True, capture_output=True)
-        except CalledProcessError as ex:
-            if ex.stderr.decode("utf8").find("ServiceException: 409 ") > 0:
-                Help.log("  ...bucket already exists")
-            else:
-                Help.log(ex.stdout.decode("utf8"))
-                Help.error(ex.stderr.decode("utf8"))
+        logger.info(f"Checking if bucket gs://{bucket_name} exists...")
+        ret_code = _run(
+            f"{gsutil} mb -l {location} -p {project_id} gs://{bucket_name}",
+            check=False,
+            err_to_stdout=True,
+            errors_log_level=logging.DEBUG
+        )
+        if ret_code == 1:
+            logger.info("Bucket already exists")
 
 
 def make_cloud_deploy_recipes(
@@ -188,11 +207,23 @@ def make_cloud_deploy_recipes(
         extra_context_vars: dict = None,
         extra_target_context_vars: dict[str, dict] = None
 ):
-
+    use_cloudrun = int(os.environ.get("USE_CLOUDRUN", "0"))
+    use_clouddeploy = int(os.environ.get("USE_CLOUDDEPLOY", "0"))
+    if use_clouddeploy:
+        logger.info("using Google Cloud Deploy")
+        if "USE_CLOUDBUILD" in os.environ and not int(os.environ["USE_CLOUDBUILD"]):
+            logger.warn("USE_CLOUDBUILD is set to False but USE_CLOUDDEPLOY is set to True so USE_CLOUDBUILD will be overridden")
+        use_cloudbuild = True
+    else:
+        use_cloudbuild = int(os.environ.get("USE_CLOUDBUILD", "0"))
+        if use_cloudbuild:
+            logger.info("using Google Cloud Build")
+        
     if extra_context_vars is None:
         extra_context_vars = {}
     if extra_target_context_vars is None:
         extra_target_context_vars = {}
+
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
     targets = [s.lower() for s in re.split(" |,|;", sane_utils.check_env("TARGETS")) if len(s)]
@@ -229,8 +260,7 @@ def make_cloud_deploy_recipes(
 
     sane_utils.make_render_resource_recipes(
         globs=[
-            "Dockerfile.j2",
-            "skaffold.yaml.j2",
+            "Dockerfile.j2"
         ],
         context_vars=lambda: {
             "app_name": sane_utils.check_env("APP_NAME"),
@@ -239,6 +269,7 @@ def make_cloud_deploy_recipes(
             "user_baselibs": baselibs,
             "project_id": sane_utils.get_var_for_target("project_id", targets[0], True),
             "targets": targets,
+            "sources": sources,
             **extra_context_vars
         },
         hooks=[
@@ -248,18 +279,37 @@ def make_cloud_deploy_recipes(
 
     sane_utils.make_render_resource_recipes(
         globs=[
-            "pipeline.yaml.j2",
+            "skaffold.yaml.j2"
         ],
         context_vars=lambda: {
             "app_name": sane_utils.check_env("APP_NAME"),
-            "project_name": sane_utils.check_env("PROJECT_NAME"),
+            "project_id": sane_utils.get_var_for_target("project_id", targets[0], True),
             "targets": targets,
-            **extra_context_vars
+            "use_clouddeploy": use_clouddeploy,
+            "use_cloudbuild": use_cloudbuild,
+            "use_cloudrun": use_cloudrun,
+            ** extra_context_vars
         },
         hooks=[
-            'prepare_apply'
+            'prepare_build'
         ]
     )
+
+    if use_clouddeploy:
+        sane_utils.make_render_resource_recipes(
+            globs=[
+                "pipeline.yaml.j2",
+            ],
+            context_vars=lambda: {
+                "app_name": sane_utils.check_env("APP_NAME"),
+                "project_name": sane_utils.check_env("PROJECT_NAME"),
+                "targets": targets,
+                **extra_context_vars
+            },
+            hooks=[
+                'prepare_apply'
+            ]
+        )
 
     for target in targets:
         sane_utils.make_render_resource_recipes(
@@ -284,56 +334,58 @@ def make_cloud_deploy_recipes(
     code_digest_file = os.path.join(root_dir, out_dir, ".code.digest")
     code_changed = not os.path.exists(success_file) or os.path.exists(code_digest_file) and open(success_file).read() != open(code_digest_file).read()
 
-    @recipe(info="Build the artifact", hook_deps=['prepare_build'], hooks=["prepare_deploy"])
-    def build():
-        if str(os.environ.get("BUILD_ARTIFACTS")) == "0":
-            return
-        if not code_changed:
-            Help.log("No changes detected... Skip build")
-            return
-        Help.log("Building the artifact")
-        artifact_registry = sane_utils.check_env('PROJECT_NAME')
-        region = sane_utils.get_var_for_target('region', targets[0])
-        project = sane_utils.get_var_for_target('project_id', targets[0])
-        repo_name = f"{region}-docker.pkg.dev/{project}/{artifact_registry}"
-        try:
-            run([
-                sane_utils.check_cmd("skaffold"), "build", "--interactive=false",
-                "--default-repo", repo_name,
-                "-f", os.path.join(root_dir, out_dir, "skaffold.yaml"),
-                "--file-output", os.path.join(root_dir, out_dir, "artifacts.json"),
-            ], check=True, capture_output=True)
+    if use_clouddeploy:
+        @recipe(info="Build the artifact", hook_deps=['prepare_build'], hooks=["prepare_deploy"])
+        def build():
+            if str(os.environ.get("BUILD_ARTIFACTS")) == "0":
+                return
+            if not code_changed:
+                logger.info("No changes detected... Skip build")
+                return
+            logger.info("Building the artifact")
+            artifact_registry = sane_utils.check_env('PROJECT_NAME')
+            region = sane_utils.get_var_for_target('region', targets[0])
+            project = sane_utils.get_var_for_target('project_id', targets[0])
+            repo_name = f"{region}-docker.pkg.dev/{project}/{artifact_registry}"
+            with sane_utils.pushd(os.path.join(root_dir, out_dir)):
+                _run([
+                    sane_utils.check_cmd("skaffold"), "build", "--interactive=false",
+                    "--default-repo", repo_name,
+                    # "-f", os.path.join(root_dir, out_dir, "skaffold.yaml"),
+                    "--file-output", os.path.join(root_dir, out_dir, "artifacts.json"),
+                ])
             with open(success_file, "w") as f:
                 code_digest = open(code_digest_file, "r").read()
                 f.write(code_digest)
-        except CalledProcessError as ex:
-            Help.log(ex.stdout.decode())
-            Help.error(ex.stderr.decode())
 
-    make_gcloud_deploy_apply_recipe(
-        region=sane_utils.get_var_for_target(
-            'CLOUDDEPLOY_REGION', targets[0], default=sane_utils.get_var_for_target('region', targets[0])
-        ),
-        templates=["pipeline.yaml.j2"],
-        hooks=["prepare_deploy"],
-        hook_deps=["prepare_apply"]
-    )
+        make_gcloud_deploy_apply_recipe(
+            region=sane_utils.get_var_for_target(
+                'CLOUDDEPLOY_REGION', targets[0], default=sane_utils.get_var_for_target('region', targets[0])
+            ),
+            templates=["pipeline.yaml.j2"],
+            hooks=["prepare_deploy"],
+            hook_deps=["prepare_apply"]
+        )
 
-    @recipe(info="Deploy the artifact", hook_deps=["prepare_deploy"])
+        deploy_hook_deps = ["prepare_deploy"]
+    else:
+        deploy_hook_deps = ["prepare_build"]
+
+    @recipe(info="Deploy the artifact", hook_deps=deploy_hook_deps)
     def deploy():
-        if not code_changed:
-            Help.log("No changes detected... Skip deploy")
-            return
-        Help.log("Deploying")
-        app_name = sane_utils.check_env('APP_NAME')
-        repo = git.Repo(search_parent_directories=True)
-        git_sha = repo.head.object.hexsha[:7]
-        unique = str(uuid.uuid4()).split('-')[0]
-        app_version = f"{git_sha}-{unique}"
-        region = sane_utils.get_var_for_target('region', targets[0])
-        try:
+        if use_clouddeploy:
+            if not code_changed:
+                logger.info("No changes detected... Skip deploy")
+                return
+            logger.info("Deploying")
+            app_name = sane_utils.check_env('APP_NAME')
+            repo = git.Repo(search_parent_directories=True)
+            git_sha = repo.head.object.hexsha[:7]
+            unique = str(uuid.uuid4()).split('-')[0]
+            app_version = f"{git_sha}-{unique}"
+            region = sane_utils.get_var_for_target('region', targets[0])
             if str(os.environ.get("BUILD_ARTIFACTS")) == "0":
-                run([
+                _run([
                     sane_utils.check_cmd("gcloud"), "deploy", "releases",
                     "create", f"{app_name[0]}-{app_version}",
                     "--project", sane_utils.get_var_for_target('PROJECT_ID', targets[0]),
@@ -341,9 +393,9 @@ def make_cloud_deploy_recipes(
                     "--delivery-pipeline", f"{sane_utils.check_env('PROJECT_NAME')}-{app_name}",
                     "--skaffold-file", os.path.join(root_dir, out_dir, "skaffold.yaml"),
                     "--source", out_dir
-                ], check=True, capture_output=True)
+                ], check=True)
             else:
-                run([
+                _run([
                     sane_utils.check_cmd("gcloud"), "deploy", "releases",
                     "create", f"{app_name[0]}-{app_version}",
                     "--project", sane_utils.get_var_for_target('PROJECT_ID', targets[0]),
@@ -351,8 +403,19 @@ def make_cloud_deploy_recipes(
                     "--delivery-pipeline", f"{sane_utils.check_env('PROJECT_NAME')}-{app_name}",
                     "--build-artifacts", os.path.join(root_dir, out_dir, "artifacts.json"),
                     "--source", out_dir
-                ], check=True, capture_output=True)
-        except CalledProcessError as ex:
-            Help.log(ex.stdout.decode())
-            Help.error(ex.stderr.decode())
-        Help.log("Deployed!")
+                ], check=True)
+            logger.info("Deployed!")
+        else:
+            repo_name = os.environ.get("IMAGE_REPOSITORY")
+            if repo_name is None:
+                artifact_registry = sane_utils.check_env('PROJECT_NAME')
+                region = sane_utils.get_var_for_target('region', targets[0])
+                project = sane_utils.get_var_for_target('project_id', targets[0])
+                repo_name = f"{region}-docker.pkg.dev/{project}/{artifact_registry}"
+            with sane_utils.pushd(os.path.join(root_dir, out_dir)):
+                _run([
+                    sane_utils.check_cmd("skaffold"), "run",
+                    "--default-repo", repo_name,
+                    # "-f", os.path.join(root_dir, out_dir, "skaffold.yaml"),
+                    "-p", os.environ.get("TARGET", targets[0]),
+                ])
