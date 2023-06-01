@@ -463,6 +463,7 @@ def make_cloud_build_recipe(
         on_build_success=lambda digest: None, dockerfile_path=".", **recipe_kwargs):
     @recipe(**recipe_kwargs)
     def push_image_to_registry():
+        logger.info(f"Start building {artifact_registry}/{image_name}...")
         out = {"stdout": [], "stderr": []}
         gcloud = sane_utils.check_cmd("gcloud")
         _run(
