@@ -1,5 +1,6 @@
 import glob
 import inspect
+import json
 import logging
 import os
 import sys
@@ -13,16 +14,16 @@ from sane import recipe
 from sane import _Help as Help
 from .base import _run
 
-logger = logging.getLogger()
+logger = logging.getLogger("__sane__")
 
 
-def make_enable_apis_recipe(google_apis, **recipe_kwargs):
+def make_enable_apis_recipe(google_apis, project_id, **recipe_kwargs):
     @recipe(**recipe_kwargs)
     def enable_google_apis():
-        logger.info("Enabling GCP APIs, please wait, this may take several minutes...")
+        logger.info(f"Enabling GCP APIs on {project_id}, please wait, this may take several minutes...")
         for api in google_apis:
             logger.info(f"enable {api}...")
-            run(f"gcloud services enable {api}", shell=True, check=True, capture_output=True)
+            _run(f"gcloud services enable {api} --project {project_id}", check=True)
         logger.info("Done")
 
 
@@ -197,6 +198,42 @@ def make_ensure_gcs_bucket_recipe(bucket_name, project_id, location="EU", **reci
         )
         if ret_code == 1:
             logger.info("Bucket already exists")
+
+
+def make_ensure_artifact_registry_recipe(repository_name, project_id, location="europe", format="DOCKER", **recipe_kwargs):
+    @recipe(**recipe_kwargs)
+    def ensure_artifact_registry():
+
+        repository_resource_name = f"projects/{project_id}/locations/{location}/repositories/{repository_name}"
+
+        import google.auth.transport.requests
+        import google.auth
+        import urllib3
+        creds, _ = google.auth.default()
+        if creds.token is None:
+            auth_req = google.auth.transport.requests.Request()
+            creds.refresh(auth_req)
+        parent = f"projects/{project_id}/locations/{location}"
+        headers = {"X-Goog-User-Project": project_id, "Authorization": f"Bearer {creds.token}"}
+        api_url = f"https://artifactregistry.googleapis.com/v1/{parent}/repositories"
+
+        http = urllib3.PoolManager()
+        logger.debug("Checking repositories...")
+        resp = http.request("GET", api_url, headers=headers)
+        repos = json.loads(resp.data).get("repositories", [])
+
+        for repo in repos:
+            if repo["name"] == repository_resource_name:
+                logger.debug(f"Repository {repository_name} already exists")
+                return
+        try:
+            http.request(
+                "POST", f"{api_url}?repositoryId={repository_name}", headers=headers, body=json.dumps({"format": format})
+            )
+        except Exception as ex:
+            logger.error(f"Error creating repository {repository_name}: {ex}")
+            return
+        logger.info(f"Repository {repository_name} created")
 
 
 def make_cloud_deploy_recipes(
@@ -419,3 +456,18 @@ def make_cloud_deploy_recipes(
                     # "-f", os.path.join(root_dir, out_dir, "skaffold.yaml"),
                     "-p", os.environ.get("TARGET", targets[0]),
                 ])
+
+
+def make_cloud_build_recipe(
+        artifact_registry, image_name, project,
+        on_build_success=lambda digest: None, dockerfile_path=".", **recipe_kwargs):
+    @recipe(**recipe_kwargs)
+    def push_image_to_registry():
+        out = {"stdout": [], "stderr": []}
+        gcloud = sane_utils.check_cmd("gcloud")
+        _run(
+            f"{gcloud} builds submit -t {artifact_registry}/{image_name} {dockerfile_path} --project {project} --format 'value(results.images[0].digest)'",
+            captures=out, check=True, err_to_stdout=True
+        )
+        digest = out["stdout"][-1].replace("\n", "")
+        on_build_success(f"{artifact_registry}/{image_name}@{digest}")

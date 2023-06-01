@@ -27,7 +27,7 @@ ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(logging.INFO)
 ch.setFormatter(CustomFormatter())
 
-logger = logging.getLogger()
+logger = logging.getLogger("__sane__")
 logger.addHandler(ch)
 logger.setLevel(logging.INFO)
 

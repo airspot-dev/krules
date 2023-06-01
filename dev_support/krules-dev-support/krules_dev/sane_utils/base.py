@@ -16,7 +16,7 @@ from sane import _Help as Help
 
 import logging
 
-logger = logging.getLogger()
+logger = logging.getLogger("__sane__")
 logger.setLevel(int(os.environ.get("SANE_LOG_LEVEL", logging.INFO)))
 logger.handlers[0].setLevel(int(os.environ.get("SANE_LOG_LEVEL", logging.INFO)))
 
@@ -36,7 +36,7 @@ def check_cmd(cmd, err_code=-1):
     return cmd
 
 
-def _run(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_level=logging.ERROR):
+def _run(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_level=logging.ERROR, captures={}):
 
     def __log_out(message):
         prev_stream = logger.handlers[0].stream
@@ -64,11 +64,15 @@ def _run(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, shell=shell)
     for c in iter(lambda: p.stdout.readline(), b""):
         message = c.decode('utf-8')
+        if "stdout" in captures:
+            captures["stdout"].append(message)
         log_out(f"{log_prefix}> {message}")
     for c in iter(lambda: p.stderr.readline(), b""):
         message = c.decode('utf-8')
+        if "stderr" in captures:
+            captures["stderr"].append(message)
         log_err(f"{log_prefix}> {message}")
-    p.communicate()[0]
+    p.communicate()
     if check and p.returncode != 0:
         sys.exit(p.returncode)
     return p.returncode
