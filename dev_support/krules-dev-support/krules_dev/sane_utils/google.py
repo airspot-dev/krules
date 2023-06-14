@@ -3,6 +3,7 @@ import inspect
 import json
 import logging
 import os
+import pprint
 import sys
 import re
 import uuid
@@ -249,7 +250,7 @@ def make_cloud_deploy_recipes(
     if use_clouddeploy:
         logger.info("using Google Cloud Deploy")
         if "USE_CLOUDBUILD" in os.environ and not int(os.environ["USE_CLOUDBUILD"]):
-            logger.warn("USE_CLOUDBUILD is set to False but USE_CLOUDDEPLOY is set to True so USE_CLOUDBUILD will be overridden")
+            logger.warning("USE_CLOUDBUILD is set to False but USE_CLOUDDEPLOY is set to True so USE_CLOUDBUILD will be overridden")
         use_cloudbuild = True
     else:
         use_cloudbuild = int(os.environ.get("USE_CLOUDBUILD", "0"))
@@ -456,6 +457,161 @@ def make_cloud_deploy_recipes(
                     # "-f", os.path.join(root_dir, out_dir, "skaffold.yaml"),
                     "-p", os.environ.get("TARGET", targets[0]),
                 ])
+
+
+def make_target_deploy_recipe(
+        image_base: str,
+        baselibs: list | tuple = (),
+        sources: list | tuple = (),
+        out_dir: str = ".build",
+        extra_context_vars: dict = None,
+        extra_target_context_vars: dict[str, dict] = None,
+):
+
+    target = sane_utils.check_env("TARGET")
+
+    use_cloudrun = int(sane_utils.get_var_for_target("USE_CLOUDRUN", target, default="0"))
+    if use_cloudrun:
+        logger.info("using Cloud Run to deploy")
+    else:
+        logger.info("using Kubernetes to deploy")
+
+    use_cloudbuild = int(sane_utils.get_var_for_target("USE_CLOUDBUILD", target, default="0"))
+    if use_cloudbuild:
+        logger.info("using Google Cloud Build")
+
+    if extra_context_vars is None:
+        extra_context_vars = {}
+    if extra_target_context_vars is None:
+        extra_target_context_vars = {}
+
+    abs_path = os.path.abspath(inspect.stack()[-1].filename)
+    root_dir = os.path.dirname(abs_path)
+    targets = [s.lower() for s in re.split(" |,|;", sane_utils.check_env("TARGETS")) if len(s)]
+
+    # making changes to these files will result in a new build
+    sane_utils.update_code_hash(
+        globs=[
+            *sources,
+            *list(map(lambda x: f"{sane_utils.check_env('KRULES_PROJECT_DIR')}/base/libs/{x}/**/*.py", baselibs)),
+            os.path.join(root_dir, "k8s", "*.j2"),
+            os.path.join(root_dir, "*.j2"),
+        ],
+        out_dir=os.path.join(root_dir, out_dir),
+        output_file=".code.digest"
+    )
+
+    sane_utils.make_copy_source_recipe(
+        name="prepare_source_files",
+        location=root_dir,
+        src=sources,
+        dst="",
+        out_dir=os.path.join(root_dir, out_dir),
+        hooks=["prepare_build"],
+    )
+
+    sane_utils.make_copy_source_recipe(
+        name="prepare_user_baselibs",
+        location=os.path.join(sane_utils.check_env("KRULES_PROJECT_DIR"), "base", "libs"),
+        src=baselibs,
+        dst=".user-baselibs",
+        out_dir=os.path.join(root_dir, out_dir),
+        hooks=["prepare_build"],
+    )
+
+    sane_utils.make_render_resource_recipes(
+        globs=[
+            "Dockerfile.j2"
+        ],
+        context_vars=lambda: {
+            "app_name": sane_utils.check_env("APP_NAME"),
+            "project_name": sane_utils.check_env("PROJECT_NAME"),
+            "image_base": image_base,
+            "user_baselibs": baselibs,
+            "project_id": sane_utils.get_var_for_target("project_id", target, True),
+            "target": target,
+            "sources": sources,
+            **extra_context_vars
+        },
+        hooks=[
+            'prepare_build'
+        ]
+    )
+
+    skaffold_targets = []
+    for t in targets:
+        kubectl_opts = sane_utils.get_var_for_target("kubectl_opts", t, default=None)
+        if kubectl_opts:
+            kubectl_opts = re.split(" ", kubectl_opts)
+        else:
+            kubectl_opts = []
+
+        skaffold_targets.append({
+            "name": t,
+            "project_id": sane_utils.get_var_for_target("project_id", t),
+            "use_cloudrun": int(sane_utils.get_var_for_target("use_cloudrun", t, default="0")),
+            "use_cloudbuild": int(sane_utils.get_var_for_target("use_cloudbuild", t, default="0")),
+            "kubectl_opts": kubectl_opts,
+        })
+
+    sane_utils.make_render_resource_recipes(
+        globs=[
+            "skaffold.yaml.j2"
+        ],
+        context_vars=lambda: {
+            "app_name": sane_utils.check_env("APP_NAME"),
+            "project_id": sane_utils.get_var_for_target("project_id", target, True),
+            "targets": skaffold_targets,
+            "use_cloudrun": use_cloudrun,
+            **extra_context_vars
+        },
+        hooks=[
+            'prepare_build'
+        ]
+    )
+
+    for target in targets:
+        sane_utils.make_render_resource_recipes(
+            globs=[
+                "k8s/*.j2"
+            ],
+            context_vars={
+                "project_name": sane_utils.check_env("PROJECT_NAME"),
+                "app_name": sane_utils.check_env("APP_NAME"),
+                "namespace": sane_utils.get_var_for_target("namespace", target),
+                "target": target,
+                "project_id": sane_utils.get_var_for_target("project_id", targets[0], True),
+                **extra_target_context_vars.get(target, {})
+            },
+            hooks=[
+                'prepare_build'
+            ],
+            out_dir=f"{out_dir}/k8s/{target}"
+        )
+
+    success_file = os.path.join(root_dir, out_dir, ".success")
+    code_digest_file = os.path.join(root_dir, out_dir, ".code.digest")
+    code_changed = not os.path.exists(success_file) or os.path.exists(code_digest_file) and open(success_file).read() != open(code_digest_file).read()
+
+    @recipe(info="Deploy the artifact", hook_deps=["prepare_build"])
+    def deploy():
+        if not code_changed:
+            logger.info("No changes detected... Skip deploy")
+            return
+
+        repo_name = os.environ.get("IMAGE_REPOSITORY")
+        if repo_name is None:
+            artifact_registry = sane_utils.check_env('PROJECT_NAME')
+            region = sane_utils.get_var_for_target('region', targets[0])
+            project = sane_utils.get_var_for_target('project_id', targets[0])
+            repo_name = f"{region}-docker.pkg.dev/{project}/{artifact_registry}"
+        with sane_utils.pushd(os.path.join(root_dir, out_dir)):
+            _run([
+                sane_utils.check_cmd("skaffold"), "run",
+                "--default-repo", repo_name,
+                # "-f", os.path.join(root_dir, out_dir, "skaffold.yaml"),
+                "-p", target,
+            ])
 
 
 def make_cloud_build_recipe(

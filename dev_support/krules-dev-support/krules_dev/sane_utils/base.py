@@ -13,6 +13,7 @@ import subprocess
 from dotenv import load_dotenv
 from sane import *
 from sane import _Help as Help
+import sh
 
 import logging
 
@@ -38,6 +39,8 @@ def check_cmd(cmd, err_code=-1):
 
 def _run(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_level=logging.ERROR, captures={}):
 
+    logger.warning("!!!RUN FUNCTION DEPRECATED!!!")
+
     def __log_out(message):
         prev_stream = logger.handlers[0].stream
         logger.handlers[0].stream = sys.stdout
@@ -52,7 +55,6 @@ def _run(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_
             logger.handlers[0].stream = sys.stderr
         logger.log(errors_log_level, message)
         logger.handlers[0].stream = prev_stream
-
 
     shell = isinstance(cmd, str)
     log_out = __log_out
@@ -76,6 +78,12 @@ def _run(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_
     if check and p.returncode != 0:
         sys.exit(p.returncode)
     return p.returncode
+
+
+def _sh(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_level=logging.ERROR, captures={}):
+    if isinstance(cmd, str):
+        cmd = cmd.split(" ")
+    sh.bash(*cmd)
 
 
 def load_env():
