@@ -1,6 +1,9 @@
 import contextlib
 import hashlib
+import re
 import sys
+import os
+import inspect
 
 import yaml
 import shutil
@@ -11,7 +14,7 @@ from subprocess import CalledProcessError
 import subprocess
 
 from dotenv import load_dotenv
-from sane import *
+from sane import recipe as base_recipe
 from sane import _Help as Help
 import sh
 
@@ -21,10 +24,67 @@ logger = logging.getLogger("__sane__")
 logger.setLevel(int(os.environ.get("SANE_LOG_LEVEL", logging.INFO)))
 logger.handlers[0].setLevel(int(os.environ.get("SANE_LOG_LEVEL", logging.INFO)))
 
+import structlog
+from structlog.contextvars import bind_contextvars, clear_contextvars, unbind_contextvars
+
+log = structlog.get_logger()
+
+
+def recipe(*args, name=None, hooks=[], recipe_deps=[],
+           hook_deps=[], conditions=[], info=None, **kwargs):
+    #frame = inspect.stack(context=3)[-1]
+
+    # `frame` is disposed of once used
+
+    # class _wrapper():
+    #
+    #     def __init__(self, fn):
+    #         self._fn = fn
+    #
+    #     def __call__(self, *args, **kwargs):
+    #         print("before")
+    #         self._fn(*args, **kwargs)
+    #         print("after")
+
+
+    def recipe_fn(fn):
+        #import pdb; pdb.set_trace()
+        nonlocal name
+        if name is None:
+            name = fn.__name__
+
+        base_recipe(
+            *args, name=name, hooks=hooks, recipe_deps=recipe_deps,
+            hook_deps=hook_deps, conditions=conditions, info=info, **kwargs)(wrap(fn))
+        # from sane import _stateful
+        # _stateful.register_decorator_call(*args, frame=frame, name=name,
+        #                                   hooks=hooks, recipe_deps=recipe_deps,
+        #                                   hook_deps=hook_deps,
+        #                                   conditions=conditions,
+        #                                   info=info, fn=wrap(fn), **kwargs)
+        # r_func(fn)
+        return fn
+
+
+    def wrap(fn):
+        def __wrapped__():
+            bind_contextvars(
+                recipe=name,
+            )
+            fn()
+            unbind_contextvars("recipe")
+
+        __wrapped__.__name__=fn.__name__
+        return __wrapped__
+
+
+
+    return recipe_fn
+
 
 def check_env(name, err_code=-1):
     if name not in os.environ:
-        logger.error(f'Environment variable {name} does not exists')
+        log.error(f'Environment variable does not exists', name=name)
         sys.exit(err_code)
     return os.environ[name]
 
@@ -32,14 +92,14 @@ def check_env(name, err_code=-1):
 def check_cmd(cmd, err_code=-1):
     cmd = shutil.which(cmd)
     if cmd is None:
-        logger.error(f'Command {cmd} not found in PATH')
+        log.error(f'Command not found', cmd=cmd, PATH=os.environ.get("PATH"))
         sys.exit(err_code)
     return cmd
 
 
 def _run(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_level=logging.ERROR, captures={}):
 
-    logger.warning("!!!RUN FUNCTION DEPRECATED!!!")
+    log.warning("!!!RUN FUNCTION DEPRECATED!!!", cmd=cmd)
 
     def __log_out(message):
         prev_stream = logger.handlers[0].stream
@@ -86,18 +146,29 @@ def _sh(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_l
     sh.bash(*cmd)
 
 
+def get_targets_info():
+    target = os.environ.get("TARGET", os.environ.get("DEFAULT_TARGET", "default"))
+    targets = [s.lower() for s in re.split(" |,|;", os.environ.get("TARGETS", "default")) if len(s)]
+
+    if target not in targets:
+        log.error("Unknown target", target=target, targets=targets)
+        sys.exit(-1)
+
+    return target, targets
+
 def load_env():
 
     def _load_dir_env(_dir):
         for f in ("env.project", ".env", "env", ".env.local", "env.local"):
-            load_dotenv(
-                os.path.join(_dir, f)
-            )
+            p = os.path.join(_dir, f)
+            if os.path.exists(p):
+                log.debug("Loading environment", file=p)
+                load_dotenv(p)
         for f in (".env.override", "env.override"):
-            load_dotenv(
-                os.path.join(_dir, f),
-                override=True
-            )
+            p = os.path.join(_dir, f)
+            if os.path.exists(p):
+                log.debug("Overriding environment", file=p)
+                load_dotenv(p, override=True)
 
     # look for env files in caller directory
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
@@ -118,7 +189,6 @@ def load_env():
         p = p.parent
 
     for p in traversed_p:
-        logger.debug("Loading environment for {}".format(p))
         _load_dir_env(p)
 
 
@@ -263,7 +333,7 @@ def make_render_resource_recipes(globs: list,
                 for func in run_before:
                     func()
                 from jinja2 import Template
-                logger.info(f"Rendering {resource_file}")
+                log.debug(f"Rendering...", out_file=resource_file)
                 tmpl = Template(open(j2_template).read(), trim_blocks=True, lstrip_blocks=True, ).render(
                     _context_vars()
                 )
@@ -627,10 +697,11 @@ def make_clean_recipe(globs, on_completed=lambda: None, **recipe_kwargs):
             for file in globs:
                 files.extend(glob(file))
             for f in files:
-                logger.info(f"removing {f}")
                 if os.path.isdir(f):
+                    log.debug(f"Cleaning...", directory=f)
                     shutil.rmtree(f)
                 else:
+                    log.debug(f"Cleaning...", file=f)
                     os.unlink(f)
             on_completed()
 
@@ -647,19 +718,19 @@ def pushd(new_dir):
 
 def copy_resources(src: typing.Iterable[str], dst: str,
                    override: bool = True,
-                   make_recipes_before: typing.Iterable = (),
-                   make_recipes_after: typing.Iterable = (),
+                   #make_recipes_before: typing.Iterable = (),
+                   #make_recipes_after: typing.Iterable = (),
                    workdir: str = None):
 
-    for recipe in make_recipes_before:
-        for f in src:
-            fname=os.path.basename(f)
-            fdir=os.path.dirname(f)
-            make_py = os.path.join(fdir, "make.py")
-            if os.path.exists(make_py):
-                cmd = " ".join((make_py, recipe.format(src=fname)))
-                logger.info(f"Invoking [before] {cmd}")
-                _run(cmd)
+    # for recipe in make_recipes_before:
+    #     for f in src:
+    #         fname=os.path.basename(f)
+    #         fdir=os.path.dirname(f)
+    #         make_py = os.path.join(fdir, "make.py")
+    #         if os.path.exists(make_py):
+    #             cmd = " ".join((make_py, recipe.format(src=fname)))
+    #             logger.info(f"Invoking [before] {cmd}")
+    #             _run(cmd)
 
     if workdir is None:
         workdir = os.path.abspath(inspect.stack()[1].filename)
@@ -681,53 +752,56 @@ def copy_resources(src: typing.Iterable[str], dst: str,
             if os.path.exists(to_path):
                 if override:
                     if os.path.isdir(to_path):
+                        #log.debug("Removing...", directory=to_path, override=override)
                         shutil.rmtree(to_path)
                     else:
+                        #log.debug("Removing...", file=to_path, override=override)
                         os.unlink(to_path)
                 else:
-                    logger.error(f"Destination path {to_path} already exists")
+                    log.error(f"Destination path already exists", path=to_path)
                     sys.exit(-1)
             if os.path.isdir(p):
+                log.debug("Copying...", directory=p, to_path=to_path, override=override)
                 shutil.copytree(p, to_path)
             else:
+                log.debug("Copying...", file=p, to_path=to_path, override=override)
                 shutil.copyfile(p, to_path)
-            for recipe in make_recipes_after:
-                make_py = os.path.join(to_path, "make.py")
-                if os.path.exists(make_py):
-                    cmd = " ".join((make_py, recipe))
-                    logger.info(f"Invoking [after] {cmd}")
-                    _run(cmd)
+            # for recipe in make_recipes_after:
+            #     make_py = os.path.join(to_path, "make.py")
+            #     if os.path.exists(make_py):
+            #         cmd = " ".join((make_py, recipe))
+            #         logger.info(f"Invoking [after] {cmd}")
+            #         _run(cmd)
 
 
-# TODO: unused? -- remove?
-def make_copy_resources_recipe(src: typing.Union[typing.Iterable[str], str],
-                               dst: str,
-                               render_first: bool,
-                               **recipe_kwargs):
-    make_recipes_before = []
-    if render_first:
-        make_recipes_before.append('{src}')
-
-    if 'name' not in recipe_kwargs:
-        logger.error("You must provide a name for copy resources recipe")
-        sys.exit(-1)
-
-    workdir = os.path.abspath(inspect.stack()[1].filename)
-
-    @recipe(**recipe_kwargs)
-    def _recipe():
-        copy_resources(
-                src=src,
-                dst=".",
-                make_recipes_before=make_recipes_before,
-                workdir=workdir
-            )
+# def make_copy_resources_recipe(src: typing.Union[typing.Iterable[str], str],
+#                                dst: str,
+#                                render_first: bool,
+#                                **recipe_kwargs):
+#     make_recipes_before = []
+#     if render_first:
+#         make_recipes_before.append('{src}')
+#
+#     if 'name' not in recipe_kwargs:
+#         logger.error("You must provide a name for copy resources recipe")
+#         sys.exit(-1)
+#
+#     workdir = os.path.abspath(inspect.stack()[1].filename)
+#
+#     @recipe(**recipe_kwargs)
+#     def _recipe():
+#         copy_resources(
+#                 src=src,
+#                 dst=".",
+#                 make_recipes_before=make_recipes_before,
+#                 workdir=workdir
+#             )
 
 
 def copy_source(src: typing.Union[typing.Iterable[str], str],
                 dst: str,
                 override: bool = True,
-                make_recipes: typing.Iterable = ("clean", "setup.py"),
+                #make_recipes: typing.Iterable = ("clean", "setup.py"),
                 workdir: str = None):
     """
     It assumes paths relative to KRULES_REPO_DIR
@@ -746,7 +820,7 @@ def copy_source(src: typing.Union[typing.Iterable[str], str],
     if workdir is None:
         workdir = os.path.abspath(inspect.stack()[1].filename)
     copy_resources(
-        src, dst, override, make_recipes_before=(), make_recipes_after=make_recipes,
+        src, dst, override, #make_recipes_before=(), make_recipes_after=make_recipes,
         workdir=workdir,
     )
 
@@ -756,7 +830,7 @@ def make_copy_source_recipe(location: str,
                             dst: str,
                             out_dir: str = ".build",
                             override: bool = True,
-                            make_recipes: typing.Iterable = ("clean", "setup.py"),
+                            #make_recipes: typing.Iterable = ("clean", "setup.py"),
                             workdir: str = None,
                             **recipe_kwargs):
     src = list(map(lambda x: os.path.join(location, x), src))
@@ -768,7 +842,7 @@ def make_copy_source_recipe(location: str,
             src=src,
             dst=os.path.join(out_dir, dst),
             override=override,
-            make_recipes=make_recipes,
+            #make_recipes=make_recipes,
             workdir=workdir,
         )
 
@@ -787,14 +861,21 @@ def make_subprocess_run_recipe(cmd, **recipe_kwargs):
 def get_var_for_target(name: str, target: str, mandatory: bool = False, default=None) -> str | None:
     name = name.upper()
     target = target.upper()
-    if f"{target}_{name}" in os.environ:
-        return os.environ[f"{target}_{name}"]
+    log_msg = "Got variable for target"
+    var_name = f"{target}_{name}"
+    if var_name in os.environ:
+        var_name = f"{target}_{name}"
+        value = os.environ[var_name]
+        #log.debug(log_msg, name=name, var_name=var_name, target=target)
+        return value
     if name in os.environ:
+        #log.debug(log_msg, name=name, var_name=name, target=target)
         return os.environ[name]
     else:
         if mandatory:
-            logger.error(f"missing required environment variable for {name}")
+            log.error(f"missing required environment variable", name=name)
             sys.exit(-1)
+    #log.debug("Got default variable for target", name=name, default=default)
     return default
 
 

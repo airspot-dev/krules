@@ -1,5 +1,9 @@
 import logging
+import os
+
+import structlog
 import sys
+from sane import recipe as base_recipe
 
 class CustomFormatter(logging.Formatter):
     grey = "\x1b[38;20m"
@@ -24,12 +28,46 @@ class CustomFormatter(logging.Formatter):
 
 
 ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(CustomFormatter())
 
 logger = logging.getLogger("__sane__")
 logger.addHandler(ch)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+
+# structlog.configure(
+#     processors=[
+#         structlog.contextvars.merge_contextvars,
+#         structlog.processors.add_log_level,
+#         structlog.processors.StackInfoRenderer(),
+#         structlog.dev.set_exc_info,
+#         structlog.processors.TimeStamper(),
+#         structlog.dev.ConsoleRenderer()
+#     ],
+#     wrapper_class=structlog.make_filtering_bound_logger(logging.NOTSET),
+#     context_class=dict,
+#     logger_factory=structlog.PrintLoggerFactory(),
+#     cache_logger_on_first_use=False
+# )
+
+# structlog.configure(
+#     processors=[
+#         structlog.stdlib.add_log_level,
+#         structlog.stdlib.filter_by_level,
+#         structlog.processors.TimeStamper(fmt='iso', utc=True),
+#         structlog.processors.StackInfoRenderer(),
+#         structlog.processors.format_exc_info,
+#         structlog.processors.JSONRenderer()
+#     ],
+#     context_class=dict,
+#     logger_factory=structlog.stdlib.LoggerFactory(),
+#     wrapper_class=structlog.stdlib.BoundLogger,
+#     cache_logger_on_first_use=True,
+# )
+
+log_level = int(os.environ.get("SANE_LOG_LEVEL", logging.INFO))
+structlog.configure(wrapper_class=structlog.make_filtering_bound_logger(log_level))
 
 
 from .base import *
+
