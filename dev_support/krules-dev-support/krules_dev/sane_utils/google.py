@@ -264,7 +264,7 @@ def make_cloud_deploy_recipes(
 
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
-    targets = [s.lower() for s in re.split(" |,|;", sane_utils.check_env("TARGETS")) if len(s)]
+    targets = [s.lower() for s in re.split(" |,|;", os.environ.get("TARGETS", "default")) if len(s)]
 
     # making changes to these files will result in a new build
     sane_utils.update_code_hash(
@@ -487,7 +487,7 @@ def make_target_deploy_recipe(
 
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
-    targets = [s.lower() for s in re.split(" |,|;", sane_utils.check_env("TARGETS")) if len(s)]
+    targets = [s.lower() for s in re.split(" |,|;", os.environ.get("TARGETS", "default")) if len(s)]
 
     # making changes to these files will result in a new build
     sane_utils.update_code_hash(
