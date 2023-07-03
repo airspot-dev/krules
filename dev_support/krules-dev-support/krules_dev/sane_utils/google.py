@@ -551,6 +551,7 @@ def make_target_deploy_recipe(
             "project_id": sane_utils.get_var_for_target("project_id", t),
             "use_cloudrun": int(sane_utils.get_var_for_target("use_cloudrun", t, default="0")),
             "use_cloudbuild": int(sane_utils.get_var_for_target("use_cloudbuild", t, default="0")),
+            "use_cluster": int(sane_utils.get_var_for_target("use_cluster", t, default="1")),
             "kubectl_opts": kubectl_opts,
         })
 
