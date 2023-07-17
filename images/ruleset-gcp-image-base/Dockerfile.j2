@@ -18,11 +18,5 @@ RUN cd /.krules-libs/{{ lib }} && pip3 install --upgrade --no-cache-dir .
 {% endfor %}
 {% endif %}
 
-ADD ./app /app
+ADD env.py /app/env.py
 
-ENV PYTHONPATH /app
-WORKDIR /app
-
-RUN pip install uvicorn[standard]==0.17.6
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -17,7 +17,8 @@ KRULES_LIBS_DIR = os.path.join(KRULES_REPO_DIR, "libs")
 
 KRULES_DEP_LIBS = [
     "krules-fastapi-env",
-    "krules-k8s-functions"
+    "krules-k8s-functions",
+    "krules-dispatcher-cloudevents-pubsub",
 ]
 
 DEV_REQUIREMENTS = []
@@ -29,7 +30,7 @@ if "RELEASE_VERSION" in os.environ:
 def get_image_base():
     return sane_utils.get_buildable_image(
         location=os.path.join(KRULES_REPO_DIR, "images"),
-        dir_name="generic-pubsub-image-base",
+        dir_name="ruleset-image-base",
         use_release_version=True,
         environ_override="IMAGE_BASE",
     )
@@ -55,7 +56,7 @@ sane_utils.make_build_recipe(
         lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_resources(
             map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
             dst=".build/.krules-libs",
-            make_recipes_after=[
+            make_recipes_hooks=[
                 "clean", "setup.py"
             ]
         )

@@ -26,8 +26,6 @@ if "RELEASE_VERSION" in os.environ:
     os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")
 
 def get_image_base():
-    if "FORCED_IMAGE_BASE" in os.environ:
-        return os.environ["FORCED_IMAGE_BASE"]
     return sane_utils.get_buildable_image(
         location=os.path.join(KRULES_REPO_DIR, "images"),
         dir_name="generic-image-base",
@@ -56,7 +54,7 @@ sane_utils.make_build_recipe(
         lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_resources(
             map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
             dst=".build/.krules-libs",
-            make_recipes_after=[
+            make_recipes_hooks=[
                 "clean", "setup.py"
             ]
         )
