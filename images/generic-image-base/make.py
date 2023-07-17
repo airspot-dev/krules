@@ -32,11 +32,11 @@ GCP_SERVICE_ACCOUNT_PATH = None
 if "RELEASE_VERSION" in os.environ:
     os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")
 
-if "GCP_SERVICE_ACCOUNT_PATH" in os.environ:
-    GCP_SERVICE_ACCOUNT_PATH = os.environ.get('GCP_SERVICE_ACCOUNT_PATH')
-    if GCP_SERVICE_ACCOUNT_PATH.endswith("/"):
-        GCP_SERVICE_ACCOUNT_PATH = GCP_SERVICE_ACCOUNT_PATH[:-1]
-    GCP_SERVICE_ACCOUNT_PATH = os.path.join(".build", os.path.split(GCP_SERVICE_ACCOUNT_PATH)[-1])
+# if "GCP_SERVICE_ACCOUNT_PATH" in os.environ:
+#     GCP_SERVICE_ACCOUNT_PATH = os.environ.get('GCP_SERVICE_ACCOUNT_PATH')
+#     if GCP_SERVICE_ACCOUNT_PATH.endswith("/"):
+#         GCP_SERVICE_ACCOUNT_PATH = GCP_SERVICE_ACCOUNT_PATH[:-1]
+#     GCP_SERVICE_ACCOUNT_PATH = os.path.join(".build", os.path.split(GCP_SERVICE_ACCOUNT_PATH)[-1])
 
 
 sane_utils.make_render_resource_recipes(
@@ -61,21 +61,21 @@ sane_utils.make_build_recipe(
         lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_resources(
             map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
             dst=".build/.krules-libs",
-            make_recipes_after=[
+            make_recipes_hooks=[
                 "clean", "setup.py"
             ]
         ),
         lambda: 'RELEASE_VERSION' not in os.environ and sane_utils.copy_resources(
             map(lambda x: os.path.join(SUBJECTS_BACKENDS_DIR, x), SUBJECTS_BACKENDS),
             dst=".build/.subjects-backends",
-            make_recipes_after=[
+            make_recipes_hooks=[
                 "clean", "setup.py"
             ]
         ),
         lambda: 'GCP_SERVICE_ACCOUNT_PATH' in os.environ and sane_utils.copy_resources(
             [os.environ.get('GCP_SERVICE_ACCOUNT_PATH'), ],
             dst="./.build",
-            make_recipes_after=[
+            make_recipes_hooks=[
                 "clean", "setup.py"
             ]
         )

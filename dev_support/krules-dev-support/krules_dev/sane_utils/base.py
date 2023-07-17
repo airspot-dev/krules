@@ -1,5 +1,6 @@
 import contextlib
 import hashlib
+import io
 import re
 import sys
 import os
@@ -89,12 +90,12 @@ def check_env(name, err_code=-1):
     return os.environ[name]
 
 
-def check_cmd(cmd, err_code=-1):
-    cmd = shutil.which(cmd)
-    if cmd is None:
+def check_cmd(cmd: str, err_code=-1):
+    _cmd = os.environ.get(f"{cmd.upper()}_CMD") or shutil.which(cmd)
+    if _cmd is None:
         log.error(f'Command not found', cmd=cmd, PATH=os.environ.get("PATH"))
         sys.exit(err_code)
-    return cmd
+    return _cmd
 
 
 def _run(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_level=logging.ERROR, captures={}):
@@ -200,25 +201,39 @@ def get_buildable_image(location: str,
                         docker_registry=None,
                         environ_override: typing.Optional[str] = None,
                         push_cmd: str = "push",
-                        digest_file: str = ".digest"):
+                        digest_file: str = ".digest",
+                        target: str = os.environ.get("TARGET", "default")):
     if environ_override is not None and environ_override in os.environ:
         return os.environ[environ_override]
     if use_release_version and 'RELEASE_VERSION' in os.environ:
         if docker_registry is None:
-            docker_registry = check_env("DOCKER_REGISTRY")
+            docker_registry = get_var_for_target("DOCKER_REGISTRY", target=target)
         if name is None:
             name = f'krules-{dir_name}'
         return f'{docker_registry}/{name}:{os.environ["RELEASE_VERSION"]}'
     build_dir = os.path.join(location, dir_name)
-    logger.info(f"Ensuring {os.path.join(out_dir, digest_file)} in {dir_name}")
-    ret_code = _run([
-        os.path.join(build_dir, "make.py"), push_cmd
-    ], env={"PATH": os.environ["PATH"]}, check=False)
-    if ret_code == 0:
-        with open(os.path.join(build_dir, out_dir, digest_file), "r") as f:
-            return f.read().strip()
-    else:
-        logger.error(f"Unable to push image : {docker_registry}/{name}")
+    log.debug("Checking digest file", out_dir=out_dir, digest_file=digest_file, dir_name=dir_name)
+    #log.debug(f"Ensuring {os.path.join(out_dir, digest_file)} in {dir_name}")
+    make = sh.Command(
+        check_cmd("python"),
+    ).bake(os.path.join(build_dir, "make.py"))
+    try:
+        env = os.environ.copy()
+        env.pop("IMAGE_NAME", None)
+        make(push_cmd, _env=env)
+    except sh.ErrorReturnCode as ex:
+        log.error(ex.stderr.decode())
+        sys.exit(-1)
+    with open(os.path.join(build_dir, out_dir, digest_file), "r") as f:
+        return f.read().strip()
+    # ret_code = _run([
+    #     os.path.join(build_dir, "make.py"), push_cmd
+    # ], env={"PATH": os.environ["PATH"]}, check=False)
+    # if ret_code == 0:
+    #     with open(os.path.join(build_dir, out_dir, digest_file), "r") as f:
+    #         return f.read().strip()
+    # else:
+    #     logger.error(f"Unable to push image : {docker_registry}/{name}")
 
 def get_image(image, environ_override: typing.Optional[str] = None):
     """
@@ -352,29 +367,30 @@ def make_render_resource_recipes(globs: list,
             )
 
 
-def make_build_recipe(target: str = None,
+def make_build_recipe(image_name: str = None,
                       run_before: typing.Sequence[typing.Callable] = (),
                       out_dir: str = ".build",
                       dockerfile: str = "Dockerfile",
                       code_digest_file: str = ".code.digest",
                       success_file: str = None,
                       build_args: dict = {},
+                      target: str = os.environ.get("TARGET", "default"),
                       **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
-    if target is None:
-        target = check_env('IMAGE_NAME')
+    if image_name is None:
+        image_name = check_env('IMAGE_NAME')
 
     if 'name' not in recipe_kwargs:
         recipe_kwargs['name'] = 'build'
-    docker_cmd = os.environ.get("DOCKER_CMD", check_cmd("docker"))
+    docker_cmd = check_cmd("docker")
     if success_file is None:
         success_file = f".{recipe_kwargs['name']}.success"
     if 'info' not in recipe_kwargs:
-        recipe_kwargs['info'] = "Build the docker image for target {target}"
-    recipe_kwargs['info'] = recipe_kwargs['info'].format(target=target)
+        recipe_kwargs['info'] = "Build the docker image as {image_name}"
+    recipe_kwargs['info'] = recipe_kwargs['info'].format(image_name=image_name)
 
     if 'conditions' not in recipe_kwargs:
         recipe_kwargs['conditions'] = []
@@ -386,53 +402,72 @@ def make_build_recipe(target: str = None,
 
     @recipe(**recipe_kwargs)
     def build():
-        docker_registry = check_env('DOCKER_REGISTRY')
-        check_cmd(docker_cmd)
-        target_image = f'{docker_registry}/{target}'.lower()
-        logger.info(f'Building {target_image} from Dockerfile')
+        docker_registry = get_var_for_target('DOCKER_REGISTRY', target=target, mandatory=True)
+        target_image = f'{docker_registry}/{image_name}'.lower()
+        log.debug("Building...", target_image=target_image)
 
         for func in run_before:
-            logger.info(f"..executing {func.__name__}")
+            log.debug(f"..executing run_before", func=func.__name__)
             func()
 
         with pushd(root_dir):
-            _build_args = " ".join([f"--build-arg {v[0]}={v[1]}" for v in build_args.items()])
-            ret_code = _run(
-                f'{docker_cmd} build -t {target_image} -f {os.path.join(out_dir, dockerfile)} {_build_args} .',
-                check=False
-            )
-            if ret_code != 0:
+            #_build_args = " ".join([f"--build-arg {v[0]}={v[1]}" for v in build_args.items()])
+
+            build_platform=get_var_for_target("BUILD_PLATFORM", target=target, default="amd64")
+
+            docker=sh.Command(docker_cmd)
+
+            try:
+                try:
+                    docker.build(
+                        "--platform", build_platform,
+                        "-t", target_image, "-f", os.path.join(out_dir, dockerfile),
+                        *[item for row in [("--build-arg", f"{v[0]}={v[1]}") for v in build_args.items()] for item in row],
+                        ".",
+                        _tee='err',
+                    )
+                except sh.ErrorReturnCode as ex:
+                    log.error(ex.stderr.decode())
+                    sys.exit(ex.exit_code)
+
                 with open(success_file, "w") as f:
                     try:
                         code_digest = open(code_digest_file, "r").read()
                     except FileNotFoundError:
                         code_digest = ""
                     f.write(code_digest)
-            elif os.path.exists(success_file):
-                os.unlink(success_file)
-                logger.error(f"Unable to build image: {target_image}")
+
+                log.info("Built image", target_image=target_image)
+
+            except sh.ErrorReturnCode as ex:
+                if os.path.exists(success_file):
+                    os.unlink(success_file)
+                log.error(f"Unable to build image", target_image=target_image)
+                raise ex
+
+
 
 
 def make_push_recipe(digest_file: str = ".digest",
                      out_dir: str = ".build",
                      tag: str = os.environ.get("RELEASE_VERSION"),
-                     target: str = None,
+                     image_name: str = None,
                      run_before: typing.Sequence[typing.Callable] = (),
                      dependent_build_recipe: str = "build",
+                     target: str = os.environ.get("TARGET", "default"),
                      **recipe_kwargs):
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
-    docker_cmd = os.environ.get("DOCKER_CMD", check_cmd("docker"))
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     if 'name' not in recipe_kwargs:
         recipe_kwargs['name'] = "push"
 
-    if target is None:
-        target = os.environ.get('IMAGE_NAME')
+    if image_name is None:
+        image_name = check_env('IMAGE_NAME')
 
-    docker_registry = os.environ.get('DOCKER_REGISTRY')
-    target_image = f"{docker_registry}/{target}".lower()
+    docker_registry = get_var_for_target('DOCKER_REGISTRY', target=target, mandatory=True)
+    target_image = f"{docker_registry}/{image_name}".lower()
 
     if tag:
         _tag = f'{target_image}:{tag}'
@@ -458,31 +493,27 @@ def make_push_recipe(digest_file: str = ".digest",
 
     @recipe(**recipe_kwargs)
     def push():
-        check_env("IMAGE_NAME")
-        check_env("DOCKER_REGISTRY")
 
         for func in run_before:
             func()
 
-        logger.info(f'Pushing {_tag}')
+        log.debug(f'Pushing...', tag=_tag)
 
         with pushd(root_dir):
-            try:
-                if tag:
-                    ret_code = _run(f'{docker_cmd} tag {target_image} {_tag}', check=False)
-                    if ret_code != 0:
-                        logger.error(f"Unable to tag image {target_image}")
-                ret_code = _run(f'{docker_cmd} push {_tag}', check=False)
-                if ret_code != 0:
-                    logger.error(f"Unable to push image {target_image}")
-                out = subprocess.run(
-                    f'{docker_cmd} inspect --format="{{{{index .RepoDigests 0}}}}" {_tag}',
-                    shell=True, capture_output=True
-                ).stdout
-                with open(os.path.join(out_dir, digest_file), "wb") as f:
-                    f.write(out)
-            except CalledProcessError as ex:
-                Help.error(ex.stderr.decode())
+            docker = sh.Command(check_cmd("docker"))
+            if tag:
+                docker.tag(
+                    target_image, tag
+                )
+            docker.push(_tag)
+            of = os.path.join(out_dir, digest_file)
+            with open(of, "wb") as f:
+                docker.inspect(
+                    f'--format="{{{{index .RepoDigests 0}}}}"',
+                    _tag,
+                    _out=f,
+                )
+            log.info("Pushed", digest=open(of, "r").read())
 
 
 def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[typing.Callable] = (), context=None,
@@ -719,7 +750,7 @@ def pushd(new_dir):
 def copy_resources(src: typing.Iterable[str], dst: str,
                    override: bool = True,
                    #make_recipes_before: typing.Iterable = (),
-                   #make_recipes_after: typing.Iterable = (),
+                   make_recipes_hooks: typing.Iterable = (),
                    workdir: str = None):
 
     # for recipe in make_recipes_before:
@@ -766,12 +797,12 @@ def copy_resources(src: typing.Iterable[str], dst: str,
             else:
                 log.debug("Copying...", file=p, to_path=to_path, override=override)
                 shutil.copyfile(p, to_path)
-            # for recipe in make_recipes_after:
-            #     make_py = os.path.join(to_path, "make.py")
-            #     if os.path.exists(make_py):
-            #         cmd = " ".join((make_py, recipe))
-            #         logger.info(f"Invoking [after] {cmd}")
-            #         _run(cmd)
+            for recipe in make_recipes_hooks:
+                make_py = os.path.join(to_path, "make.py")
+                log.debug("Hook recipe", make=make_py, hooked=recipe)
+                if os.path.exists(make_py):
+                    make = sh.Command("python").bake(make_py)
+                    make(recipe)
 
 
 # def make_copy_resources_recipe(src: typing.Union[typing.Iterable[str], str],
@@ -861,7 +892,7 @@ def make_subprocess_run_recipe(cmd, **recipe_kwargs):
 def get_var_for_target(name: str, target: str, mandatory: bool = False, default=None) -> str | None:
     name = name.upper()
     target = target.upper()
-    log_msg = "Got variable for target"
+    #log_msg = "Got variable for target"
     var_name = f"{target}_{name}"
     if var_name in os.environ:
         var_name = f"{target}_{name}"

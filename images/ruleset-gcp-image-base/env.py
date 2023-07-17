@@ -1,9 +1,11 @@
-from krules_core.providers import event_dispatcher_factory
+from krules_core.providers import event_dispatcher_factory, subject_storage_factory
 from krules_cloudevents_pubsub.route.dispatcher import CloudEventsDispatcher
 from dependency_injector import providers
 from krules_env import get_source, RULE_PROC_EVENT
 import os
 import google.auth
+from redis_subjects_storage.storage_impl import SubjectsRedisStorage
+
 
 
 TOPIC_NAME = os.environ.get("PUBSUB_SINK")
@@ -37,3 +39,22 @@ def init():
             )
         )
     )
+
+    subjects_redis_url = os.environ.get("SUBJECTS_REDIS_URL")
+    if subjects_redis_url is not None:
+        subjects_redis_prefix = os.environ.get("SUBJECTS_REDIS_PREFIX")
+        if subjects_redis_prefix is None:
+            if "PROJECT_NAME" in os.environ and "TARGET" in os.environ:
+                subjects_redis_prefix=f"{os.environ['PROJECT_NAME']}-{os.environ['TARGET']}->"
+            else:
+                raise Exception("SUBJECTS_REDIS_PREFIX not configured")
+        subject_storage_factory.override(
+            providers.Factory(
+                lambda name, **kwargs:
+                SubjectsRedisStorage(
+                    name,
+                    subjects_redis_url,
+                    key_prefix=subjects_redis_prefix
+                )
+            )
+        )

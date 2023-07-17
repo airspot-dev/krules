@@ -68,7 +68,7 @@ def _preprare_krules_deps():
         sane_utils.copy_resources(
             map(lambda x: os.path.join(KRULES_LIBS_DIR, x), KRULES_DEP_LIBS),
             dst=".build/.krules-libs",
-            make_recipes_after=[
+            make_recipes_hooks=[
                 "clean", "setup.py"
             ]
         )
@@ -90,7 +90,7 @@ sane_utils.make_render_resource_recipes(
 
 sane_utils.make_build_recipe(
     name="build",
-    target=IMAGE_NAME,
+    image_name=IMAGE_NAME,
     run_before=[
         _prepare_commons,
         _preprare_krules_deps,
@@ -102,7 +102,7 @@ sane_utils.make_build_recipe(
 sane_utils.make_push_recipe(
     name="push",
     tag=os.environ.get("RELEASE_VERSION"),
-    target=IMAGE_NAME,
+    image_name=IMAGE_NAME,
     digest_file=".digest",
     recipe_deps=["build"],
 )

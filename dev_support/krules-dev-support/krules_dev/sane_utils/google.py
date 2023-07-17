@@ -8,6 +8,8 @@ import pprint
 import sys
 import re
 import uuid
+from typing import Callable
+
 import git
 from subprocess import run, CalledProcessError
 
@@ -455,7 +457,7 @@ def make_cloud_deploy_recipes(
     else:
         deploy_hook_deps = ["prepare_build"]
 
-    @recipe(info="Deploy the artifact", hook_deps=deploy_hook_deps)
+    @recipe(info="Deploy the artifact [GCP]", hook_deps=deploy_hook_deps)
     def deploy():
         if use_clouddeploy:
             if not code_changed:
@@ -506,12 +508,12 @@ def make_cloud_deploy_recipes(
 
 
 def make_target_deploy_recipe(
-        image_base: str,
+        image_base: str | Callable,
         baselibs: list | tuple = (),
         sources: list | tuple = (),
         out_dir: str = ".build",
         extra_context_vars: dict = None,
-        extra_target_context_vars: dict[str, dict] = None,
+        extra_target_context_vars: dict[str, str] = None,
 ):
 
     target, targets = sane_utils.get_targets_info()
@@ -519,7 +521,6 @@ def make_target_deploy_recipe(
     bind_contextvars(
         target=target
     )
-
 
     use_cloudrun = int(sane_utils.get_var_for_target("USE_CLOUDRUN", target, default="0"))
     if use_cloudrun:
@@ -539,11 +540,30 @@ def make_target_deploy_recipe(
     abs_path = os.path.abspath(inspect.stack()[-1].filename)
     root_dir = os.path.dirname(abs_path)
     #targets = [s.lower() for s in re.split(" |,|;", os.environ.get("TARGETS", "default")) if len(s)]
-
+    
+    sources_ext = []
+    origins = []
+    for source in sources:
+        if isinstance(source, str):
+            sources_ext.append(
+                {
+                    "origin": source,
+                    "destination": f"/app/{source}"
+                }
+            )
+            origins.append(source)
+        else:
+            sources_ext.append(
+                {
+                    "origin": source[0],
+                    "destination": source[1]
+                }
+            )
+            origins.append(source[0])
     # making changes to these files will result in a new build
     sane_utils.update_code_hash(
         globs=[
-            *sources,
+            *origins,
             *list(map(lambda x: f"{sane_utils.check_env('KRULES_PROJECT_DIR')}/base/libs/{x}/**/*.py", baselibs)),
             os.path.join(root_dir, "k8s", "*.j2"),
             os.path.join(root_dir, "*.j2"),
@@ -556,7 +576,7 @@ def make_target_deploy_recipe(
         name="prepare_source_files",
         info="Copy the source files within the designated context to prepare for the container build.",
         location=root_dir,
-        src=sources,
+        src=origins,
         dst="",
         out_dir=os.path.join(root_dir, out_dir),
         hooks=["prepare_build"],
@@ -579,11 +599,11 @@ def make_target_deploy_recipe(
         context_vars=lambda: {
             "app_name": sane_utils.check_env("APP_NAME"),
             "project_name": sane_utils.check_env("PROJECT_NAME"),
-            "image_base": image_base,
+            "image_base": callable(image_base) and image_base() or image_base,
             "user_baselibs": baselibs,
             "project_id": sane_utils.get_var_for_target("project_id", target, True),
             "target": target,
-            "sources": sources,
+            "sources": sources_ext,
             **extra_context_vars
         },
         hooks=[
@@ -604,6 +624,7 @@ def make_target_deploy_recipe(
             "project_id": sane_utils.get_var_for_target("project_id", t),
             "use_cloudrun": int(sane_utils.get_var_for_target("use_cloudrun", t, default="0")),
             "use_cloudbuild": int(sane_utils.get_var_for_target("use_cloudbuild", t, default="0")),
+            "namespace": sane_utils.get_var_for_target("namespace", t, default="default"),
             "kubectl_opts": kubectl_opts,
         })
 
@@ -613,9 +634,9 @@ def make_target_deploy_recipe(
         ],
         context_vars=lambda: {
             "app_name": sane_utils.check_env("APP_NAME"),
-            "project_id": sane_utils.get_var_for_target("project_id", target, True),
+            #"project_id": sane_utils.get_var_for_target("project_id", target, True),
             "targets": skaffold_targets,
-            "use_cloudrun": use_cloudrun,
+            #"use_cloudrun": use_cloudrun,
             **extra_context_vars
         },
         hooks=[
@@ -624,6 +645,11 @@ def make_target_deploy_recipe(
     )
 
     for target in targets:
+        extra_target_context = {
+            k: sane_utils.get_var_for_target(
+                target=target, name=v, mandatory=True
+            ) for k,v in extra_target_context_vars.items()
+        }
         sane_utils.make_render_resource_recipes(
             globs=[
                 "k8s/*.j2"
@@ -631,10 +657,11 @@ def make_target_deploy_recipe(
             context_vars={
                 "project_name": sane_utils.check_env("PROJECT_NAME"),
                 "app_name": sane_utils.check_env("APP_NAME"),
-                "namespace": sane_utils.get_var_for_target("namespace", target),
+                "namespace": sane_utils.get_var_for_target("namespace", target, default="default"),
                 "target": target,
                 "project_id": sane_utils.get_var_for_target("project_id", targets[0], True),
-                **extra_target_context_vars.get(target, {})
+                **extra_target_context,
+                **extra_context_vars
             },
             hooks=[
                 'prepare_build'
@@ -652,8 +679,8 @@ def make_target_deploy_recipe(
             log.debug("No changes detected... Skip deploy")
             return
 
-        repo_name = sane_utils.get_var_for_target("IMAGE_REPOSITORY", target)
-        log.debug("Get IMAGE_REPOSITORY from env", value=repo_name)
+        repo_name = sane_utils.get_var_for_target("DOCKER_REGISTRY", target)
+        log.debug("Get DOCKER_REGISTRY from env", value=repo_name)
         if repo_name is None:
             artifact_registry = sane_utils.check_env('PROJECT_NAME')
             region = sane_utils.get_var_for_target('region', targets[0])

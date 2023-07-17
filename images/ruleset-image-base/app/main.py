@@ -60,7 +60,6 @@ async def main(request: Request, response: Response):
         m = marshaller.NewDefaultHTTPMarshaller()
         event = m.FromRequest(v1.Event(), request.headers, io.BytesIO(json.dumps(await request.json()).encode()), lambda x: json.load(x))
         event_info = event.Properties()
-        print(f"@@@@@@ {event_info}")
         event_info.update(event_info.pop("extensions", {}))
         event_data = event_info.pop("data")
 
