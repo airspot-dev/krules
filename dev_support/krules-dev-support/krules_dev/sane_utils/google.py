@@ -613,6 +613,15 @@ def make_target_deploy_recipe(
 
     skaffold_targets = []
     for t in targets:
+
+        project_id = sane_utils.get_var_for_target("project_id", t)
+        use_cloudrun = int(sane_utils.get_var_for_target("use_cloudrun", t, default="0"))
+        use_cloudbuild = int(sane_utils.get_var_for_target("use_cloudbuild", t, default="0"))
+        region = sane_utils.get_var_for_target("region", t, default=None)
+        if use_cloudrun and region is None:
+            log.error("You must specify a region if using CloudRun")
+            sys.exit(-1)
+        namespace = sane_utils.get_var_for_target("namespace", t, default="default")
         kubectl_opts = sane_utils.get_var_for_target("kubectl_opts", t, default=None)
         if kubectl_opts:
             kubectl_opts = re.split(" ", kubectl_opts)
@@ -621,10 +630,11 @@ def make_target_deploy_recipe(
 
         skaffold_targets.append({
             "name": t,
-            "project_id": sane_utils.get_var_for_target("project_id", t),
-            "use_cloudrun": int(sane_utils.get_var_for_target("use_cloudrun", t, default="0")),
-            "use_cloudbuild": int(sane_utils.get_var_for_target("use_cloudbuild", t, default="0")),
-            "namespace": sane_utils.get_var_for_target("namespace", t, default="default"),
+            "project_id": project_id,
+            "use_cloudrun": use_cloudrun,
+            "use_cloudbuild": use_cloudbuild,
+            "region": region,
+            "namespace": namespace,
             "kubectl_opts": kubectl_opts,
         })
 
