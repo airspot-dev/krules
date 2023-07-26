@@ -516,19 +516,19 @@ def make_target_deploy_recipe(
         extra_target_context_vars: dict[str, str] = None,
 ):
 
-    target, targets = sane_utils.get_targets_info()
+    selected_target, targets = sane_utils.get_targets_info()
 
     bind_contextvars(
-        target=target
+        target=selected_target
     )
 
-    use_cloudrun = int(sane_utils.get_var_for_target("USE_CLOUDRUN", target, default="0"))
+    use_cloudrun = int(sane_utils.get_var_for_target("USE_CLOUDRUN", selected_target, default="0"))
     if use_cloudrun:
         log.debug("using CloudRun to deploy")
     else:
         log.debug("using Kubernetes to deploy")
 
-    use_cloudbuild = int(sane_utils.get_var_for_target("USE_CLOUDBUILD", target, default="0"))
+    use_cloudbuild = int(sane_utils.get_var_for_target("USE_CLOUDBUILD", selected_target, default="0"))
     if use_cloudbuild:
         log.debug("using Google Cloud Build"),
 
@@ -601,8 +601,8 @@ def make_target_deploy_recipe(
             "project_name": sane_utils.check_env("PROJECT_NAME"),
             "image_base": callable(image_base) and image_base() or image_base,
             "user_baselibs": baselibs,
-            "project_id": sane_utils.get_var_for_target("project_id", target, True),
-            "target": target,
+            "project_id": sane_utils.get_var_for_target("project_id", selected_target, True),
+            "target": selected_target,
             "sources": sources_ext,
             **extra_context_vars
         },
@@ -654,10 +654,10 @@ def make_target_deploy_recipe(
         ]
     )
 
-    for target in targets:
+    for t in targets:
         extra_target_context = {
             k: sane_utils.get_var_for_target(
-                target=target, name=v, mandatory=True
+                target=t, name=v, mandatory=True
             ) for k,v in extra_target_context_vars.items()
         }
         sane_utils.make_render_resource_recipes(
@@ -667,16 +667,16 @@ def make_target_deploy_recipe(
             context_vars={
                 "project_name": sane_utils.check_env("PROJECT_NAME"),
                 "app_name": sane_utils.check_env("APP_NAME"),
-                "namespace": sane_utils.get_var_for_target("namespace", target, default="default"),
-                "target": target,
-                "project_id": sane_utils.get_var_for_target("project_id", targets[0], True),
+                "namespace": sane_utils.get_var_for_target("namespace", t, default="default"),
+                "target": t,
+                "project_id": sane_utils.get_var_for_target("project_id", t, True),
                 **extra_target_context,
                 **extra_context_vars
             },
             hooks=[
                 'prepare_build'
             ],
-            out_dir=f"{out_dir}/k8s/{target}"
+            out_dir=f"{out_dir}/k8s/{t}"
         )
 
     success_file = os.path.join(root_dir, out_dir, ".success")
@@ -685,16 +685,21 @@ def make_target_deploy_recipe(
 
     @recipe(info="Deploy the artifact", hook_deps=["prepare_build"])
     def deploy():
+
+        bind_contextvars(
+            target=selected_target
+        )
+
         if not code_changed:
             log.debug("No changes detected... Skip deploy")
             return
 
-        repo_name = sane_utils.get_var_for_target("DOCKER_REGISTRY", target)
+        repo_name = sane_utils.get_var_for_target("DOCKER_REGISTRY", selected_target)
         log.debug("Get DOCKER_REGISTRY from env", value=repo_name)
         if repo_name is None:
             artifact_registry = sane_utils.check_env('PROJECT_NAME')
-            region = sane_utils.get_var_for_target('region', targets[0])
-            project = sane_utils.get_var_for_target('project_id', targets[0])
+            region = sane_utils.get_var_for_target('region', selected_target)
+            project = sane_utils.get_var_for_target('project_id', selected_target)
             repo_name = f"{region}-docker.pkg.dev/{project}/{artifact_registry}"
             log.debug("Using project artifact registry", value=repo_name)
         with sane_utils.pushd(os.path.join(root_dir, out_dir)):
@@ -705,7 +710,7 @@ def make_target_deploy_recipe(
             log.debug("Running skaffold" )
             skaffold.run(
                 default_repo=repo_name,
-                profile=target,
+                profile=selected_target,
             )
             log.info("Deployed")
 
