@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from os import DirEntry
 
+import krules_dev.sane_utils.deprecated
 from krules_dev import sane_utils
 
 from sane import *
@@ -96,7 +97,7 @@ sane_utils.make_render_resource_recipes(
     ],
 )
 
-sane_utils.make_subprocess_run_recipe(
+krules_dev.sane_utils.deprecated.make_subprocess_run_recipe(
     name="apply_base_resources",
     info="Apply resources from project's base",
     cmd=[
@@ -117,7 +118,7 @@ sane_utils.make_apply_recipe(
     ],
 )
 
-sane_utils.make_service_recipe(
+krules_dev.sane_utils.deprecated.make_service_recipe(
     name="service",
     labels=lambda: {
         "krules.dev/app": sane_utils.check_env("APP_NAME"),

@@ -2,6 +2,7 @@
 import os
 import re
 
+import krules_dev.sane_utils.deprecated
 from krules_dev import sane_utils
 
 from sane import *
@@ -87,7 +88,7 @@ sane_utils.make_render_resource_recipes(
     ]
 )
 
-sane_utils.make_subprocess_run_recipe(
+krules_dev.sane_utils.deprecated.make_subprocess_run_recipe(
     name="apply_base_resources",
     info="Apply resources from project's base",
     cmd=[
@@ -111,7 +112,7 @@ sane_utils.make_apply_recipe(
 
 
 # update or create service according to SERVICE_API environment variable (base/knative)
-sane_utils.make_service_recipe(
+krules_dev.sane_utils.deprecated.make_service_recipe(
     name="service",
     labels=lambda: {
         "krules.dev/app": os.environ["APP_NAME"],

@@ -2,6 +2,8 @@
 import os
 import sys
 
+import krules_dev.sane_utils.deprecated
+
 KRULES_REPO_DIR = os.environ.get("KRULES_REPO_DIR", os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                                  os.path.pardir, os.path.pardir ))
 sys.path.append(os.path.join(KRULES_REPO_DIR, "dev_support", "krules-dev-support"))
@@ -131,7 +133,7 @@ def render_resource():
     pass
 
 
-sane_utils.make_service_recipe(
+krules_dev.sane_utils.deprecated.make_service_recipe(
     image=lambda: open(".digest", "r").read().rstrip(),
     labels={
         "krules.dev/app": "{APP_NAME}",

@@ -19,43 +19,29 @@ from structlog.contextvars import bind_contextvars, clear_contextvars, unbind_co
 from krules_dev import sane_utils
 from .base import recipe
 from sane import _Help as Help
-from .base import _run
+from .deprecated import _run
 
 logger = logging.getLogger("__sane__")
 
 import structlog
 log = structlog.get_logger()
 
-def gcloud_cmd(project_id: str = None):
-    cmd = sh.Command(
-            sane_utils.check_cmd("gcloud")
-        )
-    if project_id is not None:
-        cmd = cmd.bake(
-            project=project_id
-        )
-    return cmd
-
 
 def make_enable_apis_recipe(google_apis, project_id, **recipe_kwargs):
     @recipe(**recipe_kwargs)
     def enable_google_apis():
-        gcloud = gcloud_cmd(project_id)
+        gcloud = sane_utils.get_cmd_from_env("gcloud").bake(project=project_id)
 
-        #bind_contextvars(project_id=project_id)
         log.debug(f"Enabling GCP APIs, this may take several minutes...", project_id=project_id)
         for api in google_apis:
             log.debug(f"enable API...", api=api)
             gcloud.services.enable(api)
-            #_run(f"gcloud services enable {api} --project {project_id}", check=True)
-        #ålogger.info("Done")'get-
 
 
 def make_check_gcloud_config_recipe(project_id, region, zone, **recipe_kwargs):
     @recipe(info="Check current gcloud configuration", **recipe_kwargs)
     def check_gcloud_config():
-
-        gcloud = gcloud_cmd()
+        gcloud = sane_utils.get_cmd_from_env("gcloud").bake(project=project_id)
 
         log.debug("Checking gcloud configuration", project_id=project_id, region=region, zone=zone)
         def _get_prop_cmd(prop):
@@ -124,7 +110,7 @@ def make_set_gke_contexts_recipe(project_name, targets, **recipe_kwargs):
             if region_or_zone is None:
                 region_or_zone = sane_utils.get_var_for_target("region", target, True)
                 location_arg = "--region"
-            logger.info(
+            log.info(
                 f"Setting context {context_name} for cluster {region_or_zone}/{cluster_name} in project {project} to namespace {namespace}")
 
             run(

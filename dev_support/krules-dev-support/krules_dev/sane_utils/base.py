@@ -1,18 +1,14 @@
 import contextlib
 import hashlib
-import io
 import re
 import sys
 import os
 import inspect
 
-import yaml
 import shutil
 import typing
 from glob import glob
 from pathlib import Path
-from subprocess import CalledProcessError
-import subprocess
 
 from dotenv import load_dotenv
 from sane import recipe as base_recipe
@@ -21,18 +17,23 @@ import sh
 
 import logging
 
+# from krules_dev.sane_utils.deprecated import _run
+
 logger = logging.getLogger("__sane__")
 logger.setLevel(int(os.environ.get("SANE_LOG_LEVEL", logging.INFO)))
 logger.handlers[0].setLevel(int(os.environ.get("SANE_LOG_LEVEL", logging.INFO)))
 
 import structlog
-from structlog.contextvars import bind_contextvars, clear_contextvars, unbind_contextvars
+from structlog.contextvars import bind_contextvars, unbind_contextvars
 
 log = structlog.get_logger()
 
 
 def recipe(*args, name=None, hooks=[], recipe_deps=[],
            hook_deps=[], conditions=[], info=None, **kwargs):
+    """
+    Wraps sane_utils recipe to always have a name
+    """
     #frame = inspect.stack(context=3)[-1]
 
     # `frame` is disposed of once used
@@ -82,81 +83,6 @@ def recipe(*args, name=None, hooks=[], recipe_deps=[],
 
     return recipe_fn
 
-
-def check_env(name, err_code=-1):
-    if name not in os.environ:
-        log.error(f'Environment variable does not exists', name=name)
-        sys.exit(err_code)
-    return os.environ[name]
-
-
-def check_cmd(cmd: str, err_code=-1):
-    _cmd = os.environ.get(f"{cmd.upper()}_CMD") or shutil.which(cmd)
-    if _cmd is None:
-        log.error(f'Command not found', cmd=cmd, PATH=os.environ.get("PATH"))
-        sys.exit(err_code)
-    return _cmd
-
-
-def _run(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_level=logging.ERROR, captures={}):
-
-    log.warning("!!!RUN FUNCTION DEPRECATED!!!", cmd=cmd)
-
-    def __log_out(message):
-        prev_stream = logger.handlers[0].stream
-        logger.handlers[0].stream = sys.stdout
-        logger.info(message)
-        logger.handlers[0].stream = prev_stream
-
-    def __log_err(message):
-        prev_stream = logger.handlers[0].stream
-        if err_to_stdout:
-            logger.handlers[0].stream = sys.stdout
-        else:
-            logger.handlers[0].stream = sys.stderr
-        logger.log(errors_log_level, message)
-        logger.handlers[0].stream = prev_stream
-
-    shell = isinstance(cmd, str)
-    log_out = __log_out
-    log_err = __log_err
-    if shell:
-        log_prefix = os.path.basename(cmd.split()[0])
-    else:
-        log_prefix = os.path.basename(cmd[0])
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, shell=shell)
-    for c in iter(lambda: p.stdout.readline(), b""):
-        message = c.decode('utf-8')
-        if "stdout" in captures:
-            captures["stdout"].append(message)
-        log_out(f"{log_prefix}> {message}")
-    for c in iter(lambda: p.stderr.readline(), b""):
-        message = c.decode('utf-8')
-        if "stderr" in captures:
-            captures["stderr"].append(message)
-        log_err(f"{log_prefix}> {message}")
-    p.communicate()
-    if check and p.returncode != 0:
-        sys.exit(p.returncode)
-    return p.returncode
-
-
-def _sh(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_level=logging.ERROR, captures={}):
-    if isinstance(cmd, str):
-        cmd = cmd.split(" ")
-    sh.bash(*cmd)
-
-
-def get_targets_info():
-    target = os.environ.get("TARGET", os.environ.get("DEFAULT_TARGET", "default"))
-    targets = [s.lower() for s in re.split(" |,|;", os.environ.get("TARGETS", "default")) if len(s)]
-
-    if target not in targets:
-        log.error("Unknown target", target=target, targets=targets)
-        sys.exit(-1)
-
-    return target, targets
-
 def load_env():
 
     def _load_dir_env(_dir):
@@ -191,6 +117,51 @@ def load_env():
 
     for p in traversed_p:
         _load_dir_env(p)
+
+def check_env(name, err_code=-1):
+    if name not in os.environ:
+        log.error(f'Environment variable does not exists', name=name)
+        sys.exit(err_code)
+    return os.environ[name]
+
+
+def check_cmd(cmd: str, err_code=-1):
+    _cmd = os.environ.get(f"{cmd.upper()}_CMD") or shutil.which(cmd)
+    if _cmd is None:
+        log.error(f'Command not found', cmd=cmd, PATH=os.environ.get("PATH"))
+        sys.exit(err_code)
+    return _cmd
+
+
+# def _sh(cmd: str | list, env=None, err_to_stdout=False, check=True, errors_log_level=logging.ERROR, captures={}):
+#     if isinstance(cmd, str):
+#         cmd = cmd.split(" ")
+#     sh.bash(*cmd)
+
+
+def get_targets_info():
+    target = os.environ.get("TARGET", os.environ.get("DEFAULT_TARGET", "default"))
+    targets = [s.lower() for s in re.split(" |,|;", os.environ.get("TARGETS", "default")) if len(s)]
+
+    if target not in targets:
+        log.error("Unknown target", target=target, targets=targets)
+        sys.exit(-1)
+
+    return target, targets
+
+
+def get_cmd_from_env(name, opts=True):
+    cmd = sh.Command(
+        os.environ.get(f"{name.upper()}_CMD", check_cmd(name))
+    )
+
+    if opts:
+        target, _ = get_targets_info()
+        cmd_opts = get_var_for_target(f"{name.upper()}_OPTS", target, default="").split()
+        if len(cmd_opts):
+            cmd.bake(cmd_opts)
+
+    return cmd
 
 
 def get_buildable_image(location: str,
@@ -234,6 +205,7 @@ def get_buildable_image(location: str,
     #         return f.read().strip()
     # else:
     #     logger.error(f"Unable to push image : {docker_registry}/{name}")
+
 
 def get_image(image, environ_override: typing.Optional[str] = None):
     """
@@ -528,21 +500,7 @@ def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[t
 
     @recipe(**recipe_kwargs)
     def apply():
-        kubectl_cmd = os.environ.get("KUBECTL_CMD", check_cmd("kubectl"))
-        check_cmd(kubectl_cmd)
-        kubectl_opts = os.environ.get("KUBECTL_OPTS", "").split()
-        context_opt = None
-        context_idx = -1
-        if context is not None:
-            for idx, opt in enumerate(kubectl_opts):
-                if opt.startswith("--context="):
-                    context_opt = opt
-                    context_idx = idx
-                    break
-            if context_opt is not None:
-                kubectl_opts[context_idx] = f"--context={context}"
-            else:
-                kubectl_opts.append(f"--context={context}")
+        kubectl = get_cmd_from_env("kubectl")
         for func in run_before:
             func()
         with pushd(root_dir):
@@ -550,168 +508,8 @@ def make_apply_recipe(globs: typing.Iterable[str], run_before: typing.Iterable[t
             for file in globs:
                 k8s_files.extend(glob(file))
             for file in sorted(k8s_files):
-                logger.info(f"Applying {file}..")
-                ret_code = _run(
-                    [
-                        kubectl_cmd, *kubectl_opts,  "apply", "-f", file,
-                    ],
-                    check=False
-                )
-                if ret_code != 0:
-                    logger.error(f"Unable to apply {file}")
-
-
-def make_service_recipe(image: typing.Union[str, typing.Callable] = None,
-                        out_dir: str = ".build",
-                        labels: typing.Union[dict, typing.Callable] = {},
-                        service_account: str = None,
-                        kn_extra: tuple = (),
-                        env: typing.Union[dict, typing.Callable[[], dict]] = {},
-                        context=None,
-                        **recipe_kwargs):
-    abs_path = os.path.abspath(inspect.stack()[-1].filename)
-    root_dir = os.path.dirname(abs_path)
-    namespace = check_env("NAMESPACE")
-    service_api = os.environ.get("SERVICE_API", "base")
-    service_type = os.environ.get("SERVICE_TYPE", "ClusterIP")
-    kubectl_cmd = kubectl_opts = kn_cmd = kn_opts = None
-    if service_api == "base":
-        kubectl_cmd = os.environ.get("KUBECTL_CMD", check_cmd("kubectl"))
-        kubectl_opts = os.environ.get("KUBECTL_OPTS", "").split()
-        context_opt = None
-        context_idx = -1
-        if context is not None:
-            for idx, opt in enumerate(kubectl_opts):
-                if opt.startswith("--context="):
-                    context_opt = opt
-                    context_idx = idx
-                    break
-            if context_opt is not None:
-                kubectl_opts[context_idx] = f"--context={context}"
-            else:
-                kubectl_opts.append(f"--context={context}")
-    elif service_api == "knative":
-        kn_cmd = os.environ.get("KN_CMD", check_cmd("kn"))
-        kn_opts = os.environ.get("KN_OPTS", "").split()
-    else:
-        logger.error(f"unknown service api {service_api}")
-        sys.exit(-1)
-    app_name = check_env("APP_NAME")
-
-    @recipe(**recipe_kwargs)
-    def service():
-        # image_name = check_envvar_exists("IMAGE_NAME")
-
-        with pushd(root_dir):
-            #print(f"*********> {root_dir}")
-            _image = callable(image) and image() or image
-            if _image is None:
-                _image = open(os.path.join(out_dir, ".digest"), "r").read().rstrip()
-            _env = callable(env) and env() or env
-            _labels = callable(labels) and labels() or labels
-            try:
-                if service_api == "base":
-                    out = subprocess.run([
-                        kubectl_cmd, *kubectl_opts, "-n", namespace, "get", "deployments",
-                        "-o", "jsonpath=\"{{.items[?(@.metadata.name=='{}')]}}\"".format(app_name)
-                    ], check=True, capture_output=True).stdout
-                    if len(out) > len('""'):  # found
-                        logger.info(f"updating deployment {app_name}")
-                        ret_code = _run([
-                            kubectl_cmd, *kubectl_opts, "-n", namespace, "set", "image", f"deployment/{app_name}",
-                            f"{app_name}={_image}", "--record"
-                        ])
-                        if ret_code != 0:
-                            logger.error(f"Unable to update Deployment: {app_name}")
-                    else:
-                        logger.info(f"creating deployment {app_name}")
-                        deployment = {
-                            "apiVersion": "apps/v1",
-                            "kind": "Deployment",
-                            "metadata": {
-                                "name": app_name,
-                                "labels": _labels,
-                            },
-                            "spec": {
-                                "replicas": 1,  # TODO: env var
-                                "selector": {
-                                    "matchLabels": _labels,
-                                },
-                                "template": {
-                                    "metadata": {
-                                        "labels": _labels,
-                                    },
-                                    "spec": {
-                                        "containers": [
-                                            {
-                                                "name": app_name,
-                                                "image": _image,
-                                                "env": [{"name": e[0], "value": e[1]} for e in _env.items()],
-                                                "ports": [
-                                                    {
-                                                        "containerPort": 8080,
-                                                    }
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                        if service_account:
-                            deployment["spec"]["template"]["spec"]["serviceAccountName"] = service_account
-                        out = subprocess.run([
-                            kubectl_cmd, *kubectl_opts, "-n", namespace, "apply", "-f", "-",
-                        ], input=yaml.dump(deployment, Dumper=yaml.SafeDumper).encode("utf-8"), check=True, capture_output=True).stdout
-                        [logger.info(f"> {l}") for l in out.decode().splitlines()]
-                        if service_type != "":
-                            logger.info("creating service")
-                            ret_code = _run([
-                                kubectl_cmd, *kubectl_opts, "-n", namespace, "expose", "deployment", app_name,
-                                "--type", service_type, "--protocol", "TCP", "--port", "80", "--target-port", "8080"
-                            ])
-                            if ret_code != 0:
-                                logger.error(f"Unable to create Service: {app_name}")
-                elif service_api == "knative":
-                    out = subprocess.run([
-                        kn_cmd, *kn_opts, "-n", namespace, "service", "list",
-                        "-o", "jsonpath=\"{{.items[?(@.metadata.name=='{}')].metadata.name}}\"".format(app_name)
-                    ], check=True, capture_output=True).stdout
-                    if out.decode().rstrip() == f'"{app_name}"':  # found
-                        logger.info(f"updating existing knative service '{app_name}'")
-                        ret_code = _run([
-                            kn_cmd, *kn_opts, "-n", namespace, "service", "update", app_name,
-                            "--image", _image,
-                            "--revision-name", "{{.Service}}-{{.Random 5}}-{{.Generation}}"
-                        ])
-                        if ret_code != 0:
-                            logger.error(f"Unable to update Knative Service: {app_name}")
-                    else:
-                        logger.info(f"creating knative service {app_name}")
-                        service_account_args = ()
-                        if service_account:
-                            service_account_args = ("--service-account", service_account)
-                        ret_code = _run([
-                            kn_cmd, *kn_opts, "-n", namespace, "service", "create", app_name,
-                            "--image", _image,
-                            *list(
-                                sum([
-                                    ("--label", f"{name}={value.format(APP_NAME=app_name)}") for name, value in
-                                    _labels.items()
-                                ], ())
-                            ),
-                            *list(
-                                sum([
-                                    ("--env", f"{name}={value}") for name, value in _env.items()
-                                ], ())
-                            ),
-                            *service_account_args,
-                            *kn_extra,
-                        ])
-                        if ret_code != 0:
-                            logger.error(f"Unable to create Knative service: {app_name}")
-            except CalledProcessError as err:
-                logger.error(err.stderr.decode())
+                log.info(f"Applying {file}..")
+                kubectl.apply("-f", file)
 
 
 def make_clean_recipe(globs, on_completed=lambda: None, **recipe_kwargs):
@@ -878,17 +676,6 @@ def make_copy_source_recipe(location: str,
         )
 
 
-def make_subprocess_run_recipe(cmd, **recipe_kwargs):
-
-    if 'name' not in recipe_kwargs:
-        logger.error("You must provide a name for subprocess run recipe")
-        sys.exit(-1)
-
-    @recipe(**recipe_kwargs)
-    def _recipe():
-        _run(cmd)
-
-
 def get_var_for_target(name: str, target: str, mandatory: bool = False, default=None) -> str | None:
     name = name.upper()
     target = target.upper()
@@ -935,9 +722,12 @@ def make_run_terraform_recipe(manifests_dir="terraform", init_params=(), **recip
 
     @recipe(info="Apply terraform manifests", **recipe_kwargs)
     def run_terraform():
-        terraform = check_cmd(os.environ.get("TERRAFORM_CMD", "terraform"))
+        terraform = get_cmd_from_env("terraform")
         with pushd(manifests_dir):
-            logger.info("Applying terraform manifests...")
-            _run(f"{terraform} init --upgrade {' '.join(init_params)}")
-            _run(f"{terraform} plan -out=terraform.tfplan")
-            _run(f"{terraform} apply -auto-approve terraform.tfplan")
+            log.info("Applying terraform manifests...")
+            terraform.init("--upgrade", *init_params, _fg=True)
+            # _run(f"{terraform} init --upgrade {' '.join(init_params)}")
+            terraform.plan("-out=terraform.tfplan", _fg=True)
+            # _run(f"{terraform} plan -out=terraform.tfplan")
+            terraform.apply("-auto-approve", "terraform.tfplan", _fg=True)
+            # _run(f"{terraform} apply -auto-approve terraform.tfplan")
