@@ -11,6 +11,7 @@
 
 import inspect
 import json
+import logging
 import os
 import uuid
 from concurrent import futures
@@ -56,12 +57,16 @@ class CloudEventsDispatcher(BaseDispatcher):
             subject = subject_factory(subject)
         _event_info = subject.event_info()
 
+        _topic_id = self._topic_id
         if "topic" in extra:
             _topic_id = extra.pop("topic")
-        else:
-            _topic_id = callable(self._topic_id) and self._topic_id(subject, event_type) or self._topic_id
-            if _topic_id is None:
-                raise EnvironmentError("A topic must be specified or PUBSUB_SINK must be defined in environ")
+
+        if callable(_topic_id):
+            _topic_id = self._topic_id(subject, event_type)
+
+        if not _topic_id:
+            return
+
         if _topic_id.startswith("projects/"):
             topic_path = _topic_id
         else:

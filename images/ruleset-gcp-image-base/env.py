@@ -5,12 +5,16 @@ from krules_env import get_source, RULE_PROC_EVENT
 import os
 import google.auth
 from redis_subjects_storage.storage_impl import SubjectsRedisStorage
+from google.cloud import secretmanager
+import re
+import logging
 
+logger = logging.getLogger()
 
 
 TOPIC_NAME = os.environ.get("PUBSUB_SINK")
 if TOPIC_NAME is None:
-    raise EnvironmentError("PUBSUB_SINK must be defined")
+    logger.warning("PUBSUB_SINK is not defined. Unhandled messaged will be silently discarded")
 
 _, PROJECT = google.auth.default()
 
@@ -42,6 +46,17 @@ def init():
 
     subjects_redis_url = os.environ.get("SUBJECTS_REDIS_URL")
     if subjects_redis_url is not None:
+
+        if subjects_redis_url.startswith("googlesecret://"):
+            env_vars = re.findall("\{([a-zA-Z0-9_]*)\}", subjects_redis_url)
+            subjects_redis_url = subjects_redis_url.format(
+                **{v: os.environ.get(v.upper(), "") for v in env_vars}
+            )
+            client = secretmanager.SecretManagerServiceClient()
+            version, secret_id = subjects_redis_url.replace("googlesecret://", "").split(":")
+            name = client.secret_version_path(PROJECT, secret_id, version)
+            response = client.access_secret_version(name=name)
+            subjects_redis_url = response.payload.data.decode('utf-8')
         subjects_redis_prefix = os.environ.get("SUBJECTS_REDIS_PREFIX")
         if subjects_redis_prefix is None:
             if "PROJECT_NAME" in os.environ and "TARGET" in os.environ:

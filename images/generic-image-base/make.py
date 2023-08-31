@@ -23,11 +23,13 @@ SUBJECTS_BACKENDS_DIR = os.path.join(KRULES_REPO_DIR, "subjects_storages")
 KRULES_DEP_LIBS = [
     "krules-core",
     "krules-dispatcher-cloudevents",
-    "krules-env"
+    "krules-env",
+    "krules-fastapi-env",
+    "krules-k8s-functions",
 ]
 
 DEV_REQUIREMENTS = ["dependency-injector==4.39.1"]
-GCP_SERVICE_ACCOUNT_PATH = None
+GCP_SERVICE_ACCOUNT_PATH = ".build/gcp_artifact_registry"
 
 if "RELEASE_VERSION" in os.environ:
     os.environ["DOCKER_REGISTRY"] = os.environ.get("RELEASE_DOCKER_REGISTRY", "gcr.io/airspot")
