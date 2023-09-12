@@ -46,8 +46,15 @@ def init():
 
     subjects_redis_url = os.environ.get("SUBJECTS_REDIS_URL")
     if subjects_redis_url is not None:
-
-        if subjects_redis_url.startswith("googlesecret://"):
+        if re.match("^projects/./secrets/./versions/.*$", subjects_redis_url):
+            env_vars = re.findall("\{([a-zA-Z0-9_]*)\}", subjects_redis_url)
+            subjects_redis_url = subjects_redis_url.format(
+                **{v: os.environ.get(v.upper(), "") for v in env_vars}
+            )
+            client = secretmanager.SecretManagerServiceClient()
+            response = client.access_secret_version(name=subjects_redis_url)
+            subjects_redis_url = response.payload.data.decode('utf-8')
+        elif subjects_redis_url.startswith("googlesecret://"): # used for backward compatibility (urmet-logging)
             env_vars = re.findall("\{([a-zA-Z0-9_]*)\}", subjects_redis_url)
             subjects_redis_url = subjects_redis_url.format(
                 **{v: os.environ.get(v.upper(), "") for v in env_vars}
