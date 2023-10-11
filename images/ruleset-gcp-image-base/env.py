@@ -12,21 +12,23 @@ import logging
 logger = logging.getLogger()
 
 
-TOPIC_NAME = os.environ.get("PUBSUB_SINK")
-if TOPIC_NAME is None:
-    logger.warning("PUBSUB_SINK is not defined. Unhandled messaged will be silently discarded")
-
 _, PROJECT = google.auth.default()
+APP_PROJECT = os.environ.get("APPLICATION_PROJECT_ID", PROJECT)
+PROJECT_NAME = os.environ['PROJECT_NAME']
+TARGET = os.environ['TARGET']
+
+
+TOPIC_NAME = os.environ.get(
+    "PUBSUB_SINK",
+    f"projects/{APP_PROJECT}/topics/{PROJECT_NAME}-default-sink-{TARGET}"
+)
 
 
 def _get_topic_id(subject, event_type):
 
     if event_type == RULE_PROC_EVENT:
-        topic_name = os.environ.get("PUBSUB_PROCEVENTS_SINK")
-        if topic_name is None:
-            raise EnvironmentError("PUBSUB_PROCEVENTS_SINK must be defined")
-        if os.environ.get("PUBSUB_PROCEVENTS_SINK_PROJECT"):
-            return f"projects/{os.environ.get('PUBSUB_PROCEVENTS_SINK_PROJECT')}/topics/{topic_name}"
+        topic_name = os.environ.get("PUBSUB_PROCEVENTS_SINK", f"{PROJECT_NAME}-procevents-{TARGET}")
+        return f"projects/{os.environ.get('PUBSUB_PROCEVENTS_SINK_PROJECT_ID', APP_PROJECT)}/topics/{topic_name}"
     else:
         topic_name = TOPIC_NAME
 
@@ -45,38 +47,28 @@ def init():
     )
 
     subjects_redis_url = os.environ.get("SUBJECTS_REDIS_URL")
-    if subjects_redis_url is not None:
-        if re.match("^projects/./secrets/./versions/.*$", subjects_redis_url):
-            env_vars = re.findall("\{([a-zA-Z0-9_]*)\}", subjects_redis_url)
-            subjects_redis_url = subjects_redis_url.format(
-                **{v: os.environ.get(v.upper(), "") for v in env_vars}
-            )
-            client = secretmanager.SecretManagerServiceClient()
-            response = client.access_secret_version(name=subjects_redis_url)
-            subjects_redis_url = response.payload.data.decode('utf-8')
-        elif subjects_redis_url.startswith("googlesecret://"): # used for backward compatibility (urmet-logging)
-            env_vars = re.findall("\{([a-zA-Z0-9_]*)\}", subjects_redis_url)
-            subjects_redis_url = subjects_redis_url.format(
-                **{v: os.environ.get(v.upper(), "") for v in env_vars}
-            )
-            client = secretmanager.SecretManagerServiceClient()
-            version, secret_id = subjects_redis_url.replace("googlesecret://", "").split(":")
-            name = client.secret_version_path(PROJECT, secret_id, version)
-            response = client.access_secret_version(name=name)
-            subjects_redis_url = response.payload.data.decode('utf-8')
-        subjects_redis_prefix = os.environ.get("SUBJECTS_REDIS_PREFIX")
-        if subjects_redis_prefix is None:
-            if "PROJECT_NAME" in os.environ and "TARGET" in os.environ:
-                subjects_redis_prefix=f"{os.environ['PROJECT_NAME']}-{os.environ['TARGET']}->"
-            else:
-                raise Exception("SUBJECTS_REDIS_PREFIX not configured")
-        subject_storage_factory.override(
-            providers.Factory(
-                lambda name, **kwargs:
-                SubjectsRedisStorage(
-                    name,
-                    subjects_redis_url,
-                    key_prefix=subjects_redis_prefix
-                )
+    if subjects_redis_url is None:
+        secretmanager_project_id = os.environ.get("SECRETMANAGER_PROJECT_ID", APP_PROJECT)
+        secret_name = f"{os.environ['PROJECT_NAME']}-subjects_redis_url-{os.environ['TARGET']}"
+        client = secretmanager.SecretManagerServiceClient()
+        secret_path = client.secret_version_path(
+            secretmanager_project_id, secret_name, os.environ.get("SUBJECTS_REDIS_URL_SECRET_VERSION", "latest")
+        )
+        response = client.access_secret_version(name=secret_path)
+        subjects_redis_url = response.payload.data.decode('utf-8')
+    subjects_redis_prefix = os.environ.get("SUBJECTS_REDIS_PREFIX")
+    if subjects_redis_prefix is None:
+        if "PROJECT_NAME" in os.environ and "TARGET" in os.environ:
+            subjects_redis_prefix = f"{os.environ['PROJECT_NAME']}-{os.environ['TARGET']}->"
+        else:
+            raise Exception("SUBJECTS_REDIS_PREFIX not configured")
+    subject_storage_factory.override(
+        providers.Factory(
+            lambda name, **kwargs:
+            SubjectsRedisStorage(
+                name,
+                subjects_redis_url,
+                key_prefix=subjects_redis_prefix
             )
         )
+    )
