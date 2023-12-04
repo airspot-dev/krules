@@ -8,78 +8,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-
-from abc import ABCMeta, abstractmethod
-#import jsonpath_rw_ext as jp
-from pydantic.fields import ModelField
+from abc import ABCMeta
 
 from krules_core.arg_processors import processors, DefaultArgProcessor, BaseArgProcessor
-from krules_core.providers import event_router_factory, configs_factory
-
-
-# class with_payload(object):
-#
-#     def __init__(self, func):
-#         self.func = func
-#
-#     def __call__(self, payload):
-#         self._result = self.func(payload)
-#         return self._result
-#
-#     def __repr__(self):
-#         if not hasattr(self, "_result"):
-#             return "[not called]"
-#         return str(self._result)
-#
-#     def result(self):
-#         return getattr(self, "_result", None)
-#
-# # TODO: with_payload_jp
-#
-# # TODO: need testing
-# class with_subject(object):
-#
-#     def __init__(self, func):
-#         self.func = func
-#
-#     def __call__(self, subject):
-#         self._result = self.func(subject)
-#         return self._result
-#
-
-#     def __repr__(self):
-#         if not hasattr(self, "_result"):
-#             return "[not called]"
-#         return str(self._result)
-#
-#     def result(self):
-#         return getattr(self, "_result", None)
-#
-# # TODO: with_subject_jp
-#
-# # TODO: test
-# class with_self(object):
-#
-#     def __init__(self, func):
-#         self.func = func
-#
-#     def __call__(self, _class):
-#         self._result = self.func(_class)
-#         return self._result
-#
-#     def __repr__(self):
-#         if not hasattr(self, "_result"):
-#             return "[not called]"
-#         return str(self._result)
-#
-#     def result(self):
-#         return getattr(self, "_result", None)
 
 
 class RuleFunctionBase:
-
     __metaclass__ = ABCMeta
 
     subject = object()  # just for the ide happiness
@@ -131,11 +65,6 @@ class RuleFunctionBase:
     # @abstractmethod
     # def execute(self, *args, **kwargs):
     #     raise NotImplementedError("execute")
-
-
-from krules_core.base_functions.filters import *
-from krules_core.base_functions.processing import *
-from krules_core.base_functions.misc import *
 
 
 def Callable(_callable):

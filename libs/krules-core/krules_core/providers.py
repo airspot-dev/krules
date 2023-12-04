@@ -10,25 +10,23 @@
 # limitations under the License.
 
 
-from rx import subject, from_future
-
-from dependency_injector import providers as providers
+from dependency_injector import providers as di_providers
 from krules_core.subject.empty_storage import EmptySubjectStorage
+from rx import subject
 
+from .exceptions_dumpers import ExceptionsDumpers
 from .route.dispatcher import BaseDispatcher
 from .route.router import EventRouter
 from .subject.storaged_subject import Subject
-from .exceptions_dumpers import ExceptionsDumpers
 
-
-configs_factory = providers.Singleton(lambda: {})
+configs_factory = di_providers.Singleton(lambda: {})
 
 # for testing/development only
-subject_storage_factory = providers.Factory(lambda *args, **kwargs: EmptySubjectStorage())
+subject_storage_factory = di_providers.Factory(lambda *args, **kwargs: EmptySubjectStorage())
 
-subject_factory = providers.Factory(Subject)
-proc_events_rx_factory = providers.Singleton(subject.ReplaySubject)
+subject_factory = di_providers.Factory(Subject)
+proc_events_rx_factory = di_providers.Singleton(subject.ReplaySubject)
 # proc_events_rx_factory = subject.ReplaySubject()
-event_router_factory = providers.Singleton(EventRouter)
-event_dispatcher_factory = providers.Singleton(BaseDispatcher)
-exceptions_dumpers_factory = providers.Singleton(ExceptionsDumpers)
+event_router_factory = di_providers.Singleton(EventRouter)
+event_dispatcher_factory = di_providers.Singleton(BaseDispatcher)
+exceptions_dumpers_factory = di_providers.Singleton(ExceptionsDumpers)

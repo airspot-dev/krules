@@ -12,12 +12,13 @@ import os
 
 import pytest
 from dependency_injector import providers
+from krules_core.base_functions import RuleFunctionBase
+from krules_core.base_functions.filters import OnSubjectPropertyChanged, Filter
+from krules_core.base_functions.processing import Process, SetPayloadProperties, SetPayloadProperty, PayloadDeepMerge, \
+    SetSubjectProperty, SetSubjectExtendedProperty, FlushSubject, SetSubjectProperties
 from rx import subject as rx_subject
 
 from krules_core import RuleConst, ProcEventsLevel
-from krules_core.base_functions import SetPayloadProperties, SetPayloadProperty, SetSubjectProperty, \
-    OnSubjectPropertyChanged, SetSubjectExtendedProperty, RuleFunctionBase, SetSubjectProperties, Process, FlushSubject, \
-    Filter, PayloadDeepMerge
 from krules_core.core import RuleFactory
 from krules_core.providers import (
     event_router_factory,

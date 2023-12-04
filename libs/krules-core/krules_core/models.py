@@ -1,18 +1,18 @@
 from typing import Optional, NewType, List
 
-from pydantic import BaseModel, Field, constr
-
 from krules_core.arg_processors import BaseArgProcessor
-from krules_core.base_functions import FilterFunction, ProcessingFunction, Filter, Process
+from krules_core.base_functions.filters import FilterFunction, Filter
+from krules_core.base_functions.processing import ProcessingFunction, Process
+from pydantic import BaseModel, constr
 
-EventType = NewType("EventType", constr(regex="^[a-zA-Z0-9_.-]+$"))
+EventType = NewType("EventType", constr(pattern="^[a-zA-Z0-9_.-]+$"))
 
 
 class Rule(BaseModel):
 
     name: str
-    description: Optional[str]
-    subscribe_to: Optional[EventType | List[EventType]]
+    description: Optional[str] = "",
+    subscribe_to: Optional[EventType | List[EventType]] = ["*"]
     filters: List[FilterFunction | BaseArgProcessor] = []
     processing: List[ProcessingFunction | BaseArgProcessor] = []
 

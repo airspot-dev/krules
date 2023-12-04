@@ -79,6 +79,7 @@ class CloudEventsDispatcher(BaseDispatcher):
             ext_props.update({"propertyname": property_name})
         ext_props['originid'] = str(_event_info.get("originid", _id))
         ext_props["ce-type"] = event_type
+        dataschema = extra.pop("dataschema", None)
         ext_props.update(extra)
 
         event = CloudEvent(
@@ -87,93 +88,15 @@ class CloudEventsDispatcher(BaseDispatcher):
             source=self._source,
             subject=str(subject),
             data=payload,
-            time=datetime.now(timezone.utc)
+            time=datetime.now(timezone.utc),
+            datacontenttype="application/json",
+            dataschema=dataschema,
         )
 
-        # event.SetData(payload)
-
-        event_obj = event.dict(exclude_unset=True)
+        event_obj = event.model_dump(exclude_unset=True, exclude_none=True)
         event_obj["data"] = json.dumps(event_obj["data"], cls=_JSONEncoder).encode()
         event_obj["time"] = event_obj["time"].isoformat()
 
-        # for k,v in event_obj.items():
-        #     if k != "data":
-        #         event_obj[k] = str(v)
         future = self._publisher.publish(topic_path, **event_obj, **ext_props, contentType="text/json")
-        # future = self._publisher.publish(topic_path, data=event.json().encode("utf-8"), **ext_props, contentType="text/json")
         future.add_done_callback(lambda _future: _future.result(timeout=60))
 
-# class __old__CloudEventsDispatcher(BaseDispatcher):
-#
-#     def __init__(self, dispatch_url, source, test=False):
-#         self._dispatch_url = dispatch_url
-#         self._source = source
-#         self._test = test
-#
-#     def dispatch(self, event_type, subject, payload):  # copy
-#
-#         if isinstance(subject, str):
-#             subject = subject_factory(subject)
-#         _event_info = subject.event_info()
-#
-#         _id = str(uuid.uuid4())
-#         logging.debug("new event id: {}".format(_id))
-#
-#         event = v1.Event()
-#         event.SetContentType('application/json')
-#         event.SetEventID(_id)
-#         event.SetSource(self._source)
-#         event.SetSubject(str(subject))
-#         event.SetEventTime(datetime.utcnow().replace(tzinfo=pytz.UTC).isoformat())
-#         event.SetEventType(event_type)
-#
-#         # set extended properties
-#         ext_props = subject.get_ext_props()
-#         property_name = payload.get(PayloadConst.PROPERTY_NAME, None)
-#         if property_name is not None:
-#             ext_props.update({"propertyname": property_name})
-#         event.SetExtensions(ext_props)
-#         event.Set('Originid', str(_event_info.get("originid", _id)))
-#         event.SetData(payload)
-#
-#         m = marshaller.NewHTTPMarshaller([binary.NewBinaryHTTPCloudEventConverter()])
-#
-#         headers, body = m.ToRequest(event, converters.TypeBinary, lambda x: json.dumps(x, cls=_JSONEncoder))
-#
-#         if "ce-datacontenttype" in headers:
-#             del headers["ce-datacontenttype"]
-#
-#         if callable(self._dispatch_url):
-#             dispatch_url = self._dispatch_url(subject, event_type)
-#         else:
-#             dispatch_url = self._dispatch_url
-#
-#         response = requests.post(dispatch_url,
-#                                  headers=headers,
-#                                  data=body)
-#
-#         response.raise_for_status()
-#
-#         if self._test:
-#             return _id, response.status_code, headers
-#         return _id
-#
-
-
-
-
-        # url = self._dispatch_url.replace("{{message}}", message)
-        # print(url)
-        # #_pool.apply_async(requests.post, args=(url,), kwds={'headers': headers, 'data': data.getvalue()},
-        # #                  callback=_on_success)
-        # #requests.post(url, headers=headers, data=data.getvalue())
-        # req = Request(url, data=data.getvalue())
-        # print(req)
-        # for k, v in headers.items():
-        #     req.add_header(k, v)
-        # req.get_method = lambda: "POST"
-        # print("posting")
-        # urlopen(req)
-        # print("posted")
-
-        #return event
