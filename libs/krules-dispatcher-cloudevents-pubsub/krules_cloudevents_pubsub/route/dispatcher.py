@@ -103,7 +103,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         event_obj["data"] = json.dumps(event_obj["data"], cls=_JSONEncoder).encode()
         event_obj["time"] = event_obj["time"].isoformat()
 
-        _exception_handler = extra.get("exception_handler")
+        _exception_handler = extra.pop("exception_handler", None)
 
         future = self._publisher.publish(topic_path, **event_obj, **ext_props, contentType="text/json")
         #future.add_done_callback(lambda _future: _future.result(timeout=60))
