@@ -34,8 +34,14 @@ class _JSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def _callback(publish_future, data):
-    publish_future.result(timeout=60)
+def _callback(publish_future, exception_handler=None):
+    try:
+        publish_future.result(timeout=60)
+    except Exception as ex:
+        if exception_handler is not None:
+            exception_handler(ex)
+        else:
+            raise
 
 
 class CloudEventsDispatcher(BaseDispatcher):
@@ -97,6 +103,9 @@ class CloudEventsDispatcher(BaseDispatcher):
         event_obj["data"] = json.dumps(event_obj["data"], cls=_JSONEncoder).encode()
         event_obj["time"] = event_obj["time"].isoformat()
 
+        _exception_handler = extra.get("exception_handler")
+
         future = self._publisher.publish(topic_path, **event_obj, **ext_props, contentType="text/json")
-        future.add_done_callback(lambda _future: _future.result(timeout=60))
+        #future.add_done_callback(lambda _future: _future.result(timeout=60))
+        future.add_done_callback(lambda _future: _callback(_future, _exception_handler))
 
