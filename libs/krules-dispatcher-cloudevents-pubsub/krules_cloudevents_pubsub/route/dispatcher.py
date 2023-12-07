@@ -13,6 +13,7 @@ import inspect
 import json
 import uuid
 from datetime import datetime, timezone
+from pprint import pprint
 
 from cloudevents.pydantic import CloudEvent
 from google.cloud import pubsub_v1
@@ -101,6 +102,8 @@ class CloudEventsDispatcher(BaseDispatcher):
         event_obj["data"] = json.dumps(event_obj["data"], cls=_JSONEncoder).encode()
         event_obj["time"] = event_obj["time"].isoformat()
 
+        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+        pprint(ext_props)
 
         future = self._publisher.publish(topic_path, **event_obj, **ext_props, contentType="text/json")
         future.add_done_callback(lambda _future: _callback(_future, exception_handler))
