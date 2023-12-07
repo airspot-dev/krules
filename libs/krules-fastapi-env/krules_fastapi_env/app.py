@@ -31,6 +31,7 @@ from .globals import GlobalsMiddleware, g
 class KRulesAPIRoute(routing.APIRoute):
 
     async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+
         g.subjects = []
         if self.methods and scope["method"] not in self.methods:
             headers = {"Allow": ", ".join(self.methods)}
@@ -71,6 +72,7 @@ class KRulesAPIRouter(routing.APIRouter):
         # ),
     ) -> None:
         super(KRulesAPIRouter, self).__init__(
+            route_class=KRulesAPIRoute,
             *args, **kwargs,
             # prefix=prefix,
             # tags=tags,
@@ -82,7 +84,6 @@ class KRulesAPIRouter(routing.APIRouter):
             # redirect_slashes=redirect_slashes,
             # default=default,
             # dependency_overrides_provider=dependency_overrides_provider,
-            # route_class=KRulesAPIRoute,
             # on_startup=on_startup,
             # on_shutdown=on_shutdown,
             # deprecated=deprecated,
@@ -261,6 +262,7 @@ class KrulesApp(FastAPI):
 
 
 def _g_wrap(subject_class, *args, **kwargs):
+
     event_info = kwargs.pop("event_info", {})
     if not getattr(g, "subjects"):
         g.subjects = []
