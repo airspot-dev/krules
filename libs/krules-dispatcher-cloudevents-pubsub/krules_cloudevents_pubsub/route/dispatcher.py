@@ -11,15 +11,12 @@
 
 import inspect
 import json
-import logging
-import os
 import uuid
-from concurrent import futures
 from datetime import datetime, timezone
-from typing import Callable
 
 from cloudevents.pydantic import CloudEvent
 from google.cloud import pubsub_v1
+
 from krules_core.providers import subject_factory
 from krules_core.route.dispatcher import BaseDispatcher
 from krules_core.subject import PayloadConst
@@ -86,7 +83,7 @@ class CloudEventsDispatcher(BaseDispatcher):
         ext_props['originid'] = str(_event_info.get("originid", _id))
         ext_props["ce-type"] = event_type
         dataschema = extra.pop("dataschema", None)
-        _exception_handler = extra.pop("exception_handler", None)
+        exception_handler = extra.pop("exception_handler", None)
         ext_props.update(extra)
 
         event = CloudEvent(
@@ -106,6 +103,5 @@ class CloudEventsDispatcher(BaseDispatcher):
 
 
         future = self._publisher.publish(topic_path, **event_obj, **ext_props, contentType="text/json")
-        #future.add_done_callback(lambda _future: _future.result(timeout=60))
-        future.add_done_callback(lambda _future: _callback(_future, _exception_handler))
+        future.add_done_callback(lambda _future: _callback(_future, exception_handler))
 
